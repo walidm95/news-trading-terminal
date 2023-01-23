@@ -13,7 +13,7 @@ import EventLogs from './EventLogs.vue';
             <li class="list-group-item">
                 <TradingParameters />
             </li>
-            <li class="list-group-item">
+            <li class="list-group-item text-center">
                 <TradingButtons />
             </li>
             <li class="list-group-item">

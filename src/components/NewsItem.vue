@@ -1,19 +1,21 @@
-<script setup>
+<script>
 
-defineProps({
-  headline: String,
-  time: String,
-  symbol: String,
-})
+export default {
+  props: {
+    headline: {type: String, required: true},
+    time: {type: String, required: true},
+    selected: {type: Boolean, required: true}
+  }
+}
 </script>
 
 <template>
-    <div style="text-align: left;">
+    <li class="list-group-item" :class="{active: selected}">
         <div>
-          <h6 class="card-subtitle mb-2 text-muted" style="text-align;: left">{{ time }}</h6>
+          <h6 class="card-subtitle mb-1">{{ time }}</h6>
           <h5 class="card-title">{{ headline }}</h5>
         </div>
-    </div>
+      </li>
 </template>
 
 <style scoped>

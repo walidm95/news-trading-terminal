@@ -5,28 +5,44 @@
 <template>
     <div class="container">
         <div class="row">
-            <div class="col">
-                <label for="trading-size">Trading Size</label>
-                <div class="input-group mb-1">
-                    <input type="number" class="form-control" id="trading-size">
-                    <div class="input-group-append">
+            <div class="col-6">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Trading Size</span>
                         <span class="input-group-text">$</span>
-                    </div>
+                    </div>  
+                    <input type="number" class="form-control" id="max-trading-size">
                 </div>
             </div>
+            <div class="col-4">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <div class="input-group-text">
+                        <input type="checkbox" aria-label="lock-trading">
+                        </div>
+                    </div>
+                    <span class="input-group-text">Lock Trading</span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
             <div class="col">
-                <label for="use-stop-loss">Stop Loss</label>
-                <div class="input-group">
-                    <input type="number" class="form-control" id="stop-loss-pct">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Stop Loss</span>
+                    </div>  
+                    <input type="number" class="form-control" aria-label="stop-loss-pct">
                     <div class="input-group-append">
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <label for="use-take-profit">Take Profit</label>
-                <div class="input-group">
-                    <input type="number" class="form-control" id="take-profit-pct">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Take Profit</span>
+                    </div>  
+                    <input type="number" class="form-control" aria-label="take-profit-pct">
                     <div class="input-group-append">
                         <span class="input-group-text">%</span>
                     </div>
@@ -35,18 +51,22 @@
         </div>
         <div class="row">
             <div class="col">
-                <label for="symbol">Symbol</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="symbol" :disabled="symbolLocked">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Trading Symbol</span>
+                    </div>  
+                    <input type="text" class="form-control" aria-label="trading-symbol">
                 </div>
             </div>
-            <div class="col d-flex align-items-center justify-content-center">
-                <input type="checkbox" class="custom-control-input" id="lock-symbol" v-model="symbolLocked">
-                <label class="custom-control-label" for="lock-symbol">&nbsp;&nbsp;Lock Symbol</label>                
-            </div>
-            <div class="col d-flex align-items-center justify-content-center">
-                <input type="checkbox" class="custom-control-input" id="lock-trading">
-                <label for="lock-trading">&nbsp;&nbsp;Lock Trading</label>
+            <div class="col">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <div class="input-group-text">
+                        <input type="checkbox" aria-label="Checkbox for following text input">
+                        </div>
+                    </div>
+                    <span class="input-group-text">Lock Symbol</span>
+                </div>
             </div>
         </div>
     </div>

@@ -7,12 +7,12 @@ import TradingPanel from './components/TradingPanel.vue';
   <div class="page-title">
     <h1>News Trading Terminal</h1>
   </div>
-  <div class="container">
+  <div class="container-fluid">
     <div class="row">
-      <div class="col">
+      <div class="col-7">
         <NewsFeed />
       </div>
-      <div class="col">
+      <div class="col-5">
         <TradingPanel />
       </div>
     </div>

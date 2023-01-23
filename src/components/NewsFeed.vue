@@ -1,5 +1,42 @@
-<script setup>
-import NewsItem from './NewsItem.vue'
+<script>
+import NewsItem from './NewsItem.vue';
+
+function getHeadlines() {
+    return [
+        {
+        'time': '15:02:43',
+        'title': 'This is a headline1'
+        },
+        {
+        'time': '15:02:42',
+        'title': 'This is a headline2'
+        },
+        {
+        'time': '15:02:41',
+        'title': 'This is a headline3'
+        },
+        {
+        'time': '15:02:40',
+        'title': 'This is a headline4'
+        }
+    ]
+}
+
+export default {
+    data() {
+        return {
+            activeHeadline: 0,
+            headlines: getHeadlines()
+        };
+    },
+    components: { NewsItem },
+    methods: {
+        selectHeadline(index) {
+            this.activeHeadline = index;
+        }
+    }
+}
+
 </script>
 
 <template>
@@ -8,27 +45,7 @@ import NewsItem from './NewsItem.vue'
             News Feed
         </div>
         <ul class="list-group list-group-flush">
-            <li class="list-group-item">
-                <NewsItem 
-                    headline="This is a headline1"
-                    time="15:02:43"
-                    symbol="BTCUSDT"
-                />
-            </li>
-            <li class="list-group-item">
-                <NewsItem 
-                    headline="This is a headline2"
-                    time="15:02:42"
-                    symbol="BTCUSDT"
-                />
-            </li>
-            <li class="list-group-item">
-                <NewsItem 
-                    headline="This is a headline3"
-                    time="15:02:41"
-                    symbol="BTCUSDT"
-                />
-            </li>
+            <NewsItem v-for="(headline, index) in headlines" :key="index" :time="headline.time" :headline="headline.title" :selected="activeHeadline === index" @click="selectHeadline(index)"/>
         </ul>
     </div>
 </template>
