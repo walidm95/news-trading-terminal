@@ -1,7 +1,6 @@
 <script setup>
 import TradingParameters from './TradingParameters.vue';
 import TradingButtons from './TradingButtons.vue';
-import EventLogs from './EventLogs.vue';
 </script>
 
 <script>
@@ -17,8 +16,8 @@ export default {
 </script>
 
 <template>
-    <div class="card">
-        <div class="card-header h2">
+    <div class="card mb-2">
+        <div class="card-header h3">
             Trading Panel
         </div>
         <ul class="list-group list-group-flush">
@@ -36,10 +35,9 @@ export default {
                     @quote-asset-changed="$emit('quote-asset-changed', $event.target.innerText)"/>
             </li>
             <li class="list-group-item text-center">
-                <TradingButtons />
-            </li>
-            <li class="list-group-item">
-                <EventLogs />
+                <TradingButtons 
+                    @buy-button-clicked="$emit('buy-button-clicked', $event.target.textContent)" 
+                    @sell-button-clicked="$emit('sell-button-clicked', $event.target.textContent)"/>
             </li>
         </ul>
     </div>

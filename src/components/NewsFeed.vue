@@ -18,7 +18,7 @@ export default {
 
 <template>
     <div class="card">
-        <div class="card-header h2">
+        <div class="card-header h3">
             News Feed
         </div>
         <ul class="list-group list-group-flush scrolled">
@@ -34,6 +34,6 @@ export default {
 <style scoped>
 .scrolled {
     overflow-y: scroll;
-    height: 533px;
+    height: 595px;
 }
 </style>

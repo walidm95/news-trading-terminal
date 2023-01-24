@@ -1,26 +1,30 @@
 <script setup>
 import Log from './Log.vue'
-import api from '../api'
+</script>
+
+<script>
+export default {
+    props: {
+        logs: {type: Array, required: true}
+    },
+    components: { Log }
+}
 </script>
 
 <template>
-    <div style="text-align:left">
-        <div class="h4">
-            Event Logs
+    <div class="card">
+        <div class="card-header h3">
+              Event Logs
         </div>
-        <ul class="list-group list-group-flush">
+        <ul class="list-group list-group-flush scrolled mt-1">
             <Log v-for="(log, index) in logs" :key="index" :time="log.time" :text="log.text" />
         </ul>
     </div>
 </template>
 
-<script>
-export default {
-    data() {
-        return {
-            logs: api.getEventLogs()
-        };
-    },
-    components: { Log }
+<style scoped>
+.scrolled {
+    overflow-y: scroll;
+    height: 160px;
 }
-</script>
+</style>

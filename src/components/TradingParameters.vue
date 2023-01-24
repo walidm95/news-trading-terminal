@@ -14,7 +14,7 @@ export default {
     <div class="container">
         <div class="input-group mb-2">
             <div class="input-group-prepend">
-                <label class="input-group-text" for="maxTradingSizd">Trading Size</label>
+                <label class="input-group-text" for="maxTradingSizd">Max Size</label>
             </div>
             <input type="number" class="form-control" id="maxTradingSize" placeholder="Max Trading Size" 
                 :value="maxTradingSize"
@@ -47,7 +47,7 @@ export default {
         </div>
         <div class="input-group mb-2">
             <div class="input-group-prepend">
-                <label class="input-group-text" for="tradingSymbol">Trading Symbol</label>
+                <label class="input-group-text" for="tradingSymbol">Symbol</label>
             </div>
             <input type="text" class="form-control" id="tradingSymbol" placeholder="Trading Symbol"
                 :value="tradingSymbol"

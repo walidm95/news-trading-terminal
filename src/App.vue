@@ -1,6 +1,7 @@
 <script setup>
 import NewsFeed from './components/NewsFeed.vue'
 import TradingPanel from './components/TradingPanel.vue';
+import EventLogs from './components/EventLogs.vue';
 import api from './api';
 </script>
 
@@ -19,16 +20,19 @@ import api from './api';
       </div>
       <div class="col-5">
         <TradingPanel
-          :maxTradingSize="trading.maxTradingSize" 
-          :stopLossPct="trading.stopLossPct"
-          :takeProfitPct="trading.takeProfitPct"
-          :tradingSymbol="trading.tradingSymbol"
-          :quoteAsset="trading.quoteAsset"
-          @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
-          @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
-          @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
-          @trading-symbol-changed="trading.tradingSymbol=$event.target.value"
-          @quote-asset-changed="onQuoteAssetChanged"/>
+        :maxTradingSize="trading.maxTradingSize" 
+        :stopLossPct="trading.stopLossPct"
+        :takeProfitPct="trading.takeProfitPct"
+        :tradingSymbol="trading.tradingSymbol"
+        :quoteAsset="trading.quoteAsset"
+        @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
+        @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
+        @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
+        @trading-symbol-changed="trading.tradingSymbol=$event.target.value"
+        @quote-asset-changed="onQuoteAssetChanged"
+        @buy-button-clicked="onBuyButtonClicked"
+        @sell-button-clicked="onSellButtonClicked"/>
+        <EventLogs :logs="eventLogs"/>
       </div>
     </div>
   </div>
@@ -45,19 +49,18 @@ function findSymbolInHeadline(headline, symbols) {
       return symbols[symbol];
     }
   }
-  return null;
+  return '';
 }
 
 // Initialize data
 var symbols = api.getNamesAndTickers();
 var headlines = api.getNewsHeadlines();
-var eventLogs = api.getEventLogs();
 
 export default {
   data() {
     return {
       symbols: symbols,
-      eventLogs: eventLogs,
+      eventLogs: [],
       news: {
         headlines: headlines,
         activeHeadline: 0
@@ -81,6 +84,20 @@ export default {
       if (quoteAsset != '') {
         this.trading.quoteAsset = quoteAsset;
       }
+    },
+    onBuyButtonClicked(size) {
+      var dollarSize = Number(size.replace('%','')) / 100 * this.trading.maxTradingSize;
+      this.eventLogs = [{
+        time: new Date().toLocaleTimeString(),
+        text: `Bought ${this.trading.tradingSymbol} for ${dollarSize.toLocaleString()} ${this.trading.quoteAsset}`
+      }].concat(this.eventLogs);
+    },
+    onSellButtonClicked(size) {
+      var dollarSize = Number(size.replace('%','')) / 100 * this.trading.maxTradingSize;
+      this.eventLogs = [{
+        time: new Date().toLocaleTimeString(),
+        text: `Sold ${this.trading.tradingSymbol} for ${dollarSize.toLocaleString()} ${this.trading.quoteAsset}`
+      }].concat(this.eventLogs);
     }
   }
 }

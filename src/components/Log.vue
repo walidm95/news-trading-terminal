@@ -6,5 +6,5 @@ defineProps({
 </script>
 
 <template>
-    <h6>[{{ time }}] {{ text }}</h6>
+    <h6>&nbsp; {{ time }} &nbsp; {{ text }}</h6>
 </template>
