@@ -22,7 +22,15 @@ export default {
         </div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item">
-                <TradingParameters />
+                <TradingParameters 
+                    :maxTradingSize="maxTradingSize" 
+                    :stopLossPct="stopLossPct"
+                    :takeProfitPct="takeProfitPct"
+                    :tradingSymbol="tradingSymbol"
+                    @trading-size-changed="$emit('trading-size-changed', $event)"
+                    @stop-loss-changed="$emit('stop-loss-changed', $event)"
+                    @take-profit-changed="$emit('take-profit-changed', $event)"
+                    @trading-symbol-changed="$emit('trading-symbol-changed', $event)"/>
             </li>
             <li class="list-group-item text-center">
                 <TradingButtons />

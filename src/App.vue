@@ -2,7 +2,6 @@
 import NewsFeed from './components/NewsFeed.vue'
 import TradingPanel from './components/TradingPanel.vue';
 import api from './api';
-
 </script>
 
 <template>
@@ -16,14 +15,18 @@ import api from './api';
           :symbols="symbols"
           :headlines="news.headlines" 
           :activeHeadline="news.activeHeadline"
-          @selectHeadline="handleSelectHeadline"/>
+          @selectHeadline="onSelectHeadline"/>
       </div>
       <div class="col-5">
         <TradingPanel
           :maxTradingSize="trading.maxTradingSize" 
           :stopLossPct="trading.stopLossPct"
           :takeProfitPct="trading.takeProfitPct"
-          :tradingSymbol="trading.tradingSymbol"/>
+          :tradingSymbol="trading.tradingSymbol"
+          @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
+          @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
+          @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
+          @trading-symbol-changed="trading.tradingSymbol=$event.target.value"/>
       </div>
     </div>
   </div>
@@ -37,7 +40,7 @@ function findSymbolInHeadline(headline, symbols) {
     let regexSymbol = new RegExp(`\\b${symbols[symbol]}\\b`, 'i');
 
     if(regexName.test(headline) || regexSymbol.test(headline)){
-      return symbol;
+      return symbols[symbol];
     }
   }
   return null;
@@ -65,8 +68,9 @@ export default {
       } 
     }
   },
+  components: { NewsFeed, TradingPanel },
   methods: {
-    handleSelectHeadline(index) {
+    onSelectHeadline(index) {
       this.news.activeHeadline = index;
       this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, this.symbols);
     }
