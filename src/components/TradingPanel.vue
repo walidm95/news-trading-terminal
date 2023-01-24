@@ -10,7 +10,8 @@ export default {
         maxTradingSize: {type: Number, required: true},
         stopLossPct: {type: Number, required: true},
         takeProfitPct: {type: Number, required: true},
-        tradingSymbol: {type: String, required: true}
+        tradingSymbol: {type: String, required: true},
+        quoteAsset: {type: String, required: true }
     }
 }
 </script>
@@ -27,10 +28,12 @@ export default {
                     :stopLossPct="stopLossPct"
                     :takeProfitPct="takeProfitPct"
                     :tradingSymbol="tradingSymbol"
+                    :quoteAsset="quoteAsset"
                     @trading-size-changed="$emit('trading-size-changed', $event)"
                     @stop-loss-changed="$emit('stop-loss-changed', $event)"
                     @take-profit-changed="$emit('take-profit-changed', $event)"
-                    @trading-symbol-changed="$emit('trading-symbol-changed', $event)"/>
+                    @trading-symbol-changed="$emit('trading-symbol-changed', $event)"
+                    @quote-asset-changed="$emit('quote-asset-changed', $event.target.innerText)"/>
             </li>
             <li class="list-group-item text-center">
                 <TradingButtons />

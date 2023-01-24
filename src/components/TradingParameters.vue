@@ -4,7 +4,8 @@ export default {
         maxTradingSize: {type: Number, required: true},
         stopLossPct: {type: Number, required: true},
         takeProfitPct: {type: Number, required: true},
-        tradingSymbol: {type: String, required: true}
+        tradingSymbol: {type: String, required: true},
+        quoteAsset: {type: String, required: true}
     }
 }
 </script>
@@ -51,6 +52,16 @@ export default {
             <input type="text" class="form-control" id="tradingSymbol" placeholder="Trading Symbol"
                 :value="tradingSymbol"
                 @focusout="$emit('trading-symbol-changed', $event)" />
+            <div class="input-group-append">
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-secondary" :class="{active: this.quoteAsset === 'USDT'}" @click="$emit('quote-asset-changed', $event)">
+                        <input type="radio" name="quotes" id="quoteUSDT" autocomplete="off"> USDT
+                    </label>
+                    <label class="btn btn-secondary" :class="{active: this.quoteAsset === 'BUSD'}" @click="$emit('quote-asset-changed', $event)">
+                        <input type="radio" name="quotes" id="quoteBUSD" autocomplete="off"> BUSD
+                    </label>
+                </div>
+            </div>  
         </div>
     </div>
 </template>

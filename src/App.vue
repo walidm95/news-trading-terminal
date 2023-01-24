@@ -23,10 +23,12 @@ import api from './api';
           :stopLossPct="trading.stopLossPct"
           :takeProfitPct="trading.takeProfitPct"
           :tradingSymbol="trading.tradingSymbol"
+          :quoteAsset="trading.quoteAsset"
           @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
           @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
           @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
-          @trading-symbol-changed="trading.tradingSymbol=$event.target.value"/>
+          @trading-symbol-changed="trading.tradingSymbol=$event.target.value"
+          @quote-asset-changed="onQuoteAssetChanged"/>
       </div>
     </div>
   </div>
@@ -61,10 +63,11 @@ export default {
         activeHeadline: 0
       },
       trading: {
-        maxTradingSize: 100,
+        maxTradingSize: 1000,
         stopLossPct: 2,
         takeProfitPct: 2,
-        tradingSymbol: findSymbolInHeadline(headlines[0].title, symbols)
+        tradingSymbol: findSymbolInHeadline(headlines[0].title, symbols),
+        quoteAsset: 'USDT'
       } 
     }
   },
@@ -73,6 +76,11 @@ export default {
     onSelectHeadline(index) {
       this.news.activeHeadline = index;
       this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, this.symbols);
+    },
+    onQuoteAssetChanged(quoteAsset) {
+      if (quoteAsset != '') {
+        this.trading.quoteAsset = quoteAsset;
+      }
     }
   }
 }
