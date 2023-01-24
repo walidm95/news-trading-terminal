@@ -1,6 +1,8 @@
 <script setup>
 import NewsFeed from './components/NewsFeed.vue'
 import TradingPanel from './components/TradingPanel.vue';
+import api from './api';
+
 </script>
 
 <template>
@@ -10,14 +12,67 @@ import TradingPanel from './components/TradingPanel.vue';
   <div class="container-fluid">
     <div class="row">
       <div class="col-7">
-        <NewsFeed />
+        <NewsFeed
+          :symbols="symbols"
+          :headlines="news.headlines" 
+          :activeHeadline="news.activeHeadline"
+          @selectHeadline="handleSelectHeadline"/>
       </div>
       <div class="col-5">
-        <TradingPanel />
+        <TradingPanel
+          :maxTradingSize="trading.maxTradingSize" 
+          :stopLossPct="trading.stopLossPct"
+          :takeProfitPct="trading.takeProfitPct"
+          :tradingSymbol="trading.tradingSymbol"/>
       </div>
     </div>
   </div>
 </template>
+
+<script>
+function findSymbolInHeadline(headline, symbols) {
+  for(const symbol in symbols)
+  {
+    let regexName = new RegExp(`\\b${symbol}\\b`, 'i');
+    let regexSymbol = new RegExp(`\\b${symbols[symbol]}\\b`, 'i');
+
+    if(regexName.test(headline) || regexSymbol.test(headline)){
+      return symbol;
+    }
+  }
+  return null;
+}
+
+// Initialize data
+var symbols = api.getNamesAndTickers();
+var headlines = api.getNewsHeadlines();
+var eventLogs = api.getEventLogs();
+
+export default {
+  data() {
+    return {
+      symbols: symbols,
+      eventLogs: eventLogs,
+      news: {
+        headlines: headlines,
+        activeHeadline: 0
+      },
+      trading: {
+        maxTradingSize: 100,
+        stopLossPct: 2,
+        takeProfitPct: 2,
+        tradingSymbol: findSymbolInHeadline(headlines[0].title, symbols)
+      } 
+    }
+  },
+  methods: {
+    handleSelectHeadline(index) {
+      this.news.activeHeadline = index;
+      this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, this.symbols);
+    }
+  }
+}
+</script>
 
 <style scoped>
 .page-title {

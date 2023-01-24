@@ -1,5 +1,6 @@
 <script setup>
 import Log from './Log.vue'
+import api from '../api'
 </script>
 
 <template>
@@ -7,19 +8,19 @@ import Log from './Log.vue'
         <div class="h4">
             Event Logs
         </div>
-        <div class="" >
-            <Log 
-                time="15:02:43"
-                text="This is a text"
-            />
-            <Log 
-                time="15:02:42"
-                text="This is a text"
-            />
-            <Log 
-                time="15:02:41"
-                text="This is a text"
-            />
-        </div>
+        <ul class="list-group list-group-flush">
+            <Log v-for="(log, index) in logs" :key="index" :time="log.time" :text="log.text" />
+        </ul>
     </div>
 </template>
+
+<script>
+export default {
+    data() {
+        return {
+            logs: api.getEventLogs()
+        };
+    },
+    components: { Log }
+}
+</script>

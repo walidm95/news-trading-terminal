@@ -1,73 +1,48 @@
-<script setup>
-
+<script>
+export default {
+    props: {
+        maxTradingSize: {type: Number, required: true},
+        stopLossPct: {type: Number, required: true},
+        takeProfitPct: {type: Number, required: true},
+        tradingSymbol: {type: String, required: true}
+    }
+}
 </script>
 
 <template>
     <div class="container">
-        <div class="row">
-            <div class="col-6">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Trading Size</span>
-                        <span class="input-group-text">$</span>
-                    </div>  
-                    <input type="number" class="form-control" id="max-trading-size">
-                </div>
+        <div class="input-group mb-2">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="maxTradingSizd">Trading Size</label>
             </div>
-            <div class="col-4">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <div class="input-group-text">
-                        <input type="checkbox" aria-label="lock-trading">
-                        </div>
-                    </div>
-                    <span class="input-group-text">Lock Trading</span>
-                </div>
+            <input type="number" class="form-control" id="maxTradingSize" placeholder="Max Trading Size" />
+            <div class="input-group-append">
+                <span class="input-group-text">$</span>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Stop Loss</span>
-                    </div>  
-                    <input type="number" class="form-control" aria-label="stop-loss-pct">
-                    <div class="input-group-append">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
+        <div class="input-group mb-2">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="stopLossPct">Stop Loss</label>
             </div>
-            <div class="col">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Take Profit</span>
-                    </div>  
-                    <input type="number" class="form-control" aria-label="take-profit-pct">
-                    <div class="input-group-append">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
+            <input type="number" class="form-control" id="stopLossPct" placeholder="Stop Loss %" />
+            <div class="input-group-append">
+                <span class="input-group-text">%</span>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Trading Symbol</span>
-                    </div>  
-                    <input type="text" class="form-control" aria-label="trading-symbol">
-                </div>
+        <div class="input-group mb-2">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="takeProfitPct">Take Profit</label>
             </div>
-            <div class="col">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <div class="input-group-text">
-                        <input type="checkbox" aria-label="Checkbox for following text input">
-                        </div>
-                    </div>
-                    <span class="input-group-text">Lock Symbol</span>
-                </div>
+            <input type="number" class="form-control" id="takeProfitPct" placeholder="Take Profit %" />
+            <div class="input-group-append">
+                <span class="input-group-text">%</span>
             </div>
+        </div>
+        <div class="input-group mb-2">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="tradingSymbol">Trading Symbol</label>
+            </div>
+            <input type="text" class="form-control" id="tradingSymbol" placeholder="Trading Symbol" />
         </div>
     </div>
 </template>

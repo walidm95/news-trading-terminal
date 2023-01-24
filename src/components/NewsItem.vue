@@ -1,5 +1,4 @@
 <script>
-
 export default {
   props: {
     headline: {type: String, required: true},
