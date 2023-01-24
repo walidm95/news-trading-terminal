@@ -21,7 +21,7 @@ export default {
         <div class="card-header h2">
             News Feed
         </div>
-        <ul class="list-group list-group-flush">
+        <ul class="list-group list-group-flush scrolled">
             <NewsItem v-for="(headline, index) in headlines" 
                 :key="index" :time="headline.time" 
                 :headline="headline.title" 
@@ -30,3 +30,10 @@ export default {
         </ul>
     </div>
 </template>
+
+<style scoped>
+.scrolled {
+    overflow-y: scroll;
+    height: 533px;
+}
+</style>
