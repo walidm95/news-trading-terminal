@@ -2,68 +2,16 @@
 function getNewsHeadlines() {
     return [
         {
-        'time': '15:02:43',
+        'datetime': new Date(2023, 1, 5, 15, 2, 43),
         'title': 'Bitcoin is going to the moon'
         },
         {
-        'time': '15:02:42',
+        'datetime': new Date(2023, 1, 5, 14, 22, 33),
         'title': 'ETH'
         },
         {
-        'time': '15:02:41',
+        'datetime': new Date(2023, 1, 5, 13, 12, 12),
         'title': 'RTRS - BINANCE IS FULLY COMPLIANT WITH POLISH REGULATORY STANDARDS FOR VIRTUAL ASSET SERVICE PROVIDERS - TWEET'
-        },
-        {
-        'time': '15:02:40',
-        'title': 'This is a headline4'
-        },
-        {
-        'time': '15:02:43',
-        'title': 'Bitcoin is going to the moon'
-        },
-        {
-        'time': '15:02:42',
-        'title': 'ETH'
-        },
-        {
-        'time': '15:02:41',
-        'title': 'RTRS - BINANCE IS FULLY COMPLIANT WITH POLISH REGULATORY STANDARDS FOR VIRTUAL ASSET SERVICE PROVIDERS - TWEET'
-        },
-        {
-        'time': '15:02:40',
-        'title': 'This is a headline4'
-        },
-        {
-        'time': '15:02:43',
-        'title': 'Bitcoin is going to the moon'
-        },
-        {
-        'time': '15:02:42',
-        'title': 'ETH'
-        },
-        {
-        'time': '15:02:41',
-        'title': 'RTRS - BINANCE IS FULLY COMPLIANT WITH POLISH REGULATORY STANDARDS FOR VIRTUAL ASSET SERVICE PROVIDERS - TWEET'
-        },
-        {
-        'time': '15:02:40',
-        'title': 'This is a headline4'
-        },
-        {
-        'time': '15:02:43',
-        'title': 'Bitcoin is going to the moon'
-        },
-        {
-        'time': '15:02:42',
-        'title': 'ETH'
-        },
-        {
-        'time': '15:02:41',
-        'title': 'RTRS - BINANCE IS FULLY COMPLIANT WITH POLISH REGULATORY STANDARDS FOR VIRTUAL ASSET SERVICE PROVIDERS - TWEET'
-        },
-        {
-        'time': '15:02:40',
-        'title': 'This is a headline4'
         }
     ]
 }

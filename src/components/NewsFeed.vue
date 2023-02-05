@@ -23,7 +23,7 @@ export default {
         </div>
         <ul class="list-group list-group-flush scrolled">
             <NewsItem v-for="(headline, index) in headlines" 
-                :key="index" :time="headline.time" 
+                :key="index" :datetime="headline.datetime.toLocaleString('en-US', {timeZoneName: 'short'})" 
                 :headline="headline.title" 
                 :selected="activeHeadline === index" 
                 @click="selectHeadline(index)"/>
