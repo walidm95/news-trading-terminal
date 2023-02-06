@@ -27,7 +27,7 @@ import api from './api';
             <TradingViewChart :ticker="getTradingSymbolTicker()" :key="tradingViewComponentKey"/>
           </div>
           <div class="row flex-fill">
-            <Positions :positions="trading.positions"/>
+            <Positions :positions="trading.positions" @close-position="onClosePosition"/>
           </div>
         </div>
         <div class="col">
@@ -77,11 +77,16 @@ function findSymbolInHeadline(headline, symbols) {
   return '';
 }
 
-// Initialize data
+// Initialize mock data
 var symbols = api.getNamesAndTickers();
 var headlines = api.getNewsHeadlines();
 var positions = api.getPositions();
 var apiKeys = api.getApiKeys();
+var livePriceFeed = {
+  'BTC': 21357.24,
+  'ETH': 1654.35,
+  'BNB': 328.21
+}
 
 // Required to re-render chart
 var tradingViewComponentKey = ref(0);
@@ -128,10 +133,24 @@ export default {
     },
     onBuyButtonClicked(size) {
       var dollarSize = Number(size.replace('%','')) / 100 * this.trading.maxTradingSize;
+
       this.eventLogs = [{
         time: new Date().toLocaleTimeString(),
         text: `Bought ${this.trading.tradingSymbol} for ${dollarSize.toLocaleString()} ${this.trading.quoteAsset}`
       }].concat(this.eventLogs);
+
+      // Add to positions screen (mock)
+      for(var i in this.trading.apiKeys)
+      { 
+        this.trading.positions.push({
+          account: this.trading.apiKeys[i].name,
+          symbol: this.trading.tradingSymbol + this.trading.quoteAsset,
+          side: 'BUY',
+          size: dollarSize,
+          entry: livePriceFeed[this.trading.tradingSymbol],
+          uPnl: dollarSize * 0.03
+        });
+      }
     },
     onSellButtonClicked(size) {
       var dollarSize = Number(size.replace('%','')) / 100 * this.trading.maxTradingSize;
@@ -139,6 +158,19 @@ export default {
         time: new Date().toLocaleTimeString(),
         text: `Sold ${this.trading.tradingSymbol} for ${dollarSize.toLocaleString()} ${this.trading.quoteAsset}`
       }].concat(this.eventLogs);
+
+      // Add to positions screen (mock)
+      for(var i in this.trading.apiKeys)
+      { 
+        this.trading.positions.push({
+          account: this.trading.apiKeys[i].name,
+          symbol: this.trading.tradingSymbol + this.trading.quoteAsset,
+          side: 'SELL',
+          size: dollarSize,
+          entry: livePriceFeed[this.trading.tradingSymbol],
+          uPnl: dollarSize * -0.03
+        });
+      }
     },
     getTradingSymbolTicker() {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
@@ -191,6 +223,17 @@ export default {
       this.eventLogs = [{
           time: new Date().toLocaleTimeString(),
           text: `Deleted API key '${apiKeyName}'`
+        }].concat(this.eventLogs);
+    },
+    onClosePosition(index) {
+      var position = this.trading.positions[index];
+
+      this.trading.positions.splice(index, 1);
+
+      // Log event
+      this.eventLogs = [{
+          time: new Date().toLocaleTimeString(),
+          text: `Close ${position.symbol} position on '${position.account}' account`
         }].concat(this.eventLogs);
     }
   }

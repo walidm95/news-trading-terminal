@@ -17,7 +17,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="pos in positions">
+                    <tr v-for="(pos, index) in positions">
                         <th scope="row" class="text-white text-center align-middle">{{ pos.account }}</th>
                         <td class="text-white text-center align-middle">{{ pos.symbol }}</td>
                         <td class="text-white text-center align-middle">{{ pos.side }}</td>
@@ -25,7 +25,7 @@
                         <td class="text-white text-center align-middle">{{ formatNumber(pos.entry) }}</td>
                         <td class="text-center align-middle" :class="pos.uPnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.uPnl) }}</td>
                         <td class="text-center align-middle">
-                            <button type="button" class="btn btn-danger">Close</button>
+                            <button type="button" class="btn btn-danger" @click="$emit('close-position', index)">Close</button>
                         </td>
                     </tr>
                 </tbody>

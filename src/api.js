@@ -68,14 +68,6 @@ function getPositions() {
             size: 5000.1111,
             entry: 21577.274,
             uPnl: -97.07
-        },
-        {
-            account: 'Alt Scalp',
-            symbol: 'INJUSDT',
-            side: 'SELL',
-            size: 9500.00,
-            entry: 1.5,
-            uPnl: 385.57
         }
     ]
 }
@@ -91,11 +83,6 @@ function getApiKeys() {
         {
             name: "Scalp",
             key: "666dsadas33d3a5sd71h5gj4",
-            secret: "35a4sd53as4das351d3as4d6as354d"
-        },
-        {
-            name: "Alt Scalp",
-            key: "4asd4as6da35ds5431",
             secret: "35a4sd53as4das351d3as4d6as354d"
         }
     ]
