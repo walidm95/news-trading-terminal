@@ -4,6 +4,7 @@ import TradingPanel from './components/TradingPanel.vue';
 import EventLogs from './components/EventLogs.vue';
 import TradingViewChart from './components/TradingViewChart.vue';
 import Positions from './components/Positions.vue';
+import AccountApiKeys from './components/AccountApiKeys.vue';
 import api from './api';
 </script>
 
@@ -47,8 +48,11 @@ import api from './api';
               @buy-button-clicked="onBuyButtonClicked"
               @sell-button-clicked="onSellButtonClicked"/>
           </div>
-          <div class="row flex-fill">
+          <div class="row flex-fill mb-2">
             <EventLogs :logs="eventLogs"/>
+          </div>
+          <div class="row flex-fill">
+            <AccountApiKeys :apiKeys="trading.apiKeys"/>
           </div>
         </div>
       </div>
@@ -77,6 +81,7 @@ function findSymbolInHeadline(headline, symbols) {
 var symbols = api.getNamesAndTickers();
 var headlines = api.getNewsHeadlines();
 var positions = api.getPositions();
+var apiKeys = api.getApiKeys();
 
 // Required to re-render chart
 var tradingViewComponentKey = ref(0);
@@ -101,7 +106,8 @@ export default {
         tradingSymbol: findSymbolInHeadline(headlines[0].title, symbols),
         quoteAsset: 'USDT',
         lockSymbol: false,
-        positions: positions
+        positions: positions,
+        apiKeys: apiKeys
       } 
     }
   },

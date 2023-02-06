@@ -25,7 +25,7 @@
                         <td class="text-white text-center align-middle">{{ formatNumber(pos.entry) }}</td>
                         <td class="text-center align-middle" :class="pos.uPnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.uPnl) }}</td>
                         <td class="text-center align-middle">
-                            <button type="button" class="btc btn-danger">Close</button>
+                            <button type="button" class="btn btn-danger">Close</button>
                         </td>
                     </tr>
                 </tbody>

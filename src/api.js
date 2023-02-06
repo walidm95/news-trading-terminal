@@ -80,4 +80,25 @@ function getPositions() {
     ]
 }
 
-export default { getNewsHeadlines, getEventLogs, getNamesAndTickers, getPositions }
+// API Keys
+function getApiKeys() {
+    return [
+        {
+            name: "Main",
+            key: "43541374315376sda35d4as35d",
+            secret: "35a4sd53as4das351d3as4d6as354d"
+        },
+        {
+            name: "Scalp",
+            key: "666dsadas33d3a5sd71h5gj4",
+            secret: "35a4sd53as4das351d3as4d6as354d"
+        },
+        {
+            name: "Alt Scalp",
+            key: "4asd4as6da35ds5431",
+            secret: "35a4sd53as4das351d3as4d6as354d"
+        }
+    ]
+}
+
+export default { getNewsHeadlines, getEventLogs, getNamesAndTickers, getPositions, getApiKeys }
