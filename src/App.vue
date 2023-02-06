@@ -135,6 +135,13 @@ export default {
       {
         this.trading.tradingSymbol = symbol;
         forceChartRender();
+      } else
+      {
+        var temp = this.trading.tradingSymbol;
+        this.trading.tradingSymbol = "";
+        this.$nextTick(function() {
+          this.trading.tradingSymbol = temp;
+        });
       }
     } 
   }
