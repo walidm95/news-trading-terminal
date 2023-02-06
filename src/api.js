@@ -67,7 +67,7 @@ function getPositions() {
             side: 'BUY',
             size: 5000.1111,
             entry: 21577.274,
-            uPnl: -97.07
+            uPnl: 197.07
         }
     ]
 }
