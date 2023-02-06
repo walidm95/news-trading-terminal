@@ -52,7 +52,7 @@ import api from './api';
             <EventLogs :logs="eventLogs"/>
           </div>
           <div class="row flex-fill">
-            <AccountApiKeys :apiKeys="trading.apiKeys"/>
+            <AccountApiKeys :apiKeys="trading.apiKeys" @add-api-key="onAddApiKey" @delete-api-key="onDeleteApiKey"/>
           </div>
         </div>
       </div>
@@ -157,7 +157,42 @@ export default {
           this.trading.tradingSymbol = temp;
         });
       }
-    } 
+    },
+    onAddApiKey(event) {
+      // Note: might exist a cleaner way to do this
+      var inputs = event.target.parentElement.parentElement.getElementsByTagName("input");
+
+      if (inputs[0].value != "" && inputs[1].value != "" && inputs[2].value != "")
+      {
+        this.trading.apiKeys.push({
+          name: inputs[0].value,
+          key: inputs[1].value,
+          secret: inputs[2].value
+        });
+
+        // Log event
+        this.eventLogs = [{
+          time: new Date().toLocaleTimeString(),
+          text: `Added API key '${inputs[1].value}'`
+        }].concat(this.eventLogs);
+
+        // Reset inputs
+        inputs[0].value = "";
+        inputs[1].value = "";
+        inputs[2].value = "";
+      }
+    },
+    onDeleteApiKey(index) {
+      var apiKeyName = this.trading.apiKeys[index].name;
+
+      this.trading.apiKeys.splice(index, 1);
+
+      // Log event
+      this.eventLogs = [{
+          time: new Date().toLocaleTimeString(),
+          text: `Deleted API key '${apiKeyName}'`
+        }].concat(this.eventLogs);
+    }
   }
 }
 </script>
