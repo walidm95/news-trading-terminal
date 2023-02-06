@@ -25,6 +25,9 @@
                 </tbody>
             </table>
         </div>
+        <div class="card-footer">
+            <button type="button" class="btn btn-light float-right">Add</button>
+        </div>
     </div>
 </template>
 
