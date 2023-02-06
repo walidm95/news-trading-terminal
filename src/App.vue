@@ -84,7 +84,9 @@ export default {
   methods: {
     onSelectHeadline(index) {
       this.news.activeHeadline = index;
-      this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, this.symbols);
+      if(!this.trading.lockSymbol) {
+        this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, this.symbols);
+      }
     },
     onQuoteAssetChanged(quoteAsset) {
       if (quoteAsset != '') {
