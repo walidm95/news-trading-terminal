@@ -12,24 +12,26 @@ import api from './api';
     </div>
     <div class="container-fluid">
       <div class="row">
-        <div class="col-7">
+        <div class="col">
           <NewsFeed
             :symbols="symbols"
             :headlines="news.headlines" 
             :activeHeadline="news.activeHeadline"
             @selectHeadline="onSelectHeadline"/>
         </div>
-        <div class="col-5">
+        <div class="col">
           <TradingPanel
           :maxTradingSize="trading.maxTradingSize"
           :stopLossPct="trading.stopLossPct"
           :takeProfitPct="trading.takeProfitPct"
           :tradingSymbol="trading.tradingSymbol"
           :quoteAsset="trading.quoteAsset"
+          :lockSymbol="trading.lockSymbol"
           @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
           @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
           @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
           @trading-symbol-changed="trading.tradingSymbol=$event.target.value"
+          @lock-symbol-checked="trading.lockSymbol=$event.target.checked"
           @quote-asset-changed="onQuoteAssetChanged"
           @buy-button-clicked="onBuyButtonClicked"
           @sell-button-clicked="onSellButtonClicked"/>
@@ -73,7 +75,8 @@ export default {
         stopLossPct: 2,
         takeProfitPct: 2,
         tradingSymbol: findSymbolInHeadline(headlines[0].title, symbols),
-        quoteAsset: 'USDT'
+        quoteAsset: 'USDT',
+        lockSymbol: false,
       } 
     }
   },
