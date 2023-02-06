@@ -33,7 +33,7 @@ export default {
 
 <style scoped>
 .scrolled {
-    overflow-y: scroll;
-    height: 75vh;
+    overflow-y: auto;
+    height: 350px;
 }
 </style>

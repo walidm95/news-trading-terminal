@@ -3,28 +3,34 @@ import NewsFeed from './components/NewsFeed.vue'
 import TradingPanel from './components/TradingPanel.vue';
 import EventLogs from './components/EventLogs.vue';
 import TradingViewChart from './components/TradingViewChart.vue';
+import Positions from './components/Positions.vue';
 import api from './api';
 </script>
 
 <template>
-  <div class="" style="height: 100vh;">
+  <div style="height: 100vh;">
     <div class="page-title">
       <h1>News Trading Terminal</h1>
     </div>
     <div class="container-fluid">
       <div class="row">
-        <div class="col">
-          <NewsFeed
-            :symbols="symbols"
-            :headlines="news.headlines" 
-            :activeHeadline="news.activeHeadline"
-            @selectHeadline="onSelectHeadline"/>
-        </div>
-        <div class="col">
-          <div class="row " style="height: 25vh">
+        <div class="col mr-2">
+          <div class="row mb-2 flex-fill">
+            <NewsFeed
+              :symbols="symbols"
+              :headlines="news.headlines" 
+              :activeHeadline="news.activeHeadline"
+              @selectHeadline="onSelectHeadline"/>
+          </div>
+          <div class="row flex-fill">
             <TradingViewChart :ticker="getTradingSymbolTicker()" :key="tradingViewComponentKey"/>
           </div>
-          <div class="row">
+          <div class="row flex-fill">
+            <Positions :positions="trading.positions"/>
+          </div>
+        </div>
+        <div class="col">
+          <div class="row flex-fill">
             <TradingPanel
               :maxTradingSize="trading.maxTradingSize"
               :stopLossPct="trading.stopLossPct"
@@ -41,7 +47,7 @@ import api from './api';
               @buy-button-clicked="onBuyButtonClicked"
               @sell-button-clicked="onSellButtonClicked"/>
           </div>
-          <div class="row">
+          <div class="row flex-fill">
             <EventLogs :logs="eventLogs"/>
           </div>
         </div>
@@ -70,6 +76,7 @@ function findSymbolInHeadline(headline, symbols) {
 // Initialize data
 var symbols = api.getNamesAndTickers();
 var headlines = api.getNewsHeadlines();
+var positions = api.getPositions();
 
 // Required to re-render chart
 var tradingViewComponentKey = ref(0);
@@ -94,6 +101,7 @@ export default {
         tradingSymbol: findSymbolInHeadline(headlines[0].title, symbols),
         quoteAsset: 'USDT',
         lockSymbol: false,
+        positions: positions
       } 
     }
   },

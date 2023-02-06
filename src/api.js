@@ -50,4 +50,34 @@ function getEventLogs() {
     ]
 }
 
-export default { getNewsHeadlines, getEventLogs, getNamesAndTickers }
+// Positions
+function getPositions() {
+    return [
+        {
+            account: 'Main',
+            symbol: 'BTCUSDT',
+            side: 'BUY',
+            size: 15000.555,
+            entry: 21577.279,
+            uPnl: -245.24
+        },
+        {
+            account: 'Scalp',
+            symbol: 'BTCUSDT',
+            side: 'BUY',
+            size: 5000.1111,
+            entry: 21577.274,
+            uPnl: -97.07
+        },
+        {
+            account: 'Alt Scalp',
+            symbol: 'INJUSDT',
+            side: 'SELL',
+            size: 9500.00,
+            entry: 1.5,
+            uPnl: 385.57
+        }
+    ]
+}
+
+export default { getNewsHeadlines, getEventLogs, getNamesAndTickers, getPositions }

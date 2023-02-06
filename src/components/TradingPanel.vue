@@ -17,7 +17,7 @@ export default {
 </script>
 
 <template>
-    <div class="card mb-2 bg-dark text-white border-secondary">
+    <div class="card mb-2 bg-dark text-white border-secondary" style="height: 400px">
         <div class="card-header h3 border-secondary">
             Trading Panel
         </div>

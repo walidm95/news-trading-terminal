@@ -24,7 +24,7 @@ export default {
 
 <style scoped>
 .scrolled {
-    overflow-y: scroll;
-    height: 20vh;
+    overflow-y: auto;
+    height: 300px;
 }
 </style>

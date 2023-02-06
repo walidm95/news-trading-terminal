@@ -13,7 +13,7 @@
                 hide_top_toolbar: true,
                 hide_legend: true
             }"
-            style="height: 100%"
+            style="height: 300px"
         />
     </div>
 </template>
