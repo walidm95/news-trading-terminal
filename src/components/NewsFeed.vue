@@ -17,8 +17,8 @@ export default {
 </script>
 
 <template>
-    <div class="card">
-        <div class="card-header h3">
+    <div class="card bg-dark text-white border-secondary">
+        <div class="card-header h3 border-secondary">
             News Feed
         </div>
         <ul class="list-group list-group-flush scrolled">

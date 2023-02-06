@@ -6,36 +6,39 @@ import api from './api';
 </script>
 
 <template>
-  <div class="page-title">
-    <h1>News Trading Terminal</h1>
-  </div>
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-7">
-        <NewsFeed
-          :symbols="symbols"
-          :headlines="news.headlines" 
-          :activeHeadline="news.activeHeadline"
-          @selectHeadline="onSelectHeadline"/>
-      </div>
-      <div class="col-5">
-        <TradingPanel
-        :maxTradingSize="trading.maxTradingSize" 
-        :stopLossPct="trading.stopLossPct"
-        :takeProfitPct="trading.takeProfitPct"
-        :tradingSymbol="trading.tradingSymbol"
-        :quoteAsset="trading.quoteAsset"
-        @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
-        @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
-        @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
-        @trading-symbol-changed="trading.tradingSymbol=$event.target.value"
-        @quote-asset-changed="onQuoteAssetChanged"
-        @buy-button-clicked="onBuyButtonClicked"
-        @sell-button-clicked="onSellButtonClicked"/>
-        <EventLogs :logs="eventLogs"/>
+  <div class="">
+    <div class="page-title">
+      <h1>News Trading Terminal</h1>
+    </div>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-7">
+          <NewsFeed
+            :symbols="symbols"
+            :headlines="news.headlines" 
+            :activeHeadline="news.activeHeadline"
+            @selectHeadline="onSelectHeadline"/>
+        </div>
+        <div class="col-5">
+          <TradingPanel
+          :maxTradingSize="trading.maxTradingSize"
+          :stopLossPct="trading.stopLossPct"
+          :takeProfitPct="trading.takeProfitPct"
+          :tradingSymbol="trading.tradingSymbol"
+          :quoteAsset="trading.quoteAsset"
+          @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
+          @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
+          @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
+          @trading-symbol-changed="trading.tradingSymbol=$event.target.value"
+          @quote-asset-changed="onQuoteAssetChanged"
+          @buy-button-clicked="onBuyButtonClicked"
+          @sell-button-clicked="onSellButtonClicked"/>
+          <EventLogs :logs="eventLogs"/>
+        </div>
       </div>
     </div>
   </div>
+  
 </template>
 
 <script>

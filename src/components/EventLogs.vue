@@ -12,12 +12,12 @@ export default {
 </script>
 
 <template>
-    <div class="card">
-        <div class="card-header h3">
+    <div class="card bg-dark text-white border-secondary">
+        <div class="card-header h3 border-secondary">
               Event Logs
         </div>
-        <ul class="list-group list-group-flush scrolled mt-1">
-            <Log v-for="(log, index) in logs" :key="index" :time="log.time" :text="log.text" />
+        <ul class="list-group list-group-flush scrolled p-1 bg-dark text-white border-secondary">
+            <Log v-for="(log, index) in logs" :key="index" :time="log.time" :text="log.text"/>
         </ul>
     </div>
 </template>

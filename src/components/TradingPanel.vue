@@ -16,12 +16,12 @@ export default {
 </script>
 
 <template>
-    <div class="card mb-2">
-        <div class="card-header h3">
+    <div class="card mb-2 bg-dark text-white border-secondary">
+        <div class="card-header h3 border-secondary">
             Trading Panel
         </div>
         <ul class="list-group list-group-flush">
-            <li class="list-group-item">
+            <li class="list-group-item bg-dark text-white border-secondary">
                 <TradingParameters 
                     :maxTradingSize="maxTradingSize" 
                     :stopLossPct="stopLossPct"
@@ -34,7 +34,7 @@ export default {
                     @trading-symbol-changed="$emit('trading-symbol-changed', $event)"
                     @quote-asset-changed="$emit('quote-asset-changed', $event.target.innerText)"/>
             </li>
-            <li class="list-group-item text-center">
+            <li class="list-group-item text-center bg-dark text-white border-secondary">
                 <TradingButtons 
                     @buy-button-clicked="$emit('buy-button-clicked', $event.target.textContent)" 
                     @sell-button-clicked="$emit('sell-button-clicked', $event.target.textContent)"/>
