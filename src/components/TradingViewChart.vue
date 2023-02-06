@@ -8,6 +8,7 @@
                 autosize: true,
                 interval: '1',
                 symbol: ticker,
+                timezone: getLocaleTimezone(),
                 theme: 'dark',
                 hide_top_toolbar: true,
                 hide_legend: true
@@ -25,6 +26,11 @@ export default {
     props: {
         ticker: {type: String, required: true}
     },
-    components: { Chart }
+    components: { Chart },
+    methods: {
+        getLocaleTimezone() {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+        }
+    }
 }
 </script>
