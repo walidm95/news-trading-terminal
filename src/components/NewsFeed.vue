@@ -34,6 +34,6 @@ export default {
 <style scoped>
 .scrolled {
     overflow-y: scroll;
-    height: 595px;
+    height: 75vh;
 }
 </style>

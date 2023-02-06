@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "bootstrap": "^5.2.3",
-    "vue": "^3.2.45"
+    "vue": "^3.2.45",
+    "vue-tradingview-widgets": "^1.2.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",

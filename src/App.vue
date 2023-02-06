@@ -2,11 +2,12 @@
 import NewsFeed from './components/NewsFeed.vue'
 import TradingPanel from './components/TradingPanel.vue';
 import EventLogs from './components/EventLogs.vue';
+import TradingViewChart from './components/TradingViewChart.vue';
 import api from './api';
 </script>
 
 <template>
-  <div class="">
+  <div class="" style="height: 100vh;">
     <div class="page-title">
       <h1>News Trading Terminal</h1>
     </div>
@@ -20,22 +21,29 @@ import api from './api';
             @selectHeadline="onSelectHeadline"/>
         </div>
         <div class="col">
-          <TradingPanel
-          :maxTradingSize="trading.maxTradingSize"
-          :stopLossPct="trading.stopLossPct"
-          :takeProfitPct="trading.takeProfitPct"
-          :tradingSymbol="trading.tradingSymbol"
-          :quoteAsset="trading.quoteAsset"
-          :lockSymbol="trading.lockSymbol"
-          @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
-          @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
-          @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
-          @trading-symbol-changed="trading.tradingSymbol=$event.target.value"
-          @lock-symbol-checked="trading.lockSymbol=$event.target.checked"
-          @quote-asset-changed="onQuoteAssetChanged"
-          @buy-button-clicked="onBuyButtonClicked"
-          @sell-button-clicked="onSellButtonClicked"/>
-          <EventLogs :logs="eventLogs"/>
+          <div class="row " style="height: 25vh">
+            <TradingViewChart :ticker="getTradingSymbolTicker()" :key="tradingViewComponentKey"/>
+          </div>
+          <div class="row">
+            <TradingPanel
+              :maxTradingSize="trading.maxTradingSize"
+              :stopLossPct="trading.stopLossPct"
+              :takeProfitPct="trading.takeProfitPct"
+              :tradingSymbol="trading.tradingSymbol"
+              :quoteAsset="trading.quoteAsset"
+              :lockSymbol="trading.lockSymbol"
+              @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
+              @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
+              @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
+              @trading-symbol-changed="onSymbolChanged($event.target.value)"
+              @lock-symbol-checked="trading.lockSymbol=Boolean($event.target.checked)"
+              @quote-asset-changed="onQuoteAssetChanged"
+              @buy-button-clicked="onBuyButtonClicked"
+              @sell-button-clicked="onSellButtonClicked"/>
+          </div>
+          <div class="row">
+            <EventLogs :logs="eventLogs"/>
+          </div>
         </div>
       </div>
     </div>
@@ -44,6 +52,8 @@ import api from './api';
 </template>
 
 <script>
+import { ref } from 'vue';
+
 function findSymbolInHeadline(headline, symbols) {
   for(const symbol in symbols)
   {
@@ -60,6 +70,13 @@ function findSymbolInHeadline(headline, symbols) {
 // Initialize data
 var symbols = api.getNamesAndTickers();
 var headlines = api.getNewsHeadlines();
+
+// Required to re-render chart
+var tradingViewComponentKey = ref(0);
+
+function forceChartRender() {
+  tradingViewComponentKey.value += 1;
+}
 
 export default {
   data() {
@@ -86,11 +103,13 @@ export default {
       this.news.activeHeadline = index;
       if(!this.trading.lockSymbol) {
         this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, this.symbols);
+        forceChartRender();
       }
     },
     onQuoteAssetChanged(quoteAsset) {
       if (quoteAsset != '') {
         this.trading.quoteAsset = quoteAsset;
+        forceChartRender();
       }
     },
     onBuyButtonClicked(size) {
@@ -106,15 +125,25 @@ export default {
         time: new Date().toLocaleTimeString(),
         text: `Sold ${this.trading.tradingSymbol} for ${dollarSize.toLocaleString()} ${this.trading.quoteAsset}`
       }].concat(this.eventLogs);
-    }
+    },
+    getTradingSymbolTicker() {
+      return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
+    },
+    onSymbolChanged(symbol) {
+      symbol = symbol.toUpperCase();
+      if (Object.values(this.symbols).includes(symbol))
+      {
+        this.trading.tradingSymbol = symbol;
+        forceChartRender();
+      }
+    } 
   }
 }
 </script>
 
 <style scoped>
 .page-title {
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   text-align: center;
 }
 </style>
