@@ -67,6 +67,7 @@ import { Coingecko } from './coingecko';
 import { ref } from 'vue';
 
 let symbolNames = {};
+var livePriceFeed = {};
 
 function findSymbolInHeadline(headline, symbols) {
   for(const symbol in symbols)
@@ -81,19 +82,21 @@ function findSymbolInHeadline(headline, symbols) {
   return '';
 }
 
+function onMarkPriceUpdate(markPrices) {
+  for(let markPrice of JSON.parse(markPrices)) {
+      livePriceFeed[markPrice.s] = Number(markPrice.p);
+  }
+}
+
 // Initialize mock data
 var headlines = api.getNewsHeadlines();
 var positions = api.getPositions();
 var apiKeys = api.getApiKeys();
-var livePriceFeed = {
-  'BTC': 21357.24,
-  'ETH': 1654.35,
-  'BNB': 328.21
-}
 
 // Initialize Binance and Coingecko
 var coingecko = new Coingecko();
 var binancePublic = new BinancePublic();
+binancePublic.connectMarkPriceStreamWS(onMarkPriceUpdate);
 //var binancePrivate = new BinancePrivate();
 
 Promise.allSettled([binancePublic.getExchangeInfo(), coingecko.getAllCoins()]).then((values) => {
@@ -174,7 +177,7 @@ export default {
           symbol: this.trading.tradingSymbol + this.trading.quoteAsset,
           side: 'BUY',
           size: dollarSize,
-          entry: livePriceFeed[this.trading.tradingSymbol],
+          entry: livePriceFeed[this.trading.tradingSymbol + this.trading.quoteAsset],
           uPnl: dollarSize * 0.03
         });
       }
@@ -194,7 +197,7 @@ export default {
           symbol: this.trading.tradingSymbol + this.trading.quoteAsset,
           side: 'SELL',
           size: dollarSize,
-          entry: livePriceFeed[this.trading.tradingSymbol],
+          entry: livePriceFeed[this.trading.tradingSymbol + this.trading.quoteAsset],
           uPnl: dollarSize * -0.03
         });
       }
@@ -204,7 +207,7 @@ export default {
     },
     onSymbolChanged(symbol) {
       symbol = symbol.toUpperCase();
-      if (Object.values(this.symbols).includes(symbol))
+      if (Object.keys(symbolNames).includes(symbol))
       {
         this.trading.tradingSymbol = symbol;
         forceChartRender();
