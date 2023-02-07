@@ -5,7 +5,7 @@ import EventLogs from './components/EventLogs.vue';
 import TradingViewChart from './components/TradingViewChart.vue';
 import Positions from './components/Positions.vue';
 import AccountApiKeys from './components/AccountApiKeys.vue';
-import api from './api';
+import {getNewsHeadlines} from './api';
 import { BinancePublic, BinancePrivate } from './binance';
 import { Coingecko } from './coingecko';
 </script>
@@ -45,7 +45,7 @@ import { Coingecko } from './coingecko';
               @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
               @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
               @trading-symbol-changed="onSymbolChanged($event.target.value)"
-              @lock-symbol-checked="trading.lockSymbol=Boolean($event.target.checked)"
+              @lock-symbol-toggled="trading.lockSymbol=!trading.lockSymbol"
               @quote-asset-changed="onQuoteAssetChanged"
               @buy-button-clicked="onBuyButtonClicked"
               @sell-button-clicked="onSellButtonClicked"/>
@@ -69,11 +69,11 @@ import { ref } from 'vue';
 let symbolNames = {};
 var livePriceFeed = {};
 
-function findSymbolInHeadline(headline, symbols) {
-  for(const symbol in symbols)
+function findSymbolInHeadline(headline) {
+  for(let symbol of Object.keys(symbolNames))
   {
-    let regexName = new RegExp(`\\b${symbol}\\b`, 'i');
-    let regexSymbol = new RegExp(`\\b${symbols[symbol]}\\b`, 'i');
+    let regexName = new RegExp(`\\b${symbolNames[symbol]}\\b`, 'i');
+    let regexSymbol = new RegExp(`\\b${symbol}\\b`, 'i');
 
     if(regexName.test(headline) || regexSymbol.test(headline)){
       return symbol;
@@ -89,9 +89,7 @@ function onMarkPriceUpdate(markPrices) {
 }
 
 // Initialize mock data
-var headlines = api.getNewsHeadlines();
-var positions = api.getPositions();
-var apiKeys = api.getApiKeys();
+var headlines = getNewsHeadlines();
 
 // Initialize Binance and Coingecko
 var coingecko = new Coingecko();
@@ -120,15 +118,16 @@ Promise.allSettled([binancePublic.getExchangeInfo(), coingecko.getAllCoins()]).t
 
 // Required to re-render chart
 var tradingViewComponentKey = ref(0);
-
 function forceChartRender() {
   tradingViewComponentKey.value += 1;
 }
 
+var binanceSymbols = Object.keys(symbolNames);
+
 export default {
   data() {
     return {
-      symbols: Object.keys(symbolNames),
+      symbols: binanceSymbols,
       eventLogs: [],
       news: {
         headlines: headlines,
@@ -141,8 +140,8 @@ export default {
         tradingSymbol: "BTC",
         quoteAsset: 'USDT',
         lockSymbol: false,
-        positions: positions,
-        apiKeys: apiKeys
+        positions: [],
+        apiKeys: []
       } 
     }
   },
@@ -162,7 +161,13 @@ export default {
       }
     },
     onBuyButtonClicked(size) {
-      var dollarSize = Number(size.replace('%','')) / 100 * this.trading.maxTradingSize;
+      if(this.trading.apiKeys.length == 0) {
+        alert('API Keys are required to trade');
+        return;
+      }
+
+      size = size.replace('$','');
+      let dollarSize = size.endsWith('K') ? Number(size.replace('K','')) * 1000 : Number(size);
 
       this.eventLogs = [{
         time: new Date().toLocaleTimeString(),
@@ -183,7 +188,14 @@ export default {
       }
     },
     onSellButtonClicked(size) {
-      var dollarSize = Number(size.replace('%','')) / 100 * this.trading.maxTradingSize;
+      if(this.trading.apiKeys.length == 0) {
+        alert('API Keys are required to trade');
+        return;
+      }
+
+      size = size.replace('$','');
+      let dollarSize = size.endsWith('K') ? Number(size.replace('K','')) * 1000 : Number(size);
+
       this.eventLogs = [{
         time: new Date().toLocaleTimeString(),
         text: `Sold ${this.trading.tradingSymbol} for ${dollarSize.toLocaleString()} ${this.trading.quoteAsset}`

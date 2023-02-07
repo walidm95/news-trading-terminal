@@ -34,11 +34,12 @@ export default {
                     @stop-loss-changed="$emit('stop-loss-changed', $event)"
                     @take-profit-changed="$emit('take-profit-changed', $event)"
                     @trading-symbol-changed="$emit('trading-symbol-changed', $event)"
-                    @quote-asset-changed="$emit('quote-asset-changed', $event.target.innerText)"
-                    @lock-symbol-checked="$emit('lock-symbol-checked', $event)"/>
+                    @quote-asset-changed="$emit('quote-asset-changed', $event.target.value)"
+                    @lock-symbol-toggled="$emit('lock-symbol-toggled')"/>
             </li>
             <li class="list-group-item text-center bg-dark text-white border-secondary">
                 <TradingButtons 
+                    :maxTradingSize="maxTradingSize"
                     @buy-button-clicked="$emit('buy-button-clicked', $event.target.textContent)" 
                     @sell-button-clicked="$emit('sell-button-clicked', $event.target.textContent)"/>
             </li>

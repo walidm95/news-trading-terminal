@@ -1,17 +1,37 @@
 <template>
     <div>
         <div>
-            <button type="button" class="btn btn-success btn-lg m-1 trading-buttons" @click="$emit('buy-button-clicked', $event)">25%</button>
-            <button type="button" class="btn btn-success btn-lg m-1 trading-buttons" @click="$emit('buy-button-clicked', $event)">50%</button>
-            <button type="button" class="btn btn-success btn-lg m-1 trading-buttons" @click="$emit('buy-button-clicked', $event)">100%</button>
+            <button type="button" class="btn btn-success btn-lg m-1 trading-buttons" @click="$emit('buy-button-clicked', $event)">{{ formatNumber(0.25 * maxTradingSize) }}</button>
+            <button type="button" class="btn btn-success btn-lg m-1 trading-buttons" @click="$emit('buy-button-clicked', $event)">{{ formatNumber(0.5 * maxTradingSize) }}</button>
+            <button type="button" class="btn btn-success btn-lg m-1 trading-buttons" @click="$emit('buy-button-clicked', $event)">{{ formatNumber(maxTradingSize) }}</button>
         </div>
         <div>
-            <button type="button" class="btn btn-danger btn-lg m-1 trading-buttons" @click="$emit('sell-button-clicked', $event)">25%</button>
-            <button type="button" class="btn btn-danger btn-lg m-1 trading-buttons" @click="$emit('sell-button-clicked', $event)">50%</button>
-            <button type="button" class="btn btn-danger btn-lg m-1 trading-buttons" @click="$emit('sell-button-clicked', $event)">100%</button>
+            <button type="button" class="btn btn-danger btn-lg m-1 trading-buttons" @click="$emit('sell-button-clicked', $event)">{{ formatNumber(0.25 * maxTradingSize) }}</button>
+            <button type="button" class="btn btn-danger btn-lg m-1 trading-buttons" @click="$emit('sell-button-clicked', $event)">{{ formatNumber(0.5 * maxTradingSize) }}</button>
+            <button type="button" class="btn btn-danger btn-lg m-1 trading-buttons" @click="$emit('sell-button-clicked', $event)">{{ formatNumber(maxTradingSize) }}</button>
         </div>
     </div>
 </template>
+
+<script>
+var formatter = new Intl.NumberFormat("en-US", {
+    style:"currency",
+    currency: "USD",
+    notation: "compact"
+});
+
+export default {
+    props: {
+        maxTradingSize: {type: Number, required: true}
+    },
+    methods: {
+        formatNumber(number) {
+            return formatter.format(number);
+        }
+    }
+}
+
+</script>
 
 <style scoped>
 .trading-buttons {
