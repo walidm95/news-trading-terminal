@@ -6,6 +6,8 @@ import TradingViewChart from './components/TradingViewChart.vue';
 import Positions from './components/Positions.vue';
 import AccountApiKeys from './components/AccountApiKeys.vue';
 import api from './api';
+import { BinancePublic, BinancePrivate } from './binance';
+import { Coingecko } from './coingecko';
 </script>
 
 <template>
@@ -64,6 +66,8 @@ import api from './api';
 <script>
 import { ref } from 'vue';
 
+let symbolNames = {};
+
 function findSymbolInHeadline(headline, symbols) {
   for(const symbol in symbols)
   {
@@ -71,14 +75,13 @@ function findSymbolInHeadline(headline, symbols) {
     let regexSymbol = new RegExp(`\\b${symbols[symbol]}\\b`, 'i');
 
     if(regexName.test(headline) || regexSymbol.test(headline)){
-      return symbols[symbol];
+      return symbol;
     }
   }
   return '';
 }
 
 // Initialize mock data
-var symbols = api.getNamesAndTickers();
 var headlines = api.getNewsHeadlines();
 var positions = api.getPositions();
 var apiKeys = api.getApiKeys();
@@ -87,6 +90,30 @@ var livePriceFeed = {
   'ETH': 1654.35,
   'BNB': 328.21
 }
+
+// Initialize Binance and Coingecko
+var coingecko = new Coingecko();
+var binancePublic = new BinancePublic();
+//var binancePrivate = new BinancePrivate();
+
+Promise.allSettled([binancePublic.getExchangeInfo(), coingecko.getAllCoins()]).then((values) => {
+  if (values[0].status == 'rejected' || values[1].status == 'rejected') {
+    console.log('Error getting exchange info or coins list');
+    return;
+  }
+
+  let binanceSymbols = values[0].value.symbols;
+  let allCoins = values[1].value;
+
+  binanceSymbols.forEach((symbol) => {
+    let coinName = allCoins[symbol.baseAsset.replace('1000', '')]
+    if (symbol.baseAsset == 'BNB') {
+      coinName = 'Binance'
+    }
+    symbolNames[symbol.baseAsset] = coinName
+  });
+});
+
 
 // Required to re-render chart
 var tradingViewComponentKey = ref(0);
@@ -98,7 +125,7 @@ function forceChartRender() {
 export default {
   data() {
     return {
-      symbols: symbols,
+      symbols: Object.keys(symbolNames),
       eventLogs: [],
       news: {
         headlines: headlines,
@@ -108,7 +135,7 @@ export default {
         maxTradingSize: 1000,
         stopLossPct: 2,
         takeProfitPct: 2,
-        tradingSymbol: findSymbolInHeadline(headlines[0].title, symbols),
+        tradingSymbol: "BTC",
         quoteAsset: 'USDT',
         lockSymbol: false,
         positions: positions,
@@ -121,7 +148,7 @@ export default {
     onSelectHeadline(index) {
       this.news.activeHeadline = index;
       if(!this.trading.lockSymbol) {
-        this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, this.symbols);
+        this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, symbolNames);
         forceChartRender();
       }
     },
