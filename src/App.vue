@@ -1,7 +1,6 @@
 <script setup>
 import NewsFeed from './components/NewsFeed.vue'
 import TradingPanel from './components/TradingPanel.vue';
-import EventLogs from './components/EventLogs.vue';
 import TradingViewChart from './components/TradingViewChart.vue';
 import Positions from './components/Positions.vue';
 import AccountApiKeys from './components/AccountApiKeys.vue';
@@ -18,38 +17,32 @@ import AccountApiKeys from './components/AccountApiKeys.vue';
           <div class="row mb-2 flex-fill">
             <NewsFeed :symbols="symbols" @symbol-from-headline="onSymbolChanged"/>
           </div>
-          <div class="row flex-fill">
+          <div class="row mb-2 flex-fill">
             <TradingViewChart :ticker="getTradingSymbolTicker()" :key="tradingViewComponentKey"/>
-          </div>
-          <div class="row flex-fill">
-            <Positions :positions="trading.positions" @close-position="onClosePosition"/>
           </div>
         </div>
         <div class="col">
-          <div class="row flex-fill">
+          <div class="row flex-fill mb-2">
             <TradingPanel
-              :maxTradingSize="trading.maxTradingSize"
-              :stopLossPct="trading.stopLossPct"
-              :takeProfitPct="trading.takeProfitPct"
               :tradingSymbol="trading.tradingSymbol"
               :quoteAsset="trading.quoteAsset"
-              :lockSymbol="trading.lockSymbol"
+              :apiKeys="trading.apiKeys"
+              :livePriceFeed="livePriceFeed"
               @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
               @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
               @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
               @trading-symbol-changed="onSymbolChanged($event.target.value)"
               @lock-symbol-toggled="trading.lockSymbol=!trading.lockSymbol"
               @quote-asset-changed="onQuoteAssetChanged"
-              @buy-button-clicked="onBuyButtonClicked"
-              @sell-button-clicked="onSellButtonClicked" />
+              @positions-opened="onPositionsOpened"/>
           </div>
-          <div class="row flex-fill mb-2">
-            <EventLogs :logs="eventLogs"/>
-          </div>
-          <div class="row flex-fill">
+          <div class="row flex-fill mb-2" style="height: 345px">
             <AccountApiKeys :apiKeys="trading.apiKeys" @add-api-key="onAddApiKey" @delete-api-key="onDeleteApiKey"/>
           </div>
         </div>
+      </div>
+      <div class="row flex-fill">
+        <Positions :positions="trading.positions" @close-position="onClosePosition"/>
       </div>
     </div>
   </div>
@@ -70,7 +63,6 @@ export default {
     return {
       livePriceFeed: {},
       symbols: [],
-      eventLogs: [],
       news: {
         headlines: [],
         activeHeadline: 0
@@ -84,7 +76,12 @@ export default {
         lockSymbol: false,
         positions: [],
         apiKeys: []
-      } 
+      },
+      dollarsFormatter: new Intl.NumberFormat("en-US", {
+        style:"currency",
+        currency: "USD",
+        maximumFractionDigits: 5
+      }),
     }
   },
   components: { NewsFeed, TradingPanel },
@@ -162,66 +159,15 @@ export default {
         forceChartRender();
       }
     },
-    onBuyButtonClicked(size) {
-      if(this.trading.apiKeys.length == 0) {
-        alert('API Keys are required to trade');
-        return;
-      }
-
-      size = size.replace('$','');
-      let dollarSize = size.endsWith('K') ? Number(size.replace('K','')) * 1000 : Number(size);
-
-      this.eventLogs = [{
-        time: new Date().toLocaleTimeString(),
-        text: `Bought ${this.trading.tradingSymbol} for ${dollarSize.toLocaleString()} ${this.trading.quoteAsset}`
-      }].concat(this.eventLogs);
-
-      // Add to positions screen (mock)
-      for(var i in this.trading.apiKeys)
-      { 
-        this.trading.positions.push({
-          account: this.trading.apiKeys[i].name,
-          symbol: this.trading.tradingSymbol + this.trading.quoteAsset,
-          side: 'BUY',
-          size: dollarSize,
-          entry: livePriceFeed[this.trading.tradingSymbol + this.trading.quoteAsset],
-          uPnl: dollarSize * 0.03
-        });
-      }
-    },
-    onSellButtonClicked(size) {
-      if(this.trading.apiKeys.length == 0) {
-        alert('API Keys are required to trade');
-        return;
-      }
-
-      size = size.replace('$','');
-      let dollarSize = size.endsWith('K') ? Number(size.replace('K','')) * 1000 : Number(size);
-
-      this.eventLogs = [{
-        time: new Date().toLocaleTimeString(),
-        text: `Sold ${this.trading.tradingSymbol} for ${dollarSize.toLocaleString()} ${this.trading.quoteAsset}`
-      }].concat(this.eventLogs);
-
-      // Add to positions screen (mock)
-      for(var i in this.trading.apiKeys)
-      { 
-        this.trading.positions.push({
-          account: this.trading.apiKeys[i].name,
-          symbol: this.trading.tradingSymbol + this.trading.quoteAsset,
-          side: 'SELL',
-          size: dollarSize,
-          entry: livePriceFeed[this.trading.tradingSymbol + this.trading.quoteAsset],
-          uPnl: dollarSize * -0.03
-        });
-      }
-    },
     getTradingSymbolTicker() {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
     },
+    onPositionsOpened(positions) {
+      this.trading.positions.unshift(...positions);
+    },
     onSymbolChanged(symbol) {
       symbol = symbol.toUpperCase();
-      if (Object.keys(symbolNames).includes(symbol))
+      if (Object.keys(this.symbols).includes(symbol))
       {
         this.trading.tradingSymbol = symbol;
         forceChartRender();
@@ -246,12 +192,6 @@ export default {
           secret: inputs[2].value
         });
 
-        // Log event
-        this.eventLogs = [{
-          time: new Date().toLocaleTimeString(),
-          text: `Added API key '${inputs[1].value}'`
-        }].concat(this.eventLogs);
-
         // Reset inputs
         inputs[0].value = "";
         inputs[1].value = "";
@@ -262,23 +202,11 @@ export default {
       var apiKeyName = this.trading.apiKeys[index].name;
 
       this.trading.apiKeys.splice(index, 1);
-
-      // Log event
-      this.eventLogs = [{
-          time: new Date().toLocaleTimeString(),
-          text: `Deleted API key '${apiKeyName}'`
-        }].concat(this.eventLogs);
     },
     onClosePosition(index) {
       var position = this.trading.positions[index];
 
       this.trading.positions.splice(index, 1);
-
-      // Log event
-      this.eventLogs = [{
-          time: new Date().toLocaleTimeString(),
-          text: `Close ${position.symbol} position on '${position.account}' account`
-        }].concat(this.eventLogs);
     }
   },
   mounted: function() {

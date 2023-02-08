@@ -16,7 +16,7 @@ export default {
         <div class="row">
             <div class="col input-group mb-2">
                 <div class="input-group-prepend">
-                    <label class="input-group-text" for="maxTradingSizd">Max Size</label>
+                    <label class="input-group-text" for="maxTradingSizd">Size</label>
                 </div>
                 <input type="number" class="form-control" id="maxTradingSize" placeholder="Max Trading Size" 
                     :value="maxTradingSize"
@@ -38,9 +38,9 @@ export default {
         <div class="row">
             <div class="col input-group mb-2">
                 <div class="input-group-prepend">
-                    <label class="input-group-text" for="stopLossPct">Stop Loss</label>
+                    <label class="input-group-text" for="stopLossPct">SL</label>
                 </div>
-                <input type="number" class="form-control" id="stopLossPct" placeholder="Stop Loss %"
+                <input type="number" class="form-control" id="stopLossPct" placeholder="Stop Loss"
                     :value="stopLossPct"
                     @focusout="$emit('stop-loss-changed', $event)" />
                 <div class="input-group-append">
@@ -49,7 +49,7 @@ export default {
             </div>
             <div class="col input-group mb-2">
                 <div class="input-group-prepend">
-                    <label class="input-group-text" for="quoteAsset">Quote Asset</label>
+                    <label class="input-group-text" for="quoteAsset">Base</label>
                 </div>
                 <select class="custom-select" id="quoteAsset" :disabled="lockSymbol" :value="quoteAsset" @change="$emit('quote-asset-changed', $event)">
                     <option value="USDT">USDT</option>
@@ -60,9 +60,9 @@ export default {
         <div class="row">
             <div class="col input-group mb-2">
                 <div class="input-group-prepend">
-                    <label class="input-group-text" for="takeProfitPct">Take Profit</label>
+                    <label class="input-group-text" for="takeProfitPct">TP</label>
                 </div>
-                <input type="number" class="form-control" id="takeProfitPct" placeholder="Take Profit %"
+                <input type="number" class="form-control" id="takeProfitPct" placeholder="Take Profit"
                     :value="takeProfitPct"
                     @focusout="$emit('take-profit-changed', $event)" />
                 <div class="input-group-append">
@@ -71,14 +71,14 @@ export default {
             </div>
             <div class="col input-group mb-2">
                 <div class="input-group-prepend">
-                    <label class="input-group-text" for="tradingSymbol">Symbol</label>
+                    <label class="input-group-text" for="tradingSymbol">Coin</label>
                 </div>
                 <input type="text" class="form-control" id="tradingSymbol" placeholder="Trading Symbol" :disabled="lockSymbol"
                     :value="tradingSymbol"
                     @focusout="$emit('trading-symbol-changed', $event)" />
                 <div class="input-group-append">
-                    <button class="btn btn-outline-info" type="button" id="lockSymbolBtn" v-if="!lockSymbol" @click="$emit('lock-symbol-toggled')">Lock</button>
-                    <button class="btn btn-outline-info" type="button" id="unlockSymbolBtn" v-if="lockSymbol" @click="$emit('lock-symbol-toggled')">Unlock</button>
+                    <button class="btn btn-outline-info" type="button" id="lockSymbolBtn" v-if="!lockSymbol" @click="$emit('lock-symbol-toggled')"><i class="bi bi-unlock"></i></button>
+                    <button class="btn btn-outline-info" type="button" id="unlockSymbolBtn" v-if="lockSymbol" @click="$emit('lock-symbol-toggled')"><i class="bi bi-lock"></i></button>
                 </div>
             </div>
             

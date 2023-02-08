@@ -16,6 +16,10 @@ export default {
         findSymbolInHeadline(headline) {
             for(let symbol of Object.keys(this.symbols))
             {
+                if (symbol == 'T') {
+                    //NOTE: we skip it for now, because it will always be true if theres a /t/ in a URL
+                    continue
+                }
                 let regexName = new RegExp(`\\b${this.symbols[symbol]}\\b`, 'i');
                 let regexSymbol = new RegExp(`\\b${symbol}\\b`, 'i');
                 if(regexName.test(headline) || regexSymbol.test(headline)){
@@ -48,7 +52,13 @@ export default {
                     type = 'check console log'
                 }
 
-                let symbol = this.findSymbolInHeadline(data.body ? data.body : data.title);
+                let symbol
+                if (data.coin) {
+                    symbol = data.coin
+                } else {
+                    symbol = this.findSymbolInHeadline(data.body ? data.body : data.title);
+                }
+                 
                 if (symbol == '')
                 {
                     console.log('no symbol found. Skipping')
@@ -73,7 +83,7 @@ export default {
 
 <template>
     <div class="card bg-dark text-white border-secondary">
-        <div class="card-header h3 border-secondary">
+        <div class="card-header h4 border-secondary">
             News Feed
         </div>
         <ul class="list-group list-group-flush scrolled">

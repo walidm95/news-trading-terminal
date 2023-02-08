@@ -1,6 +1,6 @@
 <template>
-    <div class="card mb-2 bg-dark text-white border-secondary" style="height: 300px;">
-        <div class="card-header h3 border-secondary">
+    <div class="card bg-dark text-white border-secondary">
+        <div class="card-header h4 border-secondary">
             API Keys
         </div>
         <div class="table-responsive table-bordered table-striped table-dark" style="overflow-x: hidden">

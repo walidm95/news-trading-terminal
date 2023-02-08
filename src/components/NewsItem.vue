@@ -11,8 +11,8 @@ export default {
 <template>
     <li class="list-group-item" :class="{'bg-dark': !selected, 'bg-white': selected, 'text-white': !selected, 'text-dark': selected}">
         <div>
-          <h6 class="card-subtitle mb-1">{{ datetime }}</h6>
-          <h5 class="card-title">{{ headline }}</h5>
+          <h6 class="card-title">{{ headline }}</h6>
+          <h7 class="card-subtitle mb-1 text-right">At {{ datetime }}</h7>
         </div>
       </li>
 </template>

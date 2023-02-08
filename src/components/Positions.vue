@@ -1,6 +1,6 @@
 <template>
     <div class="card mb-2 bg-dark text-white border-secondary" style="height: 300px">
-        <div class="card-header h3 border-secondary">
+        <div class="card-header h4 border-secondary">
             Positions
         </div>
         <div class="table-responsive table-bordered table-striped table-dark" style="overflow-x: hidden">
@@ -23,7 +23,7 @@
                         <td class="text-white text-center align-middle">{{ pos.side }}</td>
                         <td class="text-white text-center align-middle">{{ formatNumber(pos.size) }}</td>
                         <td class="text-white text-center align-middle">{{ formatNumber(pos.entry) }}</td>
-                        <td class="text-center align-middle" :class="pos.uPnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.uPnl) }}</td>
+                        <td class="text-center align-middle" :class="pos.upnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.upnl) }}</td>
                         <td class="text-center align-middle">
                             <button type="button" class="btn btn-danger" @click="$emit('close-position', index)">Close</button>
                         </td>
