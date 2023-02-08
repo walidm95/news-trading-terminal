@@ -132,8 +132,12 @@ export default {
         // Update positions unrealized PnL
         for (let position of this.trading.positions) {
           let ticker = position.symbol + this.trading.quoteAsset
-          let unrealizedPnl = (this.livePriceFeed[ticker] - position.entry) * position.size * (position.side == 'BUY' ? 1 : -1)
+          let markPrice = this.livePriceFeed[ticker]
+          let currentSize = position.units * markPrice
+          let unrealizedPnl = currentSize - position.units * position.entryPrice
           position.upnl = unrealizedPnl
+          position.markPrice = markPrice
+          position.size = currentSize
         }
       }
     },

@@ -11,7 +11,8 @@
                         <th scope="col" class="text-white text-center">Symbol</th>
                         <th scope="col" class="text-white text-center">Side</th>
                         <th scope="col" class="text-white text-center">Size</th>
-                        <th scope="col" class="text-white text-center">Entry</th>
+                        <th scope="col" class="text-white text-center">Entry Price</th>
+                        <th scope="col" class="text-white text-center">Mark Price</th>
                         <th scope="col" class="text-white text-center">uPNL</th>
                         <th scope="col" class="text-white text-center">Actions</th>
                     </tr>
@@ -22,7 +23,8 @@
                         <td class="text-white text-center align-middle">{{ pos.symbol }}</td>
                         <td class="text-white text-center align-middle">{{ pos.side }}</td>
                         <td class="text-white text-center align-middle">{{ formatNumber(pos.size) }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.entry) }}</td>
+                        <td class="text-white text-center align-middle">{{ formatNumber(pos.entryPrice) }}</td>
+                        <td class="text-white text-center align-middle">{{ formatNumber(pos.markPrice) }}</td>
                         <td class="text-center align-middle" :class="pos.upnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.upnl) }}</td>
                         <td class="text-center align-middle">
                             <button type="button" class="btn btn-danger" @click="$emit('close-position', index)">Close</button>

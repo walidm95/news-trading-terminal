@@ -66,8 +66,10 @@ export default {
                     symbol: this.tradingSymbol,
                     size: dollarSize,
                     side: side,
-                    entry: latestPrice,
-                    upnl: 0
+                    entryPrice: latestPrice,
+                    markPrice: latestPrice,
+                    upnl: 0,
+                    units: dollarSize / latestPrice,
                 })
             }
 
