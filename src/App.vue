@@ -128,6 +128,13 @@ export default {
         for (let item of data) {
           this.livePriceFeed[item.s] = Number(item.p)
         }
+
+        // Update positions unrealized PnL
+        for (let position of this.trading.positions) {
+          let ticker = position.symbol + this.trading.quoteAsset
+          let unrealizedPnl = (this.livePriceFeed[ticker] - position.entry) * position.size * (position.side == 'BUY' ? 1 : -1)
+          position.upnl = unrealizedPnl
+        }
       }
     },
     getBinanceSymbolsWithNames() {

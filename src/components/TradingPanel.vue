@@ -52,7 +52,8 @@ export default {
             {
                 // Execute order
                 sizeText = sizeText.replace('$','');
-                let dollarSize = sizeText.endsWith('K') ? Number(sizeText.replace('K','')) * 1000 : Number(sizeText);
+                let multiplier = sizeText.endsWith('K') ? 1000 : sizeText.endsWith('M') ? 1000000 : 1;
+                let dollarSize = Number(sizeText.replace('K','').replace('M','')) * multiplier;
                 let latestPrice = this.livePriceFeed[this.tradingSymbol + this.quoteAsset]
                 
 
