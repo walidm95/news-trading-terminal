@@ -2,17 +2,72 @@
 import NewsItem from './NewsItem.vue';
 
 export default {
+    data() {
+        return {
+            headlines: [],
+            activeHeadline: 0
+        }
+    },
     props : {
-        symbols: {type: Object, required: true},
-        headlines: {type: Array, required: true},
-        activeHeadline: {type: Number, required: true}
+        symbols: {type: Object, required: true}
     },
     components: { NewsItem },
     methods: {
-        selectHeadline(index) {
-            this.$emit('select-headline', index);
+        findSymbolInHeadline(headline) {
+            for(let symbol of Object.keys(this.symbols))
+            {
+                let regexName = new RegExp(`\\b${this.symbols[symbol]}\\b`, 'i');
+                let regexSymbol = new RegExp(`\\b${symbol}\\b`, 'i');
+                if(regexName.test(headline) || regexSymbol.test(headline)){
+                    return symbol;
+                }
+            }
+            return '';
+        },
+        onSelectHeadline(index) {
+            this.activeHeadline = index;
+            let symbol = this.findSymbolInHeadline(this.headlines[index].body);
+            this.$emit('symbol-from-headline', symbol);
+        },
+        connectTreeOfAlphaWS() {
+            const TreeOfAlphaWS = new WebSocket('wss://news.treeofalpha.com/ws')   
+            TreeOfAlphaWS.onmessage = (event) => {
+                let data = JSON.parse(event.data)
+                console.log(data)
+
+                let type
+                if (data.info && data.info.twitterId) {
+                    type = 'twitter'
+                    if (data.info.isQuote || data.info.isReply || data.info.isRetweet) {
+                        // skip
+                        return
+                    }
+                } else if (data.source) {
+                    type = data.source
+                } else  {
+                    type = 'check console log'
+                }
+
+                let symbol = this.findSymbolInHeadline(data.body ? data.body : data.title);
+                if (symbol == '')
+                {
+                    console.log('no symbol found. Skipping')
+                    return
+                }
+
+                this.headlines.unshift({
+                    title: data.title,
+                    body: data.body ? data.body : data.title,
+                    type: type,
+                    time: new Date(data.time)
+                })
+            }
         }
-    }
+    },
+    mounted() {
+        console.log("NewsFeed mounted")
+        this.connectTreeOfAlphaWS();
+    } 
 }
 </script>
 
@@ -23,10 +78,10 @@ export default {
         </div>
         <ul class="list-group list-group-flush scrolled">
             <NewsItem v-for="(headline, index) in headlines" 
-                :key="index" :datetime="headline.datetime.toLocaleString('en-US', {timeZoneName: 'short'})" 
-                :headline="headline.title" 
+                :key="index" :datetime="headline.time.toLocaleString('en-US', {timeZoneName: 'short'})" 
+                :headline="headline.body" 
                 :selected="activeHeadline === index" 
-                @click="selectHeadline(index)"/>
+                @click="onSelectHeadline(index)"/>
         </ul>
     </div>
 </template>

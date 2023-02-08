@@ -5,9 +5,6 @@ import EventLogs from './components/EventLogs.vue';
 import TradingViewChart from './components/TradingViewChart.vue';
 import Positions from './components/Positions.vue';
 import AccountApiKeys from './components/AccountApiKeys.vue';
-import {getNewsHeadlines} from './api';
-import { BinancePublic, BinancePrivate } from './binance';
-import { Coingecko } from './coingecko';
 </script>
 
 <template>
@@ -19,11 +16,7 @@ import { Coingecko } from './coingecko';
       <div class="row">
         <div class="col mr-2">
           <div class="row mb-2 flex-fill">
-            <NewsFeed
-              :symbols="symbols"
-              :headlines="news.headlines" 
-              :activeHeadline="news.activeHeadline"
-              @selectHeadline="onSelectHeadline"/>
+            <NewsFeed :symbols="symbols" @symbol-from-headline="onSymbolChanged"/>
           </div>
           <div class="row flex-fill">
             <TradingViewChart :ticker="getTradingSymbolTicker()" :key="tradingViewComponentKey"/>
@@ -48,7 +41,7 @@ import { Coingecko } from './coingecko';
               @lock-symbol-toggled="trading.lockSymbol=!trading.lockSymbol"
               @quote-asset-changed="onQuoteAssetChanged"
               @buy-button-clicked="onBuyButtonClicked"
-              @sell-button-clicked="onSellButtonClicked"/>
+              @sell-button-clicked="onSellButtonClicked" />
           </div>
           <div class="row flex-fill mb-2">
             <EventLogs :logs="eventLogs"/>
@@ -66,71 +59,20 @@ import { Coingecko } from './coingecko';
 <script>
 import { ref } from 'vue';
 
-let symbolNames = {};
-var livePriceFeed = {};
-
-function findSymbolInHeadline(headline) {
-  for(let symbol of Object.keys(symbolNames))
-  {
-    let regexName = new RegExp(`\\b${symbolNames[symbol]}\\b`, 'i');
-    let regexSymbol = new RegExp(`\\b${symbol}\\b`, 'i');
-
-    if(regexName.test(headline) || regexSymbol.test(headline)){
-      return symbol;
-    }
-  }
-  return '';
-}
-
-function onMarkPriceUpdate(markPrices) {
-  for(let markPrice of JSON.parse(markPrices)) {
-      livePriceFeed[markPrice.s] = Number(markPrice.p);
-  }
-}
-
-// Initialize mock data
-var headlines = getNewsHeadlines();
-
-// Initialize Binance and Coingecko
-var coingecko = new Coingecko();
-var binancePublic = new BinancePublic();
-binancePublic.connectMarkPriceStreamWS(onMarkPriceUpdate);
-//var binancePrivate = new BinancePrivate();
-
-Promise.allSettled([binancePublic.getExchangeInfo(), coingecko.getAllCoins()]).then((values) => {
-  if (values[0].status == 'rejected' || values[1].status == 'rejected') {
-    console.log('Error getting exchange info or coins list');
-    return;
-  }
-
-  let binanceSymbols = values[0].value.symbols;
-  let allCoins = values[1].value;
-
-  binanceSymbols.forEach((symbol) => {
-    let coinName = allCoins[symbol.baseAsset.replace('1000', '')]
-    if (symbol.baseAsset == 'BNB') {
-      coinName = 'Binance'
-    }
-    symbolNames[symbol.baseAsset] = coinName
-  });
-});
-
-
 // Required to re-render chart
 var tradingViewComponentKey = ref(0);
 function forceChartRender() {
   tradingViewComponentKey.value += 1;
 }
 
-var binanceSymbols = Object.keys(symbolNames);
-
 export default {
   data() {
     return {
-      symbols: binanceSymbols,
+      livePriceFeed: {},
+      symbols: [],
       eventLogs: [],
       news: {
-        headlines: headlines,
+        headlines: [],
         activeHeadline: 0
       },
       trading: {
@@ -147,12 +89,72 @@ export default {
   },
   components: { NewsFeed, TradingPanel },
   methods: {
-    onSelectHeadline(index) {
-      this.news.activeHeadline = index;
-      if(!this.trading.lockSymbol) {
-        this.trading.tradingSymbol = findSymbolInHeadline(this.news.headlines[index].title, symbolNames);
-        forceChartRender();
+    async getCoinsFromCoingecko() {
+      let allCoins = {}
+      try {
+          let response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=volume_desc&per_page=250&page=1&sparkline=false')
+          let coins = await response.json()
+
+          // Get second page
+          response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=volume_desc&per_page=250&page=2&sparkline=false')
+          coins = coins.concat(await response.json())
+
+          let excludedIds = ['wormhole', 'binance-peg', 'wrapped', 'bsc', 'binemon']
+          
+          for (let coin of coins) {
+              if(excludedIds.some(excludedId => coin.id.includes(excludedId))) {
+                  continue
+              }
+
+              allCoins[coin.symbol.toUpperCase()] = coin.name         
+          }
+
+          return allCoins
+
+      } catch (error) {
+          console.error(error)
       }
+    },
+    async getBinanceExchangeInfo() {
+      try {
+        let response = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo')
+        let exchangeInfo = await response.json()
+        return exchangeInfo
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    connectBinanceMarkPriceStreamWS() {
+      let ws = new WebSocket('wss://fstream.binance.com/ws/!markPrice@arr@1s')
+      ws.onmessage = (event) => {
+        let data = JSON.parse(event.data)
+        for (let item of data) {
+          this.livePriceFeed[item.s] = Number(item.p)
+        }
+      }
+    },
+    getBinanceSymbolsWithNames() {
+      Promise.allSettled([this.getBinanceExchangeInfo(), this.getCoinsFromCoingecko()]).then((values) => {
+        let symbolNames = {}
+        if (values[0].status == 'rejected' || values[1].status == 'rejected') {
+          console.log('Error getting exchange info or coins list');
+          return;
+        }
+
+        let binanceSymbols = values[0].value.symbols;
+        let allCoins = values[1].value;
+
+        
+        binanceSymbols.forEach((symbol) => {
+          let coinName = allCoins[symbol.baseAsset.replace('1000', '')]
+          if (symbol.baseAsset == 'BNB') {
+            coinName = 'Binance'
+          }
+          symbolNames[symbol.baseAsset] = coinName
+        });
+
+        this.symbols = symbolNames
+      });
     },
     onQuoteAssetChanged(quoteAsset) {
       if (quoteAsset != '') {
@@ -278,6 +280,13 @@ export default {
           text: `Close ${position.symbol} position on '${position.account}' account`
         }].concat(this.eventLogs);
     }
+  },
+  mounted: function() {
+    console.log("App mounted")
+
+    this.connectBinanceMarkPriceStreamWS();
+    this.getBinanceSymbolsWithNames();
+
   }
 }
 </script>
