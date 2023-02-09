@@ -141,7 +141,7 @@ export default {
 
         // Update positions unrealized PnL
         for (let position of this.trading.positions) {
-          let ticker = position.symbol + this.trading.quoteAsset
+          let ticker = position.ticker
           let markPrice = this.livePriceFeed[ticker]
           let currentSize = position.units * markPrice
           let unrealizedPnl = (currentSize - position.units * position.entryPrice) * (position.side == 'BUY' ? 1 : -1)
@@ -237,7 +237,6 @@ export default {
     },
     onClosePosition(index) {
       let position = this.trading.positions[index];
-      let ticker = position.symbol + this.trading.quoteAsset;
       
       let apiKey
       for (let key of this.trading.apiKeys) {
@@ -248,14 +247,13 @@ export default {
       }
 
       //TODO: implement close order
-      let promise = binance.executeOrderBinanceFutures(ticker, position.side == 'BUY' ? 'SELL' : 'BUY', position.units, 'MARKET', apiKey.key, apiKey.secret);
+      let promise = binance.executeOrderBinanceFutures( apiKey.key, apiKey.secret, position.ticker, position.side == 'BUY' ? 'SELL' : 'BUY', 'MARKET', position.units);
       promise.then((response) => {
         console.log(response);
+        this.trading.positions.splice(index, 1);
       }).catch((error) => {
         console.error(error);
       });
-
-      this.trading.positions.splice(index, 1);
     }
   },
   mounted: function() {
@@ -265,6 +263,9 @@ export default {
     this.getBinanceSymbolsWithNames();
 
     this.trading.apiKeys = localStorage.getItem("apiKeys") ? JSON.parse(localStorage.getItem("apiKeys")) : [];
+
+    //TODO: get only positions that were opened through this terminal. Get orderIds from localstorage
+    
   }
 }
 </script>

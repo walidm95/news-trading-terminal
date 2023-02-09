@@ -76,11 +76,12 @@ export default {
                 let latestPrice = this.livePriceFeed[this.tradingSymbol + this.quoteAsset]
 
                 // Execute Binance order
+                //TODO: Add support for multiple API keys
+                //TODO: Send SL and TP orders
                 let formattedQuantity = this.formatQuantityPrecision(dollarSize / latestPrice);
                 let formattedPrice = latestPrice.toFixed(this.precisionFormat.price[this.tradingSymbol]);
                 let ticker = this.tradingSymbol + this.quoteAsset;
                 let orderPromise = binance.executeOrderBinanceFutures(apiKey.key, apiKey.secret, ticker, side, 'MARKET', formattedQuantity);
-                //let orderPromise = this.executeBinanceFuturesSignedRequest(apiKey.key, apiKey.secret, 'POST', '/fapi/v1/order', orderParams);
                 orderPromise.then(response => response.json())
                 .then(data => {
                     if (data.code) {
@@ -88,7 +89,7 @@ export default {
                     } else {
                         this.$emit('position-opened', {
                             account: apiKey.name,
-                            symbol: this.tradingSymbol + this.quoteAsset,
+                            ticker: this.tradingSymbol + this.quoteAsset,
                             size: dollarSize,
                             side: side,
                             entryPrice: latestPrice,

@@ -8,7 +8,7 @@
                 <thead>
                     <tr>
                         <th scope="col" class="text-white text-center">Account</th>
-                        <th scope="col" class="text-white text-center">Symbol</th>
+                        <th scope="col" class="text-white text-center">Ticker</th>
                         <th scope="col" class="text-white text-center">Side</th>
                         <th scope="col" class="text-white text-center">Size</th>
                         <th scope="col" class="text-white text-center">Entry Price</th>
@@ -20,7 +20,7 @@
                 <tbody>
                     <tr v-for="(pos, index) in positions">
                         <th scope="row" class="text-white text-center align-middle">{{ pos.account }}</th>
-                        <td class="text-white text-center align-middle">{{ pos.symbol }}</td>
+                        <td class="text-white text-center align-middle">{{ pos.ticker }}</td>
                         <td class="text-white text-center align-middle">{{ pos.side }}</td>
                         <td class="text-white text-center align-middle">{{ formatNumber(pos.size, 2) }}</td>
                         <td class="text-white text-center align-middle">{{ formatNumber(pos.entryPrice, 7) }}</td>
@@ -29,7 +29,7 @@
                         <td class="text-center align-middle">
                             <button type="button" class="btn btn-danger" @click="$emit('close-position', index)">Close</button>
                             &nbsp;
-                            <button type="button" class="btn btn-info" @click="$emit('select-symbol', pos.symbol)">Select</button>
+                            <button type="button" class="btn btn-info" @click="$emit('select-symbol', pos.ticker)">Select</button>
                         </td>
                     </tr>
                 </tbody>
