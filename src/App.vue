@@ -134,7 +134,7 @@ export default {
           let ticker = position.symbol + this.trading.quoteAsset
           let markPrice = this.livePriceFeed[ticker]
           let currentSize = position.units * markPrice
-          let unrealizedPnl = currentSize - position.units * position.entryPrice
+          let unrealizedPnl = (currentSize - position.units * position.entryPrice) * (position.side == 'BUY' ? 1 : -1)
           position.upnl = unrealizedPnl
           position.markPrice = markPrice
           position.size = currentSize
