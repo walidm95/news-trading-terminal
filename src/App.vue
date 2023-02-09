@@ -236,7 +236,24 @@ export default {
       localStorage.setItem("apiKeys", JSON.stringify(this.trading.apiKeys));
     },
     onClosePosition(index) {
-      // Close position on Binance
+      let position = this.trading.positions[index];
+      let ticker = position.symbol + this.trading.quoteAsset;
+      
+      let apiKey
+      for (let key of this.trading.apiKeys) {
+        if (key.name == position.account) {
+          apiKey = key;
+          break;
+        }
+      }
+
+      //TODO: implement close order
+      let promise = binance.executeOrderBinanceFutures(ticker, position.side == 'BUY' ? 'SELL' : 'BUY', position.units, 'MARKET', apiKey.key, apiKey.secret);
+      promise.then((response) => {
+        console.log(response);
+      }).catch((error) => {
+        console.error(error);
+      });
 
       this.trading.positions.splice(index, 1);
     }
