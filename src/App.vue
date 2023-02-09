@@ -28,13 +28,14 @@ import AccountApiKeys from './components/AccountApiKeys.vue';
               :quoteAsset="trading.quoteAsset"
               :apiKeys="trading.apiKeys"
               :livePriceFeed="livePriceFeed"
+              :precisionFormat="precisionFormat"
               @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
               @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
               @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
               @trading-symbol-changed="onSymbolChanged($event.target.value)"
               @lock-symbol-toggled="trading.lockSymbol=!trading.lockSymbol"
               @quote-asset-changed="onQuoteAssetChanged"
-              @positions-opened="onPositionsOpened"/>
+              @position-opened="onPositionOpened"/>
           </div>
           <div class="row flex-fill mb-2" style="height: 345px">
             <AccountApiKeys :apiKeys="trading.apiKeys" @add-api-key="onAddApiKey" @delete-api-key="onDeleteApiKey"/>
@@ -58,6 +59,7 @@ import AccountApiKeys from './components/AccountApiKeys.vue';
 
 <script>
 import { ref } from 'vue';
+import binance from './binance'
 
 // Required to re-render chart
 var tradingViewComponentKey = ref(0);
@@ -68,6 +70,7 @@ function forceChartRender() {
 export default {
   data() {
     return {
+      precisionFormat: {price:{}, quantity:{}},
       livePriceFeed: {},
       symbols: [],
       news: {
@@ -166,6 +169,10 @@ export default {
             coinName = 'Binance'
           }
           symbolNames[symbol.baseAsset] = coinName
+
+          // Set price precisions
+          this.precisionFormat.price[symbol.baseAsset] = symbol.pricePrecision
+          this.precisionFormat.quantity[symbol.baseAsset] = symbol.quantityPrecision
         });
 
         this.symbols = symbolNames
@@ -180,8 +187,9 @@ export default {
     getTradingViewSymbolTicker() {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
     },
-    onPositionsOpened(positions) {
-      this.trading.positions.unshift(...positions);
+    onPositionOpened(position) {
+      //TODO: find a way to get the exact entry price
+      this.trading.positions.unshift(position);
     },
     onSymbolChanged(symbol) {
       symbol = symbol.toUpperCase();
@@ -215,6 +223,8 @@ export default {
           secret: inputs[2].value
         });
 
+        localStorage.setItem("apiKeys", JSON.stringify(this.trading.apiKeys));
+
         // Reset inputs
         inputs[0].value = "";
         inputs[1].value = "";
@@ -222,12 +232,11 @@ export default {
       }
     },
     onDeleteApiKey(index) {
-      var apiKeyName = this.trading.apiKeys[index].name;
-
       this.trading.apiKeys.splice(index, 1);
+      localStorage.setItem("apiKeys", JSON.stringify(this.trading.apiKeys));
     },
     onClosePosition(index) {
-      var position = this.trading.positions[index];
+      // Close position on Binance
 
       this.trading.positions.splice(index, 1);
     }
@@ -238,6 +247,7 @@ export default {
     this.connectBinanceMarkPriceStreamWS();
     this.getBinanceSymbolsWithNames();
 
+    this.trading.apiKeys = localStorage.getItem("apiKeys") ? JSON.parse(localStorage.getItem("apiKeys")) : [];
   }
 }
 </script>

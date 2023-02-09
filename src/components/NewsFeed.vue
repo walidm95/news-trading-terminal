@@ -74,8 +74,13 @@ export default {
                     type: type,
                     time: new Date(data.time)
                 })
+                this.activeHeadline = 0;
                 this.$emit('symbol-from-headline', symbol);
             }
+        },
+        onDoubleClick(index) {
+            this.expand = !this.expand;
+            this.activeHeadline = index;
         }
     },
     mounted() {

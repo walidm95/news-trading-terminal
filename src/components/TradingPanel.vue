@@ -4,6 +4,8 @@ import TradingButtons from './TradingButtons.vue';
 </script>
 
 <script>
+import binance from '../binance'
+
 export default {
     data() {
         return {
@@ -17,7 +19,8 @@ export default {
         tradingSymbol: {type: String, required: true},
         quoteAsset: {type: String, required: true },
         apiKeys: {type: Array, required: true},
-        livePriceFeed: {type: Object, required: true}
+        livePriceFeed: {type: Object, required: true},
+        precisionFormat: {type: Object, required: true}
     },
     methods: {
         onTradingSizeChanged(event) {
@@ -41,13 +44,29 @@ export default {
         onSellButtonClicked(event) {
             this.executeOrder('SELL', event.target.innerText);
         },
+        executeBinanceFuturesSignedRequest(apiKey, secretKey, method, path, data) {
+            let timestamp = Date.now();
+            let query = `timestamp=${timestamp}`;
+            if (data) {
+                query += `&${data}`;
+            }
+            let signature = HmacSHA256(query, secretKey).toString();
+            let url = `https://fapi.binance.com${path}?${query}&signature=${signature}`;
+            let headers = {
+                'X-MBX-APIKEY': apiKey
+            };
+            return fetch(url, {method: method, headers: headers})
+        },
+        formatQuantityPrecision(quantity) {
+            let precision = this.precisionFormat.quantity[this.tradingSymbol];
+            return quantity.toFixed(precision);
+        },
         executeOrder(side, sizeText) {
             if(this.apiKeys.length == 0) {
                 alert('API Keys are required to trade');
                 return;
             }
 
-            let positions = []
             for(let apiKey of this.apiKeys)
             {
                 // Execute order
@@ -55,26 +74,30 @@ export default {
                 let multiplier = sizeText.endsWith('K') ? 1000 : sizeText.endsWith('M') ? 1000000 : 1;
                 let dollarSize = Number(sizeText.replace('K','').replace('M','')) * multiplier;
                 let latestPrice = this.livePriceFeed[this.tradingSymbol + this.quoteAsset]
-                
 
-                //TODO: Execute on Binance
-
-
-                // Store postion if order was successful
-                positions.unshift({
-                    account: apiKey.name,
-                    symbol: this.tradingSymbol,
-                    size: dollarSize,
-                    side: side,
-                    entryPrice: latestPrice,
-                    markPrice: latestPrice,
-                    upnl: 0,
-                    units: dollarSize / latestPrice,
-                })
-            }
-
-            if (positions.length > 0) {
-                this.$emit('positions-opened', positions)
+                // Execute Binance order
+                let formattedQuantity = this.formatQuantityPrecision(dollarSize / latestPrice);
+                let formattedPrice = latestPrice.toFixed(this.precisionFormat.price[this.tradingSymbol]);
+                let ticker = this.tradingSymbol + this.quoteAsset;
+                let orderPromise = binance.executeOrderBinanceFutures(apiKey.key, apiKey.secret, ticker, side, 'MARKET', formattedQuantity);
+                //let orderPromise = this.executeBinanceFuturesSignedRequest(apiKey.key, apiKey.secret, 'POST', '/fapi/v1/order', orderParams);
+                orderPromise.then(response => response.json())
+                .then(data => {
+                    if (data.code) {
+                        alert(data.msg);
+                    } else {
+                        this.$emit('position-opened', {
+                            account: apiKey.name,
+                            symbol: this.tradingSymbol + this.quoteAsset,
+                            size: dollarSize,
+                            side: side,
+                            entryPrice: latestPrice,
+                            markPrice: latestPrice,
+                            upnl: 0,
+                            units: Number(data.origQty),
+                        })
+                    }
+                });
             }
         },
         onLockSymbolToggled() {
