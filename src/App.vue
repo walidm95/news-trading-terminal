@@ -13,12 +13,12 @@ import AccountApiKeys from './components/AccountApiKeys.vue';
     </div>
     <div class="container-fluid">
       <div class="row">
-        <div class="col mr-2">
+        <div class="col mr-2 column-panel">
           <div class="row mb-2 flex-fill">
             <NewsFeed :symbols="symbols" @symbol-from-headline="onSymbolChanged"/>
           </div>
           <div class="row mb-2 flex-fill">
-            <TradingViewChart :ticker="getTradingSymbolTicker()" :key="tradingViewComponentKey"/>
+            <TradingViewChart :ticker="getTradingViewSymbolTicker()" :key="tradingViewComponentKey"/>
           </div>
         </div>
         <div class="col">
@@ -42,12 +42,19 @@ import AccountApiKeys from './components/AccountApiKeys.vue';
         </div>
       </div>
       <div class="row flex-fill">
-        <Positions :positions="trading.positions" @close-position="onClosePosition"/>
+        <Positions :positions="trading.positions" @close-position="onClosePosition" @select-symbol="onSymbolChanged"/>
       </div>
     </div>
   </div>
   
 </template>
+
+<style scoped>
+.column-panel {
+  height: 100%;
+  width: 500px;
+}
+</style>
 
 <script>
 import { ref } from 'vue';
@@ -170,7 +177,7 @@ export default {
         forceChartRender();
       }
     },
-    getTradingSymbolTicker() {
+    getTradingViewSymbolTicker() {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
     },
     onPositionsOpened(positions) {
@@ -178,6 +185,11 @@ export default {
     },
     onSymbolChanged(symbol) {
       symbol = symbol.toUpperCase();
+
+      if(symbol == this.trading.tradingSymbol) {
+        return;
+      }
+      
       if (Object.keys(this.symbols).includes(symbol))
       {
         this.trading.tradingSymbol = symbol;

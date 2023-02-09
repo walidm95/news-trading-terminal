@@ -1,7 +1,7 @@
 <template>
     <div class="card mb-2 bg-dark text-white border-secondary" style="height: 300px">
         <div class="card-header h4 border-secondary">
-            Positions
+            Positions ({{ positions.length }})
         </div>
         <div class="table-responsive table-bordered table-striped table-dark" style="overflow-x: hidden">
             <table class="table">
@@ -22,12 +22,14 @@
                         <th scope="row" class="text-white text-center align-middle">{{ pos.account }}</th>
                         <td class="text-white text-center align-middle">{{ pos.symbol }}</td>
                         <td class="text-white text-center align-middle">{{ pos.side }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.size) }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.entryPrice) }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.markPrice) }}</td>
-                        <td class="text-center align-middle" :class="pos.upnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.upnl) }}</td>
+                        <td class="text-white text-center align-middle">{{ formatNumber(pos.size, 2) }}</td>
+                        <td class="text-white text-center align-middle">{{ formatNumber(pos.entryPrice, 7) }}</td>
+                        <td class="text-white text-center align-middle">{{ formatNumber(pos.markPrice, 7) }}</td>
+                        <td class="text-center align-middle" :class="pos.upnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.upnl, 2) }}</td>
                         <td class="text-center align-middle">
                             <button type="button" class="btn btn-danger" @click="$emit('close-position', index)">Close</button>
+                            &nbsp;
+                            <button type="button" class="btn btn-info" @click="$emit('select-symbol', pos.symbol)">Select</button>
                         </td>
                     </tr>
                 </tbody>
@@ -40,7 +42,7 @@
 var formatter = new Intl.NumberFormat("en-US", {
     style:"currency",
     currency: "USD",
-    maximumFractionDigits: 5
+    maximumFractionDigits: 7
 });
 
 export default {
@@ -48,8 +50,14 @@ export default {
         positions: {type: Array, required: true}
     },
     methods: {
-        formatNumber(number) {
-            return formatter.format(number);
+        formatNumber(number, maxDecimals) {
+            if(number > 100) {
+                return formatter.format(number.toFixed(2))
+            } else if(number > 1) {
+                return formatter.format(number.toFixed(4));
+            } else {
+                return formatter.format(number.toFixed(maxDecimals));
+            }
         }
     }
 }

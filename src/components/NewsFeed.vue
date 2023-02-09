@@ -5,7 +5,10 @@ export default {
     data() {
         return {
             headlines: [],
-            activeHeadline: 0
+            activeHeadline: 0,
+            expand: false,
+            showTwitter: true,
+            showBlogs: true
         }
     },
     props : {
@@ -71,6 +74,7 @@ export default {
                     type: type,
                     time: new Date(data.time)
                 })
+                this.$emit('symbol-from-headline', symbol);
             }
         }
     },
@@ -85,13 +89,19 @@ export default {
     <div class="card bg-dark text-white border-secondary">
         <div class="card-header h4 border-secondary">
             News Feed
+            <button type="button" class="btn btn-outline-secondary btn-sm float-right"><i class="bi bi-gear"></i></button>
         </div>
         <ul class="list-group list-group-flush scrolled">
             <NewsItem v-for="(headline, index) in headlines" 
-                :key="index" :datetime="headline.time.toLocaleString('en-US', {timeZoneName: 'short'})" 
-                :headline="headline.body" 
-                :selected="activeHeadline === index" 
-                @click="onSelectHeadline(index)"/>
+                :key="index" 
+                :datetime="headline.time.toLocaleString('en-US', {timeZoneName: 'short'})" 
+                :type="headline.type" 
+                :title="headline.title"
+                :headline="headline.body"
+                :selected="activeHeadline === index"
+                :expand="expand"
+                @click="onSelectHeadline(index)"
+                @dblclick="onDoubleClick(index)" />
         </ul>
     </div>
 </template>
