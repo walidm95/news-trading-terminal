@@ -12,7 +12,9 @@ export default {
         }
     },
     props : {
-        symbols: {type: Object, required: true}
+        quoteAsset: {type: String, required: true},
+        symbols: {type: Object, required: true},
+        livePriceFeed: {type: Object, required: true}
     },
     components: { NewsItem },
     methods: {
@@ -58,8 +60,17 @@ export default {
                 let symbol
                 if (data.coin) {
                     symbol = data.coin
-                } else if(data.symbols) {
+                    if (!this.symbols[symbol]) {
+                        console.log('symbol not in symbols list. Skipping')
+                        return
+                    }
+
+                } else if(data.symbols && data.symbols.length > 0) {
                     symbol = data.symbols[0].split('_')[0]
+                    if (!this.symbols[symbol]) {
+                        console.log('symbol not in symbols list. Skipping')
+                        return
+                    }
                 } else {
                     symbol = this.findSymbolInHeadline(data.body ? data.body : data.title);
                 }
@@ -70,13 +81,17 @@ export default {
                     return
                 }
 
+                let ticker = symbol + this.quoteAsset
                 this.headlines.unshift({
                     title: data.title,
                     body: data.body ? data.body : data.title,
                     type: type,
                     time: new Date(data.time),
-                    symbol: symbol
+                    symbol: symbol,
+                    ticker: ticker,
+                    price: this.livePriceFeed[ticker] ? this.livePriceFeed[ticker] : 0
                 })
+
                 this.activeHeadline = 0;
                 this.$emit('symbol-from-headline', symbol);
             }
@@ -84,6 +99,11 @@ export default {
         onDoubleClick(index) {
             this.expand = !this.expand;
             this.activeHeadline = index;
+        },
+        getPriceChange(index) {
+            let priceAtNews = this.headlines[index].price
+            let priceNow = this.livePriceFeed[this.headlines[index].ticker]
+            return (priceNow - priceAtNews) / priceAtNews * 100
         }
     },
     mounted() {
@@ -102,12 +122,10 @@ export default {
         <ul class="list-group list-group-flush scrolled">
             <NewsItem v-for="(headline, index) in headlines" 
                 :key="index" 
-                :datetime="headline.time.toLocaleString('en-US', {timeZoneName: 'short'})" 
-                :type="headline.type" 
-                :title="headline.title"
-                :headline="headline.body"
+                :headline="headline"
                 :selected="activeHeadline === index"
                 :expand="expand"
+                :priceChange="getPriceChange(index)"
                 @click="onSelectHeadline(index)"
                 @dblclick="onDoubleClick(index)" />
         </ul>

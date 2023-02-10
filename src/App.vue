@@ -15,7 +15,11 @@ import AccountApiKeys from './components/AccountApiKeys.vue';
       <div class="row">
         <div class="col mr-2 column-panel">
           <div class="row mb-2 flex-fill">
-            <NewsFeed :symbols="symbols" @symbol-from-headline="onSymbolChanged"/>
+            <NewsFeed 
+              :symbols="symbols" 
+              :livePriceFeed="livePriceFeed" 
+              :quoteAsset="trading.quoteAsset" 
+              @symbol-from-headline="onSymbolChanged"/>
           </div>
           <div class="row mb-2 flex-fill">
             <TradingViewChart :ticker="getTradingViewSymbolTicker()" :key="tradingViewComponentKey"/>
@@ -188,8 +192,8 @@ export default {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
     },
     onPositionOpened(position) {
-      //TODO: find a way to get the exact entry price
-      this.trading.positions.unshift(position);
+      // Fetch positions
+      this.fetchOpenPositions()
     },
     onSymbolChanged(symbol) {
       symbol = symbol.toUpperCase();
@@ -254,6 +258,34 @@ export default {
       }).catch((error) => {
         console.error(error);
       });
+    },
+    fetchOpenPositions() {
+      // TODO: handle multiple api keys
+      let positions = []
+      binance.getBinanceFuturesAccount(this.trading.apiKeys[0].key, this.trading.apiKeys[0].secret).then((response) => {
+        let data = response.json()
+        data.then(account => {
+          for(let position of account.positions) {
+            if (position.positionAmt != 0) {
+              let positionData = {
+                ticker: position.symbol,
+                side: position.positionAmt > 0 ? 'BUY' : 'SELL',
+                units: Math.abs(position.positionAmt),
+                entryPrice: position.entryPrice,
+                account: this.trading.apiKeys[0].name,
+                upnl: position.unrealizedProfit,
+                markPrice: position.markPrice,
+                size: position.positionAmt * position.markPrice
+              }
+
+              positions.push(positionData);
+            }
+          }
+          this.trading.positions = positions;
+        })
+      }, (error) => {
+        alert(error)
+      });
     }
   },
   mounted: function() {
@@ -264,7 +296,7 @@ export default {
 
     this.trading.apiKeys = localStorage.getItem("apiKeys") ? JSON.parse(localStorage.getItem("apiKeys")) : [];
 
-    //TODO: get only positions that were opened through this terminal. Get orderIds from localstorage
+    this.fetchOpenPositions();
     
   }
 }

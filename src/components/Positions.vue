@@ -51,6 +51,7 @@ export default {
     },
     methods: {
         formatNumber(number, maxDecimals) {
+            number = parseFloat(number);
             if(number > 100) {
                 return formatter.format(number.toFixed(2))
             } else if(number > 1) {

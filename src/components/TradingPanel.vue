@@ -44,19 +44,6 @@ export default {
         onSellButtonClicked(event) {
             this.executeOrder('SELL', event.target.innerText);
         },
-        executeBinanceFuturesSignedRequest(apiKey, secretKey, method, path, data) {
-            let timestamp = Date.now();
-            let query = `timestamp=${timestamp}`;
-            if (data) {
-                query += `&${data}`;
-            }
-            let signature = HmacSHA256(query, secretKey).toString();
-            let url = `https://fapi.binance.com${path}?${query}&signature=${signature}`;
-            let headers = {
-                'X-MBX-APIKEY': apiKey
-            };
-            return fetch(url, {method: method, headers: headers})
-        },
         formatQuantityPrecision(quantity) {
             let precision = this.precisionFormat.quantity[this.tradingSymbol];
             return quantity.toFixed(precision);
@@ -87,12 +74,6 @@ export default {
                     if (data.code) {
                         alert(data.msg);
                     } else {
-                        let orders = JSON.parse(localStorage.getItem('orders'));
-                        if (!orders) {
-                            orders = [];
-                        }
-                        localStorage.setItem('orders', JSON.stringify(orders.push(data.orderId)));
-
                         this.$emit('position-opened', {
                             account: apiKey.name,
                             ticker: this.tradingSymbol + this.quoteAsset,
