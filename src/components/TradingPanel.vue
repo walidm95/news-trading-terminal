@@ -87,6 +87,12 @@ export default {
                     if (data.code) {
                         alert(data.msg);
                     } else {
+                        let orders = JSON.parse(localStorage.getItem('orders'));
+                        if (!orders) {
+                            orders = [];
+                        }
+                        localStorage.setItem('orders', JSON.stringify(orders.push(data.orderId)));
+
                         this.$emit('position-opened', {
                             account: apiKey.name,
                             ticker: this.tradingSymbol + this.quoteAsset,
