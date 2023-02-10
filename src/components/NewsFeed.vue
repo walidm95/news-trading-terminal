@@ -33,7 +33,7 @@ export default {
         },
         onSelectHeadline(index) {
             this.activeHeadline = index;
-            let symbol = this.findSymbolInHeadline(this.headlines[index].body);
+            let symbol = this.headlines[index].symbol;
             this.$emit('symbol-from-headline', symbol);
         },
         connectTreeOfAlphaWS() {
@@ -58,6 +58,8 @@ export default {
                 let symbol
                 if (data.coin) {
                     symbol = data.coin
+                } else if(data.symbols) {
+                    symbol = data.symbols[0].split('_')[0]
                 } else {
                     symbol = this.findSymbolInHeadline(data.body ? data.body : data.title);
                 }
@@ -72,7 +74,8 @@ export default {
                     title: data.title,
                     body: data.body ? data.body : data.title,
                     type: type,
-                    time: new Date(data.time)
+                    time: new Date(data.time),
+                    symbol: symbol
                 })
                 this.activeHeadline = 0;
                 this.$emit('symbol-from-headline', symbol);
