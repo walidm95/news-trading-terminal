@@ -4,6 +4,7 @@ import NewsItem from './NewsItem.vue';
 export default {
     data() {
         return {
+            notification_sound: new Audio('/public/new_headline.mp3'),
             headlines: [],
             activeHeadline: 0,
             expand: false,
@@ -93,6 +94,7 @@ export default {
                 })
 
                 this.activeHeadline = 0;
+                this.notification_sound.play()
                 this.$emit('symbol-from-headline', symbol);
             }
         },
