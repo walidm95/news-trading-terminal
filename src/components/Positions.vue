@@ -22,10 +22,10 @@
                         <th scope="row" class="text-white text-center align-middle">{{ pos.account }}</th>
                         <td class="text-white text-center align-middle">{{ pos.ticker }}</td>
                         <td class="text-white text-center align-middle">{{ pos.side }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.size, 2) }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.entryPrice, 7) }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.markPrice, 7) }}</td>
-                        <td class="text-center align-middle" :class="pos.upnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.upnl, 2) }}</td>
+                        <td class="text-white text-center align-middle">{{ formatNumber(pos.size) }}</td>
+                        <td class="text-white text-center align-middle">{{ formatNumber(pos.entryPrice, pos.ticker) }}</td>
+                        <td class="text-white text-center align-middle">{{ formatNumber(pos.markPrice, pos.ticker) }}</td>
+                        <td class="text-center align-middle" :class="pos.upnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.upnl) }}</td>
                         <td class="text-center align-middle">
                             <button type="button" class="btn btn-danger" @click="$emit('close-position', index)">Close</button>
                             &nbsp;
@@ -47,18 +47,13 @@ var formatter = new Intl.NumberFormat("en-US", {
 
 export default {
     props: {
-        positions: {type: Array, required: true}
+        positions: {type: Array, required: true},
+        pricePrecisions: {type: Object, required: true}
     },
     methods: {
-        formatNumber(number, maxDecimals) {
+        formatNumber(number, ticker) {
             number = parseFloat(number);
-            if(number > 100) {
-                return formatter.format(number.toFixed(2))
-            } else if(number > 1) {
-                return formatter.format(number.toFixed(4));
-            } else {
-                return formatter.format(number.toFixed(maxDecimals));
-            }
+            return formatter.format(number.toFixed(ticker ? this.pricePrecisions[ticker] : 2));
         }
     }
 }

@@ -1,6 +1,6 @@
 import HmacSHA256 from 'crypto-js/hmac-sha256';
 
-function executeBinanceFuturesSignedRequest(apiKey, secretKey, method, path, data) {
+function executeSignedRequest(apiKey, secretKey, method, path, data) {
     let timestamp = Date.now();
     let query = `timestamp=${timestamp}`;
     if (data) {
@@ -14,33 +14,61 @@ function executeBinanceFuturesSignedRequest(apiKey, secretKey, method, path, dat
     return fetch(url, {method: method, headers: headers})
 }
 
-function getBinanceFuturesAccount(apiKey, secretKey) {
-    return executeBinanceFuturesSignedRequest(apiKey, secretKey, 'GET', '/fapi/v2/account');
+function getAccount(apiKey, secretKey) {
+    return executeSignedRequest(apiKey, secretKey, 'GET', '/fapi/v2/account');
 }
 
-function getOrdersBinanceFutures(apiKey, secretKey, symbol) {
-    return executeBinanceFuturesSignedRequest(apiKey, secretKey, 'GET', '/fapi/v1/openOrders', `symbol=${symbol}`);
+function getOrders(apiKey, secretKey, symbol) {
+    return executeSignedRequest(apiKey, secretKey, 'GET', '/fapi/v1/openOrders', `symbol=${symbol}`);
 }
 
-function executeOrderBinanceFutures(apiKey, secretKey, symbol, side, type, quantity, price, timeInForce) {
+function executeMarketOrder(apiKey, secretKey, symbol, side, quantity) {
+    let params = `symbol=${symbol}&side=${side}&type=MARKET&quantity=${quantity}`;
+    return executeOrder(apiKey, secretKey, params);
+}
 
-    let data
-    if (type == 'MARKET') {
-        data = `symbol=${symbol}&side=${side}&type=${type}&quantity=${quantity}`;
-    } else {
-        data = `symbol=${symbol}&side=${side}&type=${type}&quantity=${quantity}&price=${price}`;
-    }
-    if (price) {
-        data += `&price=${price}`;
-    }
-    if (timeInForce) {
-        data += `&timeInForce=${timeInForce}`;
-    }
-    return executeBinanceFuturesSignedRequest(apiKey, secretKey, 'POST', '/fapi/v1/order', data);
+function executeLimitOrder(apiKey, secretKey, symbol, side, quantity, price) {
+    let params = `symbol=${symbol}&side=${side}&type=LIMIT&quantity=${quantity}&price=${price}`;
+    return executeOrder(apiKey, secretKey, params);
+}
+
+function executeTakeProfitOrder(apiKey, secretKey, symbol, side, quantity, takeProfitPrice) {
+    let params = `symbol=${symbol}&side=${side}&type=TAKE_PROFIT_MARKET&quantity=${quantity}&stopPrice=${takeProfitPrice}`;
+    return executeOrder(apiKey, secretKey, params);
+}
+
+function executeStopLossOrder(apiKey, secretKey, symbol, side, quantity, stopPrice) {
+    let params = `symbol=${symbol}&side=${side}&type=STOP_MARKET&quantity=${quantity}&stopPrice=${stopPrice}`;
+    return executeOrder(apiKey, secretKey, params);
+}
+
+function executeCloseMarketOrder(apiKey, secretKey, symbol, side, quantity) {
+    let params = `symbol=${symbol}&side=${side}&type=MARKET&quantity=${quantity}&reduceOnly=true`;
+    return executeOrder(apiKey, secretKey, params);
+}
+
+function executeMultipleOrders(apiKey, secretKey, orders) {
+    // TODO: fix if necessary. For now sending one order at a time
+    var batchOrders = JSON.stringify(orders);
+    return executeSignedRequest(apiKey, secretKey, 'POST', '/fapi/v1/batchOrders', batchOrders)
+}
+
+function cancelMultipleOrders(apiKey, secretKey, symbol, orderIdList) {
+    let params = `symbol=${symbol}&orderIdList=[${orderIdList}]`;
+    return executeSignedRequest(apiKey, secretKey, 'DELETE', '/fapi/v1/batchOrders', params)
+}
+
+function executeOrder(apiKey, secretKey, params) {
+    return executeSignedRequest(apiKey, secretKey, 'POST', '/fapi/v1/order', params);
 }
 
 export default {
-    getBinanceFuturesAccount,
-    executeOrderBinanceFutures,
-    getOrdersBinanceFutures
+    getAccount,
+    executeMarketOrder,
+    executeLimitOrder,
+    executeStopLossOrder,
+    executeTakeProfitOrder,
+    executeCloseMarketOrder,
+    cancelMultipleOrders,
+    getOrders
 }

@@ -45,7 +45,7 @@ export default {
             this.executeOrder('SELL', event.target.innerText);
         },
         formatQuantityPrecision(quantity) {
-            let precision = this.precisionFormat.quantity[this.tradingSymbol];
+            let precision = this.precisionFormat.quantity[this.tradingSymbol + this.quoteAsset];
             return quantity.toFixed(precision);
         },
         executeOrder(side, sizeText) {
@@ -63,12 +63,17 @@ export default {
                 let latestPrice = this.livePriceFeed[this.tradingSymbol + this.quoteAsset]
 
                 // Execute Binance order
-                //TODO: Add support for multiple API keys
-                //TODO: Send SL and TP orders
                 let formattedQuantity = this.formatQuantityPrecision(dollarSize / latestPrice);
-                let formattedPrice = latestPrice.toFixed(this.precisionFormat.price[this.tradingSymbol]);
                 let ticker = this.tradingSymbol + this.quoteAsset;
-                let orderPromise = binance.executeOrderBinanceFutures(apiKey.key, apiKey.secret, ticker, side, 'MARKET', formattedQuantity);
+                let formattedPrice = latestPrice.toFixed(this.precisionFormat.price[ticker]);
+                let orderPromise = binance.executeMarketOrder(apiKey.key, apiKey.secret, ticker, side, formattedQuantity);
+
+                // Stop loss and take profit
+                let stopLossPrice = side == 'BUY' ? latestPrice * (1 - this.stopLossPct / 100) : latestPrice * (1 + this.stopLossPct / 100);
+                let takeProfitPrice = side == 'BUY' ? latestPrice * (1 + this.takeProfitPct / 100) : latestPrice * (1 - this.takeProfitPct / 100);
+                let stopLossPromise = binance.executeStopLossOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, stopLossPrice.toFixed(this.precisionFormat.price[ticker]));
+                let takeProfitPromise = binance.executeTakeProfitOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, takeProfitPrice.toFixed(this.precisionFormat.price[ticker]));
+                
                 orderPromise.then(response => response.json())
                 .then(data => {
                     if (data.code) {
@@ -84,6 +89,30 @@ export default {
                             upnl: 0,
                             units: Number(data.origQty),
                         })
+                    }
+                });
+
+                stopLossPromise.then(response => response.json())
+                .then(data => {
+                    if (data.code) {
+                        alert(data.msg);
+                    } else {
+                        console.log('Stop loss order placed')
+                        let orderIds = JSON.parse(localStorage.getItem('openOrders')) || [];
+                        orderIds.push({accountName: apiKey.name, ticker: this.tradingSymbol + this.quoteAsset, orderId: data.orderId});
+                        localStorage.setItem('openOrders', JSON.stringify(orderIds));
+                    }
+                });
+
+                takeProfitPromise.then(response => response.json())
+                .then(data => {
+                    if (data.code) {
+                        alert(data.msg);
+                    } else {
+                        console.log('Take profit order placed')
+                        let orderIds = JSON.parse(localStorage.getItem('openOrders')) || [];
+                        orderIds.push({accountName: apiKey.name, ticker: this.tradingSymbol + this.quoteAsset, orderId: data.orderId});
+                        localStorage.setItem('openOrders', JSON.stringify(orderIds));
                     }
                 });
             }

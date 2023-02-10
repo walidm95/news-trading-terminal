@@ -47,7 +47,7 @@ import AccountApiKeys from './components/AccountApiKeys.vue';
         </div>
       </div>
       <div class="row flex-fill">
-        <Positions :positions="trading.positions" @close-position="onClosePosition" @select-symbol="onSymbolChanged"/>
+        <Positions :positions="trading.positions" :pricePrecisions="precisionFormat.price" @close-position="onClosePosition" @select-symbol="onSymbolChanged"/>
       </div>
     </div>
   </div>
@@ -175,8 +175,8 @@ export default {
           symbolNames[symbol.baseAsset] = coinName
 
           // Set price precisions
-          this.precisionFormat.price[symbol.baseAsset] = symbol.pricePrecision
-          this.precisionFormat.quantity[symbol.baseAsset] = symbol.quantityPrecision
+          this.precisionFormat.price[symbol.symbol] = symbol.pricePrecision
+          this.precisionFormat.quantity[symbol.symbol] = symbol.quantityPrecision
         });
 
         this.symbols = symbolNames
@@ -196,7 +196,7 @@ export default {
       this.fetchOpenPositions()
     },
     onSymbolChanged(symbol) {
-      symbol = symbol.toUpperCase();
+      symbol = symbol.toUpperCase().replace(this.trading.quoteAsset, '');
 
       if(symbol == this.trading.tradingSymbol) {
         return;
@@ -250,11 +250,45 @@ export default {
         }
       }
 
-      //TODO: implement close order
-      let promise = binance.executeOrderBinanceFutures( apiKey.key, apiKey.secret, position.ticker, position.side == 'BUY' ? 'SELL' : 'BUY', 'MARKET', position.units);
+      let promise = binance.executeCloseMarketOrder(apiKey.key, apiKey.secret, position.ticker, position.side == 'BUY' ? 'SELL' : 'BUY', position.units)
       promise.then((response) => {
         console.log(response);
         this.trading.positions.splice(index, 1);
+
+        // Cancel stop loss/take profit orders
+        let openOrders = JSON.parse(localStorage.getItem('openOrders')) || [];
+        let orderIds = []
+        for (let order of openOrders) {
+          if (order.ticker == position.ticker && order.accountName == position.account) {
+            orderIds.push(order.orderId)
+          }
+        }
+
+        if(orderIds.length == 0) {
+          return;
+        }
+
+        let cancelOrdersPromise = binance.cancelMultipleOrders(apiKey.key, apiKey.secret, position.ticker, orderIds)
+        cancelOrdersPromise.then(response => response.json())
+        .then((data) =>{
+          if (data.code) {
+              alert(data.msg);
+          } else {
+            for(let order of data) {
+              if (order.status == 'CANCELED') {
+                for (let i = 0; i < openOrders.length; i++) {
+                  if (openOrders[i].orderId == order.orderId) {
+                    openOrders.splice(i, 1);
+                    break;
+                  }
+                }
+              }
+            }
+            localStorage.setItem('openOrders', JSON.stringify(openOrders));
+          }
+        }).catch((error) => {
+          console.error(error);
+        });
       }).catch((error) => {
         console.error(error);
       });
@@ -262,7 +296,7 @@ export default {
     fetchOpenPositions() {
       // TODO: handle multiple api keys
       let positions = []
-      binance.getBinanceFuturesAccount(this.trading.apiKeys[0].key, this.trading.apiKeys[0].secret).then((response) => {
+      binance.getAccount(this.trading.apiKeys[0].key, this.trading.apiKeys[0].secret).then((response) => {
         let data = response.json()
         data.then(account => {
           for(let position of account.positions) {
