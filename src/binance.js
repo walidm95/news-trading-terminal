@@ -33,12 +33,12 @@ function executeLimitOrder(apiKey, secretKey, symbol, side, quantity, price) {
 }
 
 function executeTakeProfitOrder(apiKey, secretKey, symbol, side, quantity, takeProfitPrice) {
-    let params = `symbol=${symbol}&side=${side}&type=TAKE_PROFIT_MARKET&quantity=${quantity}&stopPrice=${takeProfitPrice}`;
+    let params = `symbol=${symbol}&side=${side}&type=TAKE_PROFIT_MARKET&quantity=${quantity}&stopPrice=${takeProfitPrice}&reduceOnly=true`;
     return executeOrder(apiKey, secretKey, params);
 }
 
 function executeStopLossOrder(apiKey, secretKey, symbol, side, quantity, stopPrice) {
-    let params = `symbol=${symbol}&side=${side}&type=STOP_MARKET&quantity=${quantity}&stopPrice=${stopPrice}`;
+    let params = `symbol=${symbol}&side=${side}&type=STOP_MARKET&quantity=${quantity}&stopPrice=${stopPrice}&reduceOnly=true`;
     return executeOrder(apiKey, secretKey, params);
 }
 
