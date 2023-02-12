@@ -1,10 +1,7 @@
 <script>
 export default {
   props: {
-    title: {type: String, required: true},
-    type: {type: String, required: true},
-    headline: {type: String, required: true},
-    datetime: {type: String, required: true},
+    headline: {type: Object, required: true},
     selected: {type: Boolean, required: true},
     expand: {type: Boolean, required: true},
     priceChange: {type: Number, required: true}

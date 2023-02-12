@@ -4,7 +4,7 @@ import NewsItem from './NewsItem.vue';
 export default {
     data() {
         return {
-            notification_sound: new Audio('/public/new_headline.mp3'),
+            notification_sound: new Audio('/new_headline.mp3'),
             headlines: [],
             activeHeadline: 0,
             expand: false,
