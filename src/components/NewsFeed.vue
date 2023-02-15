@@ -48,10 +48,10 @@ export default {
                 let type
                 if (data.info && data.info.twitterId) {
                     type = 'twitter'
-                    if (data.info.isQuote || data.info.isReply || data.info.isRetweet) {
+                    /*if (data.info.isQuote || data.info.isReply || data.info.isRetweet) {
                         // skip
                         return
-                    }
+                    }*/
                 } else if (data.source) {
                     type = data.source
                 } else  {
@@ -119,7 +119,7 @@ export default {
     <div class="card bg-dark text-white border-secondary">
         <div class="card-header h4 border-secondary">
             News Feed
-            <button type="button" class="btn btn-outline-secondary btn-sm float-right"><i class="bi bi-gear"></i></button>
+            <!--button type="button" class="btn btn-outline-secondary btn-sm float-right"><i class="bi bi-gear"></i></button-->
         </div>
         <ul class="list-group list-group-flush scrolled">
             <NewsItem v-for="(headline, index) in headlines" 

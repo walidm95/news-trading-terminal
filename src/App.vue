@@ -4,51 +4,72 @@ import TradingPanel from './components/TradingPanel.vue';
 import TradingViewChart from './components/TradingViewChart.vue';
 import Positions from './components/Positions.vue';
 import AccountApiKeys from './components/AccountApiKeys.vue';
+
+import { Authenticator } from "@aws-amplify/ui-vue";
+import "@aws-amplify/ui-vue/styles.css";
+
+import { Amplify } from 'aws-amplify';
+import awsconfig from './aws-exports';
+
+Amplify.configure(awsconfig);
 </script>
 
 <template>
   <div style="height: 100vh;">
-    <div class="page-title">
-      <h1>News Trading Terminal</h1>
-    </div>
     <div class="container-fluid">
-      <div class="row">
-        <div class="col mr-2 column-panel">
-          <div class="row mb-2 flex-fill">
-            <NewsFeed 
-              :symbols="symbols" 
-              :livePriceFeed="livePriceFeed" 
-              :quoteAsset="trading.quoteAsset" 
-              @symbol-from-headline="onSymbolChanged"/>
+      <authenticator :hide-sign-up="true" :login-mechanisms="['email']">
+        <template v-slot:header>
+          <div style="padding: var(--amplify-space-large); text-align: center">
+            <!--img
+              class="amplify-image"
+              alt="Amplify logo"
+              src="https://docs.amplify.aws/assets/logo-dark.svg"
+            /-->
+            <h1>News Trading Terminal</h1>
           </div>
-          <div class="row mb-2 flex-fill">
-            <TradingViewChart :ticker="getTradingViewSymbolTicker()" :key="tradingViewComponentKey"/>
+        </template>
+        <template v-slot="{ user, signOut }" >
+          <h4 class="text-center p-2">News Trading Terminal</h4>
+          <div class="row">
+            <div class="col mr-2 column-panel">
+              <div class="row mb-2 flex-fill">
+                <NewsFeed 
+                  :symbols="symbols"
+                  :livePriceFeed="livePriceFeed" 
+                  :quoteAsset="trading.quoteAsset" 
+                  @symbol-from-headline="onSymbolChanged"/>
+              </div>
+              <div class="row mb-2 flex-fill">
+                <TradingViewChart :ticker="getTradingViewSymbolTicker()" :key="tradingViewComponentKey"/>
+              </div>
+            </div>
+            <div class="col">
+              <div class="row flex-fill mb-2">
+                <TradingPanel
+                  :tradingSymbol="trading.tradingSymbol"
+                  :quoteAsset="trading.quoteAsset"
+                  :apiKeys="trading.apiKeys"
+                  :livePriceFeed="livePriceFeed"
+                  :precisionFormat="precisionFormat"
+                  @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
+                  @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
+                  @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
+                  @trading-symbol-changed="onSymbolChanged($event.target.value)"
+                  @lock-symbol-toggled="trading.lockSymbol=!trading.lockSymbol"
+                  @quote-asset-changed="onQuoteAssetChanged"
+                  @position-opened="onPositionOpened"/>
+              </div>
+              <div class="row flex-fill mb-2" style="height: 345px">
+                <AccountApiKeys :apiKeys="trading.apiKeys" @add-api-key="onAddApiKey" @delete-api-key="onDeleteApiKey"/>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="col">
-          <div class="row flex-fill mb-2">
-            <TradingPanel
-              :tradingSymbol="trading.tradingSymbol"
-              :quoteAsset="trading.quoteAsset"
-              :apiKeys="trading.apiKeys"
-              :livePriceFeed="livePriceFeed"
-              :precisionFormat="precisionFormat"
-              @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
-              @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
-              @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
-              @trading-symbol-changed="onSymbolChanged($event.target.value)"
-              @lock-symbol-toggled="trading.lockSymbol=!trading.lockSymbol"
-              @quote-asset-changed="onQuoteAssetChanged"
-              @position-opened="onPositionOpened"/>
-          </div>
-          <div class="row flex-fill mb-2" style="height: 345px">
-            <AccountApiKeys :apiKeys="trading.apiKeys" @add-api-key="onAddApiKey" @delete-api-key="onDeleteApiKey"/>
-          </div>
-        </div>
-      </div>
-      <div class="row flex-fill">
-        <Positions :positions="trading.positions" :pricePrecisions="precisionFormat.price" @close-position="onClosePosition" @select-symbol="onSymbolChanged"/>
-      </div>
+          <div class="row flex-fill">
+            <Positions :positions="trading.positions" :pricePrecisions="precisionFormat.price" @close-position="onClosePosition" @select-symbol="onSymbolChanged"/>
+          </div>   
+          <button class="float-right" @click="signOut">Sign Out</button>
+        </template>
+      </authenticator>
     </div>
   </div>
   
@@ -57,7 +78,7 @@ import AccountApiKeys from './components/AccountApiKeys.vue';
 <style scoped>
 .column-panel {
   height: 100%;
-  width: 500px;
+  width: 50%;
 }
 </style>
 
@@ -74,6 +95,7 @@ function forceChartRender() {
 export default {
   data() {
     return {
+      loggedIn: false,
       precisionFormat: {price:{}, quantity:{}},
       livePriceFeed: {},
       symbols: [],
@@ -270,6 +292,10 @@ export default {
     fetchOpenPositions() {
       // TODO: handle multiple api keys
       let positions = []
+      if (this.trading.apiKeys.length == 0) {
+        this.trading.positions = positions;
+        return;
+      }
       binance.getAccount(this.trading.apiKeys[0].key, this.trading.apiKeys[0].secret).then((response) => {
         let data = response.json()
         data.then(account => {
