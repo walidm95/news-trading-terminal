@@ -46,17 +46,20 @@ export default {
                 console.log(data)
 
                 let type
+                let link
                 if (data.info && data.info.twitterId) {
                     type = 'twitter'
-                    /*if (data.info.isQuote || data.info.isReply || data.info.isRetweet) {
+                    if (data.info.isQuote || data.info.isReply /*|| data.info.isRetweet*/) {
                         // skip
                         return
-                    }*/
+                    }
                 } else if (data.source) {
                     type = data.source
                 } else  {
                     type = 'check console log'
                 }
+                
+                link = data.link ? data.link : data.url ? data.url : undefined
 
                 let symbol
                 if (data.coin) {
@@ -90,7 +93,9 @@ export default {
                     time: new Date(data.time),
                     symbol: symbol,
                     ticker: ticker,
-                    price: this.livePriceFeed[ticker] ? this.livePriceFeed[ticker] : 0
+                    link: link,
+                    price: this.livePriceFeed[ticker] ? this.livePriceFeed[ticker] : 0,
+                    btcPrice: this.livePriceFeed['BTC' + this.quoteAsset] ? this.livePriceFeed['BTC' + this.quoteAsset] : 0
                 })
 
                 this.activeHeadline = 0;
@@ -105,6 +110,11 @@ export default {
         getPriceChange(index) {
             let priceAtNews = this.headlines[index].price
             let priceNow = this.livePriceFeed[this.headlines[index].ticker]
+            return (priceNow - priceAtNews) / priceAtNews * 100
+        },
+        getBtcPriceChange(index) {
+            let priceAtNews = this.headlines[index].btcPrice
+            let priceNow = this.livePriceFeed['BTC' + this.quoteAsset]
             return (priceNow - priceAtNews) / priceAtNews * 100
         }
     },
@@ -128,6 +138,7 @@ export default {
                 :selected="activeHeadline === index"
                 :expand="expand"
                 :priceChange="getPriceChange(index)"
+                :btcPriceChange="getBtcPriceChange(index)"
                 @click="onSelectHeadline(index)"
                 @dblclick="onDoubleClick(index)" />
         </ul>

@@ -41,7 +41,15 @@
 <script>
 export default {
     props: {
+        username: {type: String, required: true},
         apiKeys: {type: Array, required: true}
+    },
+    mounted() {
+        for(let i = 0; i < this.apiKeys.length; i++) {
+            if(this.apiKeys[i].user != this.username) {
+                this.$emit('delete-api-key', i)
+            }
+        }
     }
 }
 </script>

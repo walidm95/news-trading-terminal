@@ -60,7 +60,7 @@ Amplify.configure(awsconfig);
                   @position-opened="onPositionOpened"/>
               </div>
               <div class="row flex-fill mb-2" style="height: 345px">
-                <AccountApiKeys :apiKeys="trading.apiKeys" @add-api-key="onAddApiKey" @delete-api-key="onDeleteApiKey"/>
+                <AccountApiKeys :apiKeys="trading.apiKeys" :username="user.username" @add-api-key="onAddApiKey($event, user.username)" @delete-api-key="onDeleteApiKey"/>
               </div>
             </div>
           </div>
@@ -95,7 +95,6 @@ function forceChartRender() {
 export default {
   data() {
     return {
-      loggedIn: false,
       precisionFormat: {price:{}, quantity:{}},
       livePriceFeed: {},
       symbols: [],
@@ -104,9 +103,9 @@ export default {
         activeHeadline: 0
       },
       trading: {
-        maxTradingSize: 1000,
-        stopLossPct: 2,
-        takeProfitPct: 2,
+        maxTradingSize: undefined,
+        stopLossPct: undefined,
+        takeProfitPct: undefined,
         tradingSymbol: "BTC",
         quoteAsset: 'USDT',
         lockSymbol: false,
@@ -211,13 +210,14 @@ export default {
         });
       }
     },
-    onAddApiKey(event) {
+    onAddApiKey(event, username) {
       // Note: might exist a cleaner way to do this
       var inputs = event.target.parentElement.parentElement.getElementsByTagName("input");
 
       if (inputs[0].value != "" && inputs[1].value != "" && inputs[2].value != "")
       {
         this.trading.apiKeys.push({
+          user: username,
           name: inputs[0].value,
           key: inputs[1].value,
           secret: inputs[2].value
@@ -299,6 +299,11 @@ export default {
       binance.getAccount(this.trading.apiKeys[0].key, this.trading.apiKeys[0].secret).then((response) => {
         let data = response.json()
         data.then(account => {
+          if(account.positions == undefined) {
+            this.trading.positions = positions;
+            return;
+          }
+
           for(let position of account.positions) {
             if (position.positionAmt != 0) {
               let positionData = {
