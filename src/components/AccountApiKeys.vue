@@ -27,11 +27,11 @@
         </div>
         <div class="card-footer">
             <div class="input-group" id="input-group-new-api-key">
-                <input type="text" id="newApiName" class="form-control" placeholder="Name">
-                <input type="text" id="newApiKey" class="form-control" placeholder="API Key">
-                <input type="text" id="newApiSecret" class="form-control" placeholder="API Secret">
+                <input type="text" id="newApiName" class="form-control" placeholder="Name" :disabled="apiKeys.length">
+                <input type="text" id="newApiKey" class="form-control" placeholder="API Key" :disabled="apiKeys.length">
+                <input type="text" id="newApiSecret" class="form-control" placeholder="API Secret" :disabled="apiKeys.length">
                 <div class="input-group-append">
-                    <button class="btn btn-outline-light" type="button" @click="$emit('add-api-key', $event)">Add</button>
+                    <button class="btn btn-outline-light" type="button" @click="$emit('add-api-key', $event)" :disabled="apiKeys.length > 0">Add</button>
                 </div>
             </div>
         </div>
