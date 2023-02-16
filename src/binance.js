@@ -14,6 +14,14 @@ function executeSignedRequest(apiKey, secretKey, method, path, data) {
     return fetch(url, {method: method, headers: headers})
 }
 
+function getUserDataStreamListenKey(apiKey, secretKey) {
+    return executeSignedRequest(apiKey, secretKey, 'POST', '/fapi/v1/listenKey');
+}
+
+function keepAliveUserDataStream(apiKey, secretKey, listenKey) {
+    return executeSignedRequest(apiKey, secretKey, 'PUT', '/fapi/v1/listenKey', `listenKey=${listenKey}`);
+}
+
 function getAccount(apiKey, secretKey) {
     return executeSignedRequest(apiKey, secretKey, 'GET', '/fapi/v2/account');
 }
@@ -70,5 +78,7 @@ export default {
     executeTakeProfitOrder,
     executeCloseMarketOrder,
     cancelMultipleOrders,
+    getUserDataStreamListenKey,
+    keepAliveUserDataStream,
     getOrders
 }

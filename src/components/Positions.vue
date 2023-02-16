@@ -39,6 +39,8 @@
 </template>
 
 <script>
+import binance from '../binance.js';
+
 var formatter = new Intl.NumberFormat("en-US", {
     style:"currency",
     currency: "USD",
@@ -46,6 +48,13 @@ var formatter = new Intl.NumberFormat("en-US", {
 });
 
 export default {
+    data() {
+        return {
+            listenKey: null,
+            userDataStream: null,
+            keepAliveInterval: null
+        }
+    },
     props: {
         positions: {type: Array, required: true},
         pricePrecisions: {type: Object, required: true}
@@ -54,7 +63,59 @@ export default {
         formatNumber(number, ticker) {
             number = parseFloat(number);
             return formatter.format(number.toFixed(ticker ? this.pricePrecisions[ticker] : 2));
+        },
+        connectUserDataStream() {
+            // TODO: support multiple accounts
+            let apiKeys = JSON.parse(localStorage.getItem('apiKeys'));
+
+            let promise = binance.getUserDataStreamListenKey(apiKeys[0].key, apiKeys[0].secret);
+            promise.then(response => response.json())
+                .then(data => {
+                    if (data.code) {
+                        alert(data.msg);
+                    } else {
+                        this.listenKey = data.listenKey;
+                        this.userDataStream = new WebSocket('wss://fstream.binance.com/ws/' + this.listenKey);
+                        this.userDataStream.onmessage = this.onUserDataStreamMessage;
+                        this.keepAliveInterval = setInterval(() => {
+                            binance.keepAliveUserDataStream(apiKeys[0].key, apiKeys[0].secret, this.listenKey);
+                        }, 30000);
+                    }
+                });
+        },
+        onUserDataStreamMessage(event) {
+            let apiKeys = JSON.parse(localStorage.getItem('apiKeys'));
+
+            let data = JSON.parse(event.data);
+            if (data.e === 'ACCOUNT_UPDATE') {
+                let positions = {'add': [], 'remove': []}
+                for(let pos of data.a.P) {
+                    if (Number(pos.pa) == 0) {
+                        positions.remove.push({
+                            'account': apiKeys[0].name,
+                            'ticker': pos.s,
+                            'side': Number(pos.pa) > 0 ? 'BUY' : 'SELL',
+                            'size': Number(pos.pa),
+                            'entryPrice': Number(pos.ep),
+                            'upnl': Number(pos.up)
+                        });
+                    } else {
+                        positions.add.push({
+                            'account': apiKeys[0].name,
+                            'ticker': pos.s,
+                            'side': Number(pos.pa) > 0 ? 'BUY' : 'SELL',
+                            'size': Number(pos.pa),
+                            'entryPrice': Number(pos.ep),
+                            'upnl': Number(pos.up)
+                        });
+                    }
+                }
+                this.$emit('update-positions', positions);
+            }
         }
-    }
+    },
+    mounted() {
+        this.connectUserDataStream();
+    },
 }
 </script>

@@ -6,12 +6,14 @@ import TradingButtons from './TradingButtons.vue';
 <script>
 import binance from '../binance'
 
+let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
+
 export default {
     data() {
         return {
-            maxTradingSize: 1000,
-            stopLossPct: 2,
-            takeProfitPct: 2,
+            maxTradingSize: tradingParams.maxTradingSize ? tradingParams.maxTradingSize : null,
+            stopLossPct: tradingParams.stopLossPct ? tradingParams.stopLossPct : null,
+            takeProfitPct: tradingParams.takeProfitPct ? tradingParams.takeProfitPct : null,
             lockSymbol: false,
         }
     },
@@ -25,12 +27,21 @@ export default {
     methods: {
         onTradingSizeChanged(event) {
             this.maxTradingSize = Number(event.target.value);
+            let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
+            tradingParams.maxTradingSize = this.maxTradingSize;
+            localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
         },
         onStopLossChanged(event) {
             this.stopLossPct = Number(event.target.value);
+            let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
+            tradingParams.stopLossPct = this.stopLossPct;
+            localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
         },
         onTakeProfitChanged(event) {
             this.takeProfitPct = Number(event.target.value);
+            let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
+            tradingParams.takeProfitPct = this.takeProfitPct;
+            localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
         },
         onSymbolChanged(symbol) {
             this.$emit('trading-symbol-changed', symbol);

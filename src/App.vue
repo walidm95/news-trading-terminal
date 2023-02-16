@@ -55,7 +55,6 @@ Amplify.configure(awsconfig);
                   @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
                   @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
                   @trading-symbol-changed="onSymbolChanged($event.target.value)"
-                  @lock-symbol-toggled="trading.lockSymbol=!trading.lockSymbol"
                   @quote-asset-changed="onQuoteAssetChanged"
                   @position-opened="onPositionOpened"/>
               </div>
@@ -65,7 +64,7 @@ Amplify.configure(awsconfig);
             </div>
           </div>
           <div class="row flex-fill">
-            <Positions :positions="trading.positions" :pricePrecisions="precisionFormat.price" @close-position="onClosePosition" @select-symbol="onSymbolChanged"/>
+            <Positions :positions="trading.positions" :pricePrecisions="precisionFormat.price" @close-position="onClosePosition" @select-symbol="onSymbolChanged" @update-positions="onUpdatePosition"/>
           </div>   
           <button class="float-right" @click="signOut">Sign Out</button>
         </template>
@@ -105,12 +104,8 @@ export default {
         activeHeadline: 0
       },
       trading: {
-        maxTradingSize: undefined,
-        stopLossPct: undefined,
-        takeProfitPct: undefined,
         tradingSymbol: "BTC",
         quoteAsset: 'USDT',
-        lockSymbol: false,
         positions: [],
         apiKeys: []
       },
@@ -290,6 +285,29 @@ export default {
       }).catch((error) => {
         console.error(error);
       });
+    },
+    onUpdatePosition(positions) {
+      for(let addPos of positions.add) {
+        this.trading.positions.push({
+          ticker: addPos.ticker,
+          side: addPos.side,
+          units: addPos.size,
+          entryPrice: addPos.entryPrice,
+          account: addPos.account,
+          upnl: 0,
+          markPrice: 0,
+          size: addPos.units * addPos.entryPrice
+        });
+      }
+
+      for(let removePos of positions.remove) {
+        for (let i = 0; i < this.trading.positions.length; i++) {
+          if (this.trading.positions[i].ticker == removePos.ticker && this.trading.positions[i].account == removePos.account) {
+            this.trading.positions.splice(i, 1);
+            break;
+          }
+        }
+      }
     },
     fetchOpenPositions() {
       // TODO: handle multiple api keys
