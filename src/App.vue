@@ -29,7 +29,7 @@ Amplify.configure(awsconfig);
           </div>
         </template>
         <template v-slot="{ user, signOut }" >
-          <h4 class="text-center p-2">News Trading Terminal</h4>
+          <h4 class="text-center p-2">News Trading Terminal<small class="float-right" :class="binanceFuturesPing > 500 ? 'text-danger' : 'text-secondary'">{{ binanceFuturesPing }} ms</small></h4>
           <div class="row">
             <div class="col mr-2 column-panel">
               <div class="row mb-2 flex-fill">
@@ -95,6 +95,8 @@ function forceChartRender() {
 export default {
   data() {
     return {
+      binanceFuturesPing: null,
+      binanceFuturesPingLoop: null,
       precisionFormat: {price:{}, quantity:{}},
       livePriceFeed: {},
       symbols: [],
@@ -336,7 +338,16 @@ export default {
       }
 
       return coinNames
-    }
+    },
+    async calculateBinanceFuturesPing() {
+      let start = new Date().getTime();
+      let resp = await fetch('https://fapi.binance.com/fapi/v1/ping');
+      //let body = await resp.json();
+      let end = new Date().getTime();
+
+      this.binanceFuturesPing = end - start;
+
+    },
   },
   mounted: function() {
     console.log("App mounted")
@@ -348,6 +359,10 @@ export default {
 
     this.fetchOpenPositions();
     
+    this.binanceFuturesPingLoop = setInterval(this.calculateBinanceFuturesPing, 2000);
+  },
+  beforeDestroy() {
+    clearInterval(this.binanceFuturesPing);
   }
 }
 </script>
