@@ -2,6 +2,7 @@
     <div class="card mb-2 bg-dark text-white border-secondary" style="height: 300px">
         <div class="card-header h4 border-secondary">
             Positions ({{ positions.length }})
+            <button class="btn btn-dark float-right" @click="$emit('refresh-positions')"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
         <div class="table-responsive table-bordered table-striped table-dark" style="overflow-x: hidden">
             <table class="table">
@@ -115,7 +116,8 @@ export default {
         }
     },
     mounted() {
-        this.connectUserDataStream();
+        // For now, update positions through a trade or the refresh button
+        //this.connectUserDataStream();
     },
 }
 </script>

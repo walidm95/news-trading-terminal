@@ -56,7 +56,7 @@ Amplify.configure(awsconfig);
                   @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
                   @trading-symbol-changed="onSymbolChanged($event.target.value)"
                   @quote-asset-changed="onQuoteAssetChanged"
-                  @position-opened="onPositionOpened"/>
+                  @position-opened="this.fetchOpenPositions()"/>
               </div>
               <div class="row flex-fill mb-2" style="height: 345px">
                 <AccountApiKeys :apiKeys="trading.apiKeys" :username="user.username" @add-api-key="onAddApiKey($event, user.username)" @delete-api-key="onDeleteApiKey"/>
@@ -64,7 +64,13 @@ Amplify.configure(awsconfig);
             </div>
           </div>
           <div class="row flex-fill">
-            <Positions :positions="trading.positions" :pricePrecisions="precisionFormat.price" @close-position="onClosePosition" @select-symbol="onSymbolChanged" @update-positions="onUpdatePosition"/>
+            <Positions 
+              :positions="trading.positions" 
+              :pricePrecisions="precisionFormat.price" 
+              @close-position="onClosePosition" 
+              @select-symbol="onSymbolChanged"
+              @refresh-positions="this.fetchOpenPositions()"
+              @update-positions="onUpdatePosition"/>
           </div>   
           <button class="float-right" @click="signOut">Sign Out</button>
         </template>
@@ -183,10 +189,6 @@ export default {
     getTradingViewSymbolTicker() {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
     },
-    onPositionOpened(position) {
-      // Fetch positions
-      this.fetchOpenPositions()
-    },
     onSymbolChanged(symbol) {
       symbol = symbol.toUpperCase().replace(this.trading.quoteAsset, '');
 
@@ -279,6 +281,9 @@ export default {
             }
             localStorage.setItem('openOrders', JSON.stringify(openOrders));
           }
+
+          // Fetch positions
+          this.fetchOpenPositions()
         }).catch((error) => {
           console.error(error);
         });
