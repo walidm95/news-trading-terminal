@@ -56,7 +56,7 @@ Amplify.configure(awsconfig);
                   @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
                   @trading-symbol-changed="onSymbolChanged($event.target.value)"
                   @quote-asset-changed="onQuoteAssetChanged"
-                  @position-opened="fetchOpenPositions"/>
+                  @position-opened="onOpenPosition"/>
               </div>
               <div class="row flex-fill mb-2" style="height: 345px">
                 <AccountApiKeys :apiKeys="trading.apiKeys" :username="user.username" @add-api-key="onAddApiKey($event, user.username)" @delete-api-key="onDeleteApiKey"/>
@@ -234,6 +234,13 @@ export default {
       this.trading.apiKeys.splice(index, 1);
       localStorage.setItem("apiKeys", JSON.stringify(this.trading.apiKeys));
     },
+    onOpenPosition(position) {
+      let inAppPositions = JSON.parse(localStorage.getItem('inAppPositions')) || [];
+      inAppPositions.push(position.ticker);
+      localStorage.setItem('inAppPositions', JSON.stringify(inAppPositions));
+
+      this.fetchOpenPositions();
+    },
     onClosePosition(index) {
       let position = this.trading.positions[index];
       
@@ -315,6 +322,8 @@ export default {
       }
     },
     fetchOpenPositions() {
+      let inAppPositions = JSON.parse(localStorage.getItem('inAppPositions')) || [];
+
       // TODO: handle multiple api keys
       let positions = []
       if (this.trading.apiKeys.length == 0) {
@@ -330,7 +339,8 @@ export default {
           }
 
           for(let position of account.positions) {
-            if (position.positionAmt != 0) {
+            // Only add positions that were traded through the app
+            if (position.positionAmt != 0 && inAppPositions.includes(position.symbol)) {
               let positionData = {
                 ticker: position.symbol,
                 side: position.positionAmt > 0 ? 'BUY' : 'SELL',
@@ -346,6 +356,13 @@ export default {
             }
           }
           this.trading.positions = positions;
+
+          // Reset inAppPositions
+          inAppPositions = [];
+          for(let position of positions) {
+              inAppPositions.push(position.ticker);
+          }
+          localStorage.setItem('inAppPositions', JSON.stringify(inAppPositions));
         })
       }, (error) => {
         alert(error)
