@@ -56,7 +56,7 @@ Amplify.configure(awsconfig);
                   @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
                   @trading-symbol-changed="onSymbolChanged($event.target.value)"
                   @quote-asset-changed="onQuoteAssetChanged"
-                  @position-opened="this.fetchOpenPositions()"/>
+                  @position-opened="fetchOpenPositions"/>
               </div>
               <div class="row flex-fill mb-2" style="height: 345px">
                 <AccountApiKeys :apiKeys="trading.apiKeys" :username="user.username" @add-api-key="onAddApiKey($event, user.username)" @delete-api-key="onDeleteApiKey"/>
@@ -69,7 +69,7 @@ Amplify.configure(awsconfig);
               :pricePrecisions="precisionFormat.price" 
               @close-position="onClosePosition" 
               @select-symbol="onSymbolChanged"
-              @refresh-positions="this.fetchOpenPositions()"
+              @refresh-positions="fetchOpenPositions"
               @update-positions="onUpdatePosition"/>
           </div>   
           <button class="float-right" @click="signOut">Sign Out</button>
