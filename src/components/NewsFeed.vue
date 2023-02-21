@@ -9,7 +9,13 @@ export default {
             activeHeadline: 0,
             expand: false,
             showTwitter: true,
-            showBlogs: true
+            showBlogs: true,
+            websocketUsername: '',
+            websocketApiKey: '',
+            websocketInstance: null,
+            websocketTimeout: null,
+            websocketAlive: false,
+            websocketPingTimeout: 60000,
         }
     },
     props : {
@@ -39,11 +45,34 @@ export default {
             let symbol = this.headlines[index].symbol;
             this.$emit('symbol-from-headline', symbol);
         },
-        connectTreeOfAlphaWS() {
-            const TreeOfAlphaWS = new WebSocket('wss://news.treeofalpha.com/ws')   
-            TreeOfAlphaWS.onmessage = (event) => {
+        onWebsocketConnected(username) {
+            this.websocketUsername = username;
+            console.log('Websocket connected as ' + username)
+        },
+        connectTreeOfAlphaWS(api) {
+            this.websocketInstance = new WebSocket('wss://news.treeofalpha.com/ws')
+            this.websocketInstance.onopen = () => {
+                console.log('TreeOfAlphaWS connected')
+                this.websocketAlive = true
+                this.websocketTimeout = setTimeout(this.pingWebsocket, this.websocketPingTimeout)
+                if(api) {
+                    this.websocketInstance.send(`login ${api}`)
+                }
+            }
+            this.websocketInstance.onmessage = (event) => {
+                if (event.data == 'pong') {
+                    this.websocketAlive = true
+                    clearTimeout(this.websocketTimeout)
+                    this.websocketTimeout = setTimeout(this.pingWebsocket, this.websocketPingTimeout)
+                    return
+                }
+
                 let data = JSON.parse(event.data)
                 console.log(data)
+                /*if (data.user) {
+                    this.onWebsocketConnected(data.user.username)
+                    return
+                }*/
 
                 let type
                 let link
@@ -116,23 +145,69 @@ export default {
             let priceAtNews = this.headlines[index].btcPrice
             let priceNow = this.livePriceFeed['BTC' + this.quoteAsset]
             return (priceNow - priceAtNews) / priceAtNews * 100
+        },
+        onConnectWebsocket(event) {
+            let input = event.target.parentElement.parentElement.getElementsByTagName('input')
+            let api = input[0].value
+            if (api == '') {
+                return
+            }
+            localStorage.setItem('treeOfAlphaApi', api)
+            this.connectTreeOfAlphaWS(api);
+        },
+        pingWebsocket() {
+            if (this.websocketInstance && this.websocketAlive) {
+                this.websocketAlive = false
+                this.websocketInstance.send('ping')
+            } else if(this.websockInstance && !this.websocketAlive) {
+                this.websocketInstance.close()
+                clearTimeout(this.websocketTimeout)
+                this.connectTreeOfAlphaWS('') //TODO: use api if we need to
+            }
         }
     },
     mounted() {
         console.log("NewsFeed mounted")
-        this.connectTreeOfAlphaWS();
-    } 
+        //this.websocketApiKey = localStorage.getItem('treeOfAlphaApi') ? localStorage.getItem('treeOfAlphaApi') : ''
+
+        // Note: when tree of alpha becomes a paid subscripion, use api method, else connect without api
+        this.connectTreeOfAlphaWS('');
+    },
+    beforeUnmount() {
+        console.log("NewsFeed beforeUnmount")
+        if(this.websocketTimeout) {
+            this.websocketInstance.close()
+            clearTimeout(this.websocketTimeout)
+        }
+    }
 }
 </script>
 
 <template>
     <div class="card bg-dark text-white border-secondary">
         <div class="card-header h4 border-secondary">
-            News Feed
-            <!--button type="button" class="btn btn-outline-secondary btn-sm float-right"><i class="bi bi-gear"></i></button-->
+            <div class="row">
+                <div class="col">
+                    News Feed
+                </div>
+                <div class="col">
+                    <span v-if="websocketAlive" class="badge bg-success float-right">Connected</span>
+                    <span v-else class="badge bg-danger float-right">Disconnected</span>
+                    <!--span v-if="websocketConnected" class="badge bg-success float-right">{{ websocketUsername }}</span>
+                    <div v-else class="input-group input-group-sm">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="inputGroup-sizing-sm">Websocket API Key</span>
+                        </div>
+                        <input type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm" :value="websocketApiKey">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-light" type="button" @click="onConnectWebsocket($event)">Connect</button>
+                        </div>
+                    </div-->
+                </div>
+            </div>            
         </div>
         <ul class="list-group list-group-flush scrolled">
-            <NewsItem v-for="(headline, index) in headlines" 
+            <NewsItem v-for="(headline, index) in headlines"
                 :key="index" 
                 :headline="headline"
                 :selected="activeHeadline === index"
