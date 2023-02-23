@@ -8,14 +8,12 @@ export default {
             headlines: [],
             activeHeadline: 0,
             expand: false,
-            showTwitter: true,
-            showBlogs: true,
-            websocketUsername: '',
-            websocketApiKey: '',
-            websocketInstance: null,
-            websocketTimeout: null,
-            websocketAlive: false,
-            websocketPingTimeout: 60000,
+            treeWs: null,
+            wsAlive: false,
+            pingInterval: null,
+            pingTimeout: null,
+            pingIntervalTime: 10000,
+            pingTimeoutTime: 2000
         }
     },
     props : {
@@ -49,36 +47,39 @@ export default {
             this.websocketUsername = username;
             console.log('Websocket connected as ' + username)
         },
-        connectTreeOfAlphaWS(api) {
-            this.websocketInstance = new WebSocket('wss://news.treeofalpha.com/ws')
-            this.websocketInstance.onopen = () => {
-                console.log('TreeOfAlphaWS connected')
-                this.websocketAlive = true
-                this.websocketTimeout = setTimeout(this.pingWebsocket, this.websocketPingTimeout)
-                if(api) {
-                    this.websocketInstance.send(`login ${api}`)
-                }
+        connectTreeOfAlphaWS() {
+            if(this.pingTimeout) {
+                clearTimeout(this.pingTimeout)
             }
-            this.websocketInstance.onmessage = (event) => {
+
+            this.treeWs = new WebSocket('wss://news.treeofalpha.com/ws')
+            this.treeWs.onopen = () => {
+                console.log('TreeOfAlphaWS connected')
+                this.wsAlive = true
+                this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime)
+            }
+            this.treeWs.onerror = (error) => {
+                console.log('TreeOfAlphaWS error')
+                console.log(error)
+            }
+            this.treeWs.onclose = () => {
+                console.log('TreeOfAlphaWS closed')
+                clearTimeout(this.pingTimeout)
+            }
+            this.treeWs.onmessage = (event) => {
                 if (event.data == 'pong') {
-                    this.websocketAlive = true
-                    clearTimeout(this.websocketTimeout)
-                    this.websocketTimeout = setTimeout(this.pingWebsocket, this.websocketPingTimeout)
+                    clearTimeout(this.pingTimeout)
                     return
                 }
 
                 let data = JSON.parse(event.data)
                 console.log(data)
-                /*if (data.user) {
-                    this.onWebsocketConnected(data.user.username)
-                    return
-                }*/
 
                 let type
                 let link
                 if (data.info && data.info.twitterId) {
                     type = 'twitter'
-                    if (data.info.isQuote || data.info.isReply /*|| data.info.isRetweet*/) {
+                    if (/*data.info.isQuote ||*/ data.info.isReply /*|| data.info.isRetweet*/) {
                         // skip
                         return
                     }
@@ -147,38 +148,34 @@ export default {
             return (priceNow - priceAtNews) / priceAtNews * 100
         },
         onConnectWebsocket(event) {
-            let input = event.target.parentElement.parentElement.getElementsByTagName('input')
-            let api = input[0].value
-            if (api == '') {
-                return
-            }
-            localStorage.setItem('treeOfAlphaApi', api)
-            this.connectTreeOfAlphaWS(api);
+            this.connectTreeOfAlphaWS();
         },
         pingWebsocket() {
-            if (this.websocketInstance && this.websocketAlive) {
-                this.websocketAlive = false
-                this.websocketInstance.send('ping')
-            } else if(this.websockInstance && !this.websocketAlive) {
-                this.websocketInstance.close()
-                clearTimeout(this.websocketTimeout)
-                this.connectTreeOfAlphaWS('') //TODO: use api if we need to
-            }
+            this.treeWs.send('ping')
+            this.pingTimeout = setTimeout(() => {
+                console.log('ping timeout')
+
+                this.wsAlive = false
+
+                // Reconnect
+                this.treeWs.close()
+                clearInterval(this.pingInterval)
+                this.connectTreeOfAlphaWS()
+
+            }, this.pingTimeoutTime)
         }
     },
     mounted() {
         console.log("NewsFeed mounted")
-        //this.websocketApiKey = localStorage.getItem('treeOfAlphaApi') ? localStorage.getItem('treeOfAlphaApi') : ''
-
-        // Note: when tree of alpha becomes a paid subscripion, use api method, else connect without api
-        this.connectTreeOfAlphaWS('');
+        this.connectTreeOfAlphaWS()
     },
     beforeUnmount() {
         console.log("NewsFeed beforeUnmount")
-        if(this.websocketTimeout) {
-            this.websocketInstance.close()
-            clearTimeout(this.websocketTimeout)
+        if(this.treeWs) {
+            this.treeWs.close()
         }
+        clearInterval(this.pingInterval)
+        clearTimeout(this.pingTimeout)
     }
 }
 </script>
@@ -191,7 +188,7 @@ export default {
                     News Feed
                 </div>
                 <div class="col">
-                    <span v-if="websocketAlive" class="badge bg-success float-right">Connected</span>
+                    <span v-if="wsAlive" class="badge bg-success float-right">Connected</span>
                     <span v-else class="badge bg-danger float-right">Disconnected</span>
                     <!--span v-if="websocketConnected" class="badge bg-success float-right">{{ websocketUsername }}</span>
                     <div v-else class="input-group input-group-sm">
