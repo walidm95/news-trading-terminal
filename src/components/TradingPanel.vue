@@ -44,7 +44,9 @@ export default {
             localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
         },
         onSymbolChanged(symbol) {
-            this.$emit('trading-symbol-changed', symbol);
+            if(!this.lockSymbol) {
+                this.$emit('trading-symbol-changed', symbol);
+            }
         },
         onQuoteAssetChanged(event) {
             this.$emit('quote-asset-changed', event.target.value);
