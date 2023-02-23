@@ -22,6 +22,10 @@ function keepAliveUserDataStream(apiKey, secretKey, listenKey) {
     return executeSignedRequest(apiKey, secretKey, 'PUT', '/fapi/v1/listenKey', `listenKey=${listenKey}`);
 }
 
+function getNotionalAndLeverageBrackets(apiKey, secretKey) {
+    return executeSignedRequest(apiKey, secretKey, 'GET', '/fapi/v1/leverageBracket');
+}
+
 function getAccount(apiKey, secretKey) {
     return executeSignedRequest(apiKey, secretKey, 'GET', '/fapi/v2/account');
 }
@@ -80,5 +84,6 @@ export default {
     cancelMultipleOrders,
     getUserDataStreamListenKey,
     keepAliveUserDataStream,
-    getOrders
+    getOrders,
+    getNotionalAndLeverageBrackets
 }
