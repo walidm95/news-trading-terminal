@@ -13,8 +13,7 @@ export default {
         return {
             maxTradingSize: tradingParams.maxTradingSize ? tradingParams.maxTradingSize : null,
             stopLossPct: tradingParams.stopLossPct ? tradingParams.stopLossPct : null,
-            takeProfitPct: tradingParams.takeProfitPct ? tradingParams.takeProfitPct : null,
-            lockSymbol: false,
+            takeProfitPct: tradingParams.takeProfitPct ? tradingParams.takeProfitPct : null
         }
     },
     props: {
@@ -22,7 +21,8 @@ export default {
         quoteAsset: {type: String, required: true },
         apiKeys: {type: Array, required: true},
         livePriceFeed: {type: Object, required: true},
-        precisionFormat: {type: Object, required: true}
+        precisionFormat: {type: Object, required: true},
+        lockSymbol: {type: Boolean, required: true}
     },
     methods: {
         onTradingSizeChanged(event) {
@@ -44,9 +44,7 @@ export default {
             localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
         },
         onSymbolChanged(symbol) {
-            if(!this.lockSymbol) {
-                this.$emit('trading-symbol-changed', symbol);
-            }
+            this.$emit('trading-symbol-changed', symbol);
         },
         onQuoteAssetChanged(event) {
             this.$emit('quote-asset-changed', event.target.value);
@@ -129,9 +127,6 @@ export default {
                     }
                 });
             }
-        },
-        onLockSymbolToggled() {
-            this.lockSymbol = !this.lockSymbol;
         }
     },
     mounted() {
@@ -159,7 +154,7 @@ export default {
                     @take-profit-changed="onTakeProfitChanged"
                     @trading-symbol-changed="onSymbolChanged"
                     @quote-asset-changed="onQuoteAssetChanged"
-                    @lock-symbol-toggled="onLockSymbolToggled"/>
+                    @lock-symbol-toggled="$emit('lock-symbol-toggled')"/>
             </li>
             <li class="list-group-item text-center bg-dark text-white border-secondary">
                 <TradingButtons 

@@ -51,12 +51,14 @@ Amplify.configure(awsconfig);
                   :apiKeys="trading.apiKeys"
                   :livePriceFeed="livePriceFeed"
                   :precisionFormat="precisionFormat"
+                  :lockSymbol="trading.lockSymbol"
                   @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
                   @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
                   @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
                   @trading-symbol-changed="onSymbolChanged($event.target.value)"
                   @quote-asset-changed="onQuoteAssetChanged"
-                  @position-opened="onOpenPosition"/>
+                  @position-opened="onOpenPosition"
+                  @lock-symbol-toggled="onLockSymbolToggled"/>
               </div>
               <div class="row flex-fill mb-2" style="height: 345px">
                 <AccountApiKeys :apiKeys="trading.apiKeys" :username="user.username" @add-api-key="onAddApiKey($event, user.username)" @delete-api-key="onDeleteApiKey"/>
@@ -113,7 +115,8 @@ export default {
         tradingSymbol: "BTC",
         quoteAsset: 'USDT',
         positions: [],
-        apiKeys: []
+        apiKeys: [],
+        lockSymbol: false
       },
       dollarsFormatter: new Intl.NumberFormat("en-US", {
         style:"currency",
@@ -190,10 +193,14 @@ export default {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
     },
     onSymbolChanged(symbol) {
+      if(this.trading.lockSymbol) {
+        return
+      }
+
       symbol = symbol.toUpperCase().replace(this.trading.quoteAsset, '');
 
       if(symbol == this.trading.tradingSymbol) {
-        return;
+        return
       }
       
       if (Object.keys(this.symbols).includes(symbol))
@@ -233,6 +240,9 @@ export default {
     onDeleteApiKey(index) {
       this.trading.apiKeys.splice(index, 1);
       localStorage.setItem("apiKeys", JSON.stringify(this.trading.apiKeys));
+    },
+    onLockSymbolToggled() {
+      this.trading.lockSymbol = !this.trading.lockSymbol;
     },
     onOpenPosition(position) {
       let inAppPositions = JSON.parse(localStorage.getItem('inAppPositions')) || [];
