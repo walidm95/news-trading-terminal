@@ -1,5 +1,6 @@
 <template>
     <div>
+        <h6 v-if="maxLevAndNotional">Max position if max leverage ({{ maxLevAndNotional[0] }}x) = {{formatNumber(maxLevAndNotional[1])}}</h6>
         <div>
             <button type="button" class="btn btn-success btn-lg m-1 trading-buttons" @click="$emit('buy-button-clicked', $event)">{{ formatNumber(0.25 * maxTradingSize) }}</button>
             <button type="button" class="btn btn-success btn-lg m-1 trading-buttons" @click="$emit('buy-button-clicked', $event)">{{ formatNumber(0.5 * maxTradingSize) }}</button>
@@ -22,7 +23,8 @@ var formatter = new Intl.NumberFormat("en-US", {
 
 export default {
     props: {
-        maxTradingSize: {type: Number, required: true}
+        maxTradingSize: {type: Number, required: true},
+        maxLevAndNotional: {type: Object, required: true},
     },
     methods: {
         formatNumber(number) {
