@@ -54,6 +54,7 @@ Amplify.configure(awsconfig);
                   :quantityPrecision="getQuantityPrecision()"
                   :tickSize="getTickSize()"
                   :lockSymbol="trading.lockSymbol"
+                  :maxLevAndMaxNotional="maxLevAndMaxNotional"
                   @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
                   @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
                   @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
@@ -109,6 +110,8 @@ export default {
       precisionFormat: {price:{}, quantity:{}},
       tickSize: {},
       livePriceFeed: {},
+      leverageBrackets: {},
+      maxLevAndMaxNotional: {0: '0', 1: 0},
       symbols: [],
       news: {
         headlines: [],
@@ -130,6 +133,11 @@ export default {
   },
   components: { NewsFeed, TradingPanel },
   methods: {
+    getMaxLeverageAndNotional() {
+      let ticker = this.trading.tradingSymbol + this.trading.quoteAsset
+      let leverageBracket = Object.entries(this.leverageBrackets[ticker])
+      return leverageBracket[leverageBracket.length - 1]
+    },
     getTickSize() {
       if(this.trading.tradingSymbol + this.trading.quoteAsset in this.tickSize)
         return this.tickSize[this.trading.tradingSymbol + this.trading.quoteAsset]
@@ -176,6 +184,28 @@ export default {
           position.size = currentSize
         }
       }
+    },
+    async getBinanceMaxLeverageBrackets() {
+      if(this.trading.apiKeys.length == 0) {
+        return
+      }
+      let apiKey = this.trading.apiKeys[0]
+      let promise = binance.getNotionalAndLeverageBrackets(apiKey.key, apiKey.secret)
+      promise.then(response => response.json())
+      .then(data => {
+          if (data.code) {
+              alert(data.msg);
+          } else {
+              for(let symbol of data) {
+                this.leverageBrackets[symbol.symbol] = {}
+                for(let bracket of symbol.brackets) {
+                  this.leverageBrackets[symbol.symbol][bracket.initialLeverage] = bracket.notionalCap
+                }
+              }
+          }
+
+          this.maxLevAndMaxNotional = this.getMaxLeverageAndNotional()
+      });
     },
     getBinanceSymbolsWithNames() {
       Promise.allSettled([this.getBinanceExchangeInfo(), this.getCoinNames()]).then((values) => {
@@ -239,6 +269,8 @@ export default {
           this.trading.tradingSymbol = temp;
         });
       }
+
+      this.maxLevAndMaxNotional = this.getMaxLeverageAndNotional()
     },
     onAddApiKey(event, username) {
       // Note: might exist a cleaner way to do this
@@ -432,6 +464,7 @@ export default {
     this.trading.apiKeys = localStorage.getItem("apiKeys") ? JSON.parse(localStorage.getItem("apiKeys")) : [];
 
     this.fetchOpenPositions();
+    this.getBinanceMaxLeverageBrackets();
     
     this.binanceFuturesPingLoop = setInterval(this.calculateBinanceFuturesPing, 2000);
   },

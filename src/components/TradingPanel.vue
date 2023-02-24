@@ -28,7 +28,8 @@ export default {
         pricePrecision: {type: Number, required: true},
         tickSize: {type: Number, required: true},
         quantityPrecision: {type: Number, required: true},
-        lockSymbol: {type: Boolean, required: true}
+        lockSymbol: {type: Boolean, required: true},
+        maxLevAndMaxNotional: {type: Object, required: true}
     },
     methods: {
         onTradingSizeChanged(event) {
@@ -243,6 +244,7 @@ export default {
             <li class="list-group-item text-center bg-dark text-white border-secondary">
                 <TradingButtons 
                     :maxTradingSize="maxTradingSize"
+                    :maxLevAndNotional="maxLevAndMaxNotional"
                     @buy-button-clicked="onBuyButtonClicked" 
                     @sell-button-clicked="onSellButtonClicked"/>
             </li>
