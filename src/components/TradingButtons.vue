@@ -38,6 +38,5 @@ export default {
 <style scoped>
 .trading-buttons {
     width: 30%;
-    height: 70px;
 }
 </style>
