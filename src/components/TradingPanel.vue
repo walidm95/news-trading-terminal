@@ -21,7 +21,9 @@ export default {
         quoteAsset: {type: String, required: true },
         apiKeys: {type: Array, required: true},
         livePriceFeed: {type: Object, required: true},
-        precisionFormat: {type: Object, required: true},
+        pricePrecision: {type: Number, required: true},
+        tickSize: {type: Number, required: true},
+        quantityPrecision: {type: Number, required: true},
         lockSymbol: {type: Boolean, required: true}
     },
     methods: {
@@ -56,12 +58,21 @@ export default {
             this.executeOrder('SELL', event.target.innerText);
         },
         formatQuantityPrecision(quantity) {
-            let precision = this.precisionFormat.quantity[this.tradingSymbol + this.quoteAsset];
-            return quantity.toFixed(precision);
+            return quantity.toFixed(this.quantityPrecision);
+        },
+        formatPricePrecision(price) {
+            // Round based on tick size
+            price -= price % this.tickSize;
+            return price.toFixed(this.pricePrecision);
         },
         executeOrder(side, sizeText) {
             if(this.apiKeys.length == 0) {
                 alert('API Keys are required to trade');
+                return;
+            }
+
+            if(this.apiKeys.length > 1) {
+                alert('Multiple API Keys are not supported yet');
                 return;
             }
 
@@ -76,15 +87,16 @@ export default {
                 // Execute Binance order
                 let formattedQuantity = this.formatQuantityPrecision(dollarSize / latestPrice);
                 let ticker = this.tradingSymbol + this.quoteAsset;
-                let formattedPrice = latestPrice.toFixed(this.precisionFormat.price[ticker]);
                 let orderPromise = binance.executeMarketOrder(apiKey.key, apiKey.secret, ticker, side, formattedQuantity);
 
                 // Stop loss and take profit
-                let stopLossPrice = side == 'BUY' ? latestPrice * (1 - this.stopLossPct / 100) : latestPrice * (1 + this.stopLossPct / 100);
+                /*let stopLossPrice = side == 'BUY' ? latestPrice * (1 - this.stopLossPct / 100) : latestPrice * (1 + this.stopLossPct / 100);
                 let takeProfitPrice = side == 'BUY' ? latestPrice * (1 + this.takeProfitPct / 100) : latestPrice * (1 - this.takeProfitPct / 100);
                 let stopLossPromise = binance.executeStopLossOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, stopLossPrice.toFixed(this.precisionFormat.price[ticker]));
-                let takeProfitPromise = binance.executeTakeProfitOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, takeProfitPrice.toFixed(this.precisionFormat.price[ticker]));
-                
+                let takeProfitPromise = binance.executeTakeProfitOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, takeProfitPrice.toFixed(this.precisionFormat.price[ticker]));*/
+                let scaleOutPromise = this.executeScaleOutOrders(side == 'BUY' ? 'SELL' : 'BUY', dollarSize / latestPrice, 5, 1);
+                //let scaleOutPromise = binance.executeLimitOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, this.formatPricePrecision(latestPrice * 1.01))
+
                 orderPromise.then(response => response.json())
                 .then(data => {
                     if (data.code) {
@@ -103,7 +115,22 @@ export default {
                     }
                 });
 
-                stopLossPromise.then(response => response.json())
+                scaleOutPromise.then(response => response.json())
+                .then(data => {
+                    if (data.code) {
+                        alert(data.msg);
+                    } else {
+                        console.log(data)
+                        for(let order of data)
+                        {
+                            let orderIds = JSON.parse(localStorage.getItem('openOrders')) || [];
+                            orderIds.push({accountName: apiKey.name, ticker: order.symbol, orderId: order.orderId});
+                            localStorage.setItem('openOrders', JSON.stringify(orderIds));
+                        }
+                    }
+                });
+
+                /*stopLossPromise.then(response => response.json())
                 .then(data => {
                     if (data.code) {
                         alert(data.msg);
@@ -125,8 +152,33 @@ export default {
                         orderIds.push({accountName: apiKey.name, ticker: this.tradingSymbol + this.quoteAsset, orderId: data.orderId});
                         localStorage.setItem('openOrders', JSON.stringify(orderIds));
                     }
-                });
+                });*/
             }
+        },
+        executeScaleOutOrders(side, quantity, nbrOfOrders, priceIncrementPct) {
+            // Only linear scaling for now
+
+            // Build list of orders
+            let orders = []
+            let latestPrice = this.livePriceFeed[this.tradingSymbol + this.quoteAsset];
+            let priceIncrement = latestPrice * priceIncrementPct / 100;
+            
+            // Must respect the expected format of the Binance API
+            for(let i = 0; i < nbrOfOrders; i++) {
+                let order = {
+                    type: 'LIMIT',
+                    timeInForce: 'GTC',
+                    symbol: this.tradingSymbol + this.quoteAsset,
+                    side: side,
+                    quantity: this.formatQuantityPrecision(quantity / nbrOfOrders),
+                    price: this.formatPricePrecision(latestPrice + (side == 'SELL' ? 1 : -1) * priceIncrement * i),
+                    reduceOnly: 'true'
+                }
+                orders.push(order);
+            }
+
+            // Execute orders
+            return binance.executeMultipleOrders(this.apiKeys[0].key, this.apiKeys[0].secret, orders);
         }
     },
     mounted() {

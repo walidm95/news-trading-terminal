@@ -50,7 +50,9 @@ Amplify.configure(awsconfig);
                   :quoteAsset="trading.quoteAsset"
                   :apiKeys="trading.apiKeys"
                   :livePriceFeed="livePriceFeed"
-                  :precisionFormat="precisionFormat"
+                  :pricePrecision="getPricePrecision()"
+                  :quantityPrecision="getQuantityPrecision()"
+                  :tickSize="getTickSize()"
                   :lockSymbol="trading.lockSymbol"
                   @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
                   @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
@@ -105,6 +107,7 @@ export default {
       binanceFuturesPing: null,
       binanceFuturesPingLoop: null,
       precisionFormat: {price:{}, quantity:{}},
+      tickSize: {},
       livePriceFeed: {},
       symbols: [],
       news: {
@@ -127,6 +130,24 @@ export default {
   },
   components: { NewsFeed, TradingPanel },
   methods: {
+    getTickSize() {
+      if(this.trading.tradingSymbol + this.trading.quoteAsset in this.tickSize)
+        return this.tickSize[this.trading.tradingSymbol + this.trading.quoteAsset]
+      else
+        return 0.01
+    },
+    getPricePrecision() {
+      if(this.trading.tradingSymbol + this.trading.quoteAsset in this.precisionFormat.price)
+        return this.precisionFormat.price[this.trading.tradingSymbol + this.trading.quoteAsset]
+      else
+        return 2
+    },
+    getQuantityPrecision() {
+      if(this.trading.tradingSymbol + this.trading.quoteAsset in this.precisionFormat.quantity)
+        return this.precisionFormat.quantity[this.trading.tradingSymbol + this.trading.quoteAsset]
+      else
+        return 2
+    },
     async getBinanceExchangeInfo() {
       try {
         let response = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo')
@@ -178,6 +199,9 @@ export default {
           // Set price precisions
           this.precisionFormat.price[symbol.symbol] = symbol.pricePrecision
           this.precisionFormat.quantity[symbol.symbol] = symbol.quantityPrecision
+
+          // Set tick sizes
+          this.tickSize[symbol.symbol] = Number(symbol.filters[0].tickSize)
         });
 
         this.symbols = symbolNames
