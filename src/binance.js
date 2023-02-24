@@ -35,8 +35,8 @@ function executeMarketOrder(apiKey, secretKey, symbol, side, quantity) {
     return executeOrder(apiKey, secretKey, params);
 }
 
-function executeLimitOrder(apiKey, secretKey, symbol, side, quantity, price) {
-    let params = `symbol=${symbol}&side=${side}&type=LIMIT&quantity=${quantity}&price=${price}&timeInForce=GTC`;
+function executeLimitOrder(apiKey, secretKey, symbol, side, quantity, price, reduceOnly) {
+    let params = `symbol=${symbol}&side=${side}&type=LIMIT&quantity=${quantity}&price=${price}&timeInForce=GTC&reduceOnly=${reduceOnly}`;
     return executeOrder(apiKey, secretKey, params);
 }
 

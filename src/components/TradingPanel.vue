@@ -5,6 +5,7 @@ import TradingButtons from './TradingButtons.vue';
 
 <script>
 import binance from '../binance'
+import { ExecutionMode } from '../constants'
 
 let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
 
@@ -13,7 +14,10 @@ export default {
         return {
             maxTradingSize: tradingParams.maxTradingSize ? tradingParams.maxTradingSize : null,
             stopLossPct: tradingParams.stopLossPct ? tradingParams.stopLossPct : null,
-            takeProfitPct: tradingParams.takeProfitPct ? tradingParams.takeProfitPct : null
+            takeProfitPct: tradingParams.takeProfitPct ? tradingParams.takeProfitPct : null,
+            executionMode: tradingParams.executionMode ? tradingParams.executionMode : '',
+            orderSplit: tradingParams.orderSplit ? tradingParams.orderSplit : null,
+            orderSkewPct: tradingParams.orderSkewPct ? tradingParams.orderSkewPct : null,
         }
     },
     props: {
@@ -28,6 +32,7 @@ export default {
     },
     methods: {
         onTradingSizeChanged(event) {
+            //TODO: simplify these methods
             this.maxTradingSize = Number(event.target.value);
             let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
             tradingParams.maxTradingSize = this.maxTradingSize;
@@ -43,6 +48,24 @@ export default {
             this.takeProfitPct = Number(event.target.value);
             let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
             tradingParams.takeProfitPct = this.takeProfitPct;
+            localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
+        },
+        onExitModeChanged(event) {
+            this.executionMode = event.target.value;
+            let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
+            tradingParams.executionMode = this.executionMode;
+            localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
+        },
+        onOrderSplitChanged(event) {
+            this.orderSplit = Number(event.target.value);
+            let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
+            tradingParams.orderSplit = this.orderSplit;
+            localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
+        },
+        onOrderSkewChanged(event) {
+            this.orderSkewPct = Number(event.target.value);
+            let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
+            tradingParams.orderSkewPct = this.orderSkewPct;
             localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
         },
         onSymbolChanged(symbol) {
@@ -89,14 +112,6 @@ export default {
                 let ticker = this.tradingSymbol + this.quoteAsset;
                 let orderPromise = binance.executeMarketOrder(apiKey.key, apiKey.secret, ticker, side, formattedQuantity);
 
-                // Stop loss and take profit
-                /*let stopLossPrice = side == 'BUY' ? latestPrice * (1 - this.stopLossPct / 100) : latestPrice * (1 + this.stopLossPct / 100);
-                let takeProfitPrice = side == 'BUY' ? latestPrice * (1 + this.takeProfitPct / 100) : latestPrice * (1 - this.takeProfitPct / 100);
-                let stopLossPromise = binance.executeStopLossOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, stopLossPrice.toFixed(this.precisionFormat.price[ticker]));
-                let takeProfitPromise = binance.executeTakeProfitOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, takeProfitPrice.toFixed(this.precisionFormat.price[ticker]));*/
-                let scaleOutPromise = this.executeScaleOutOrders(side == 'BUY' ? 'SELL' : 'BUY', dollarSize / latestPrice, 5, 1);
-                //let scaleOutPromise = binance.executeLimitOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, this.formatPricePrecision(latestPrice * 1.01))
-
                 orderPromise.then(response => response.json())
                 .then(data => {
                     if (data.code) {
@@ -112,59 +127,70 @@ export default {
                             upnl: 0,
                             units: Number(data.origQty),
                         })
-                    }
-                });
 
-                scaleOutPromise.then(response => response.json())
-                .then(data => {
-                    if (data.code) {
-                        alert(data.msg);
-                    } else {
-                        console.log(data)
-                        for(let order of data)
-                        {
-                            let orderIds = JSON.parse(localStorage.getItem('openOrders')) || [];
-                            orderIds.push({accountName: apiKey.name, ticker: order.symbol, orderId: order.orderId});
-                            localStorage.setItem('openOrders', JSON.stringify(orderIds));
+                        // Take profit
+                        let takeProfitPromise
+                        let takeProfitPrice = side == 'BUY' ? latestPrice * (1 + this.takeProfitPct / 100) : latestPrice * (1 - this.takeProfitPct / 100)
+                        takeProfitPrice = this.formatPricePrecision(takeProfitPrice)
+                        if(this.executionMode == ExecutionMode.LIMIT) {
+                            takeProfitPromise = binance.executeLimitOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, takeProfitPrice, "true");
+                        } else if (this.executionMode == ExecutionMode.SCALE) {
+                            takeProfitPromise = this.executeScaleOutOrders(side == 'BUY' ? 'SELL' : 'BUY', dollarSize / latestPrice, this.orderSplit, takeProfitPrice);
+                        }                
+
+                        if(takeProfitPromise) {
+                            takeProfitPromise.then(response => response.json())
+                            .then(data => {
+                                console.log('Take profit(s) orders placed')
+                                
+                                if (this.executionMode == ExecutionMode.LIMIT) {
+                                    data = [data]
+                                }
+
+                                for(let order of data)
+                                {
+                                    if (data.code) {
+                                        alert(data.msg);
+                                        return
+                                    }
+
+                                    let orderIds = JSON.parse(localStorage.getItem('openOrders')) || [];
+                                    orderIds.push({accountName: apiKey.name, ticker: order.symbol, orderId: order.orderId});
+                                    localStorage.setItem('openOrders', JSON.stringify(orderIds));
+                                }
+                                
+                            });
                         }
                     }
                 });
 
-                /*stopLossPromise.then(response => response.json())
+                // Stop loss
+                let stopLossPrice = side == 'BUY' ? latestPrice * (1 - this.stopLossPct / 100) : latestPrice * (1 + this.stopLossPct / 100)
+                let stopLossPromise = binance.executeStopLossOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, this.formatPricePrecision(stopLossPrice));
+
+                stopLossPromise.then(response => response.json())
                 .then(data => {
                     if (data.code) {
                         alert(data.msg);
                     } else {
                         console.log('Stop loss order placed')
                         let orderIds = JSON.parse(localStorage.getItem('openOrders')) || [];
-                        orderIds.push({accountName: apiKey.name, ticker: this.tradingSymbol + this.quoteAsset, orderId: data.orderId});
+                        orderIds.push({accountName: apiKey.name, ticker: data.symbol, orderId: data.orderId});
                         localStorage.setItem('openOrders', JSON.stringify(orderIds));
                     }
                 });
-
-                takeProfitPromise.then(response => response.json())
-                .then(data => {
-                    if (data.code) {
-                        alert(data.msg);
-                    } else {
-                        console.log('Take profit order placed')
-                        let orderIds = JSON.parse(localStorage.getItem('openOrders')) || [];
-                        orderIds.push({accountName: apiKey.name, ticker: this.tradingSymbol + this.quoteAsset, orderId: data.orderId});
-                        localStorage.setItem('openOrders', JSON.stringify(orderIds));
-                    }
-                });*/
             }
         },
-        executeScaleOutOrders(side, quantity, nbrOfOrders, priceIncrementPct) {
+        executeScaleOutOrders(side, quantity, nbrOfOrders, takeProfitPrice) {
             // Only linear scaling for now
 
             // Build list of orders
             let orders = []
             let latestPrice = this.livePriceFeed[this.tradingSymbol + this.quoteAsset];
-            let priceIncrement = latestPrice * priceIncrementPct / 100;
+            let priceIncrement = side == 'SELL' ? (takeProfitPrice - latestPrice) / nbrOfOrders : (latestPrice - takeProfitPrice) / nbrOfOrders;
             
             // Must respect the expected format of the Binance API
-            for(let i = 0; i < nbrOfOrders; i++) {
+            for(let i = 1; i <= nbrOfOrders; i++) {
                 let order = {
                     type: 'LIMIT',
                     timeInForce: 'GTC',
@@ -201,12 +227,18 @@ export default {
                     :tradingSymbol="tradingSymbol"
                     :quoteAsset="quoteAsset"
                     :lockSymbol="lockSymbol"
+                    :executionMode="executionMode"
+                    :orderSkewPct="orderSkewPct"
+                    :orderSplit="orderSplit"
                     @trading-size-changed="onTradingSizeChanged"
                     @stop-loss-changed="onStopLossChanged"
                     @take-profit-changed="onTakeProfitChanged"
                     @trading-symbol-changed="onSymbolChanged"
                     @quote-asset-changed="onQuoteAssetChanged"
-                    @lock-symbol-toggled="$emit('lock-symbol-toggled')"/>
+                    @lock-symbol-toggled="$emit('lock-symbol-toggled')"
+                    @order-skew-changed="onOrderSkewChanged"
+                    @order-split-changed="onOrderSplitChanged"
+                    @exit-mode-changed="onExitModeChanged"/>
             </li>
             <li class="list-group-item text-center bg-dark text-white border-secondary">
                 <TradingButtons 
