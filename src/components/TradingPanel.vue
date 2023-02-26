@@ -140,7 +140,13 @@ export default {
                         }                
 
                         if(takeProfitPromise) {
-                            takeProfitPromise.then(response => response.json())
+                            takeProfitPromise.then(response => {
+                                if (response.ok) {
+                                    return response.json()
+                                } else {
+                                    return response.text().then(text => Promise.reject(text))
+                                }
+                            })
                             .then(data => {
                                 console.log('Take profit(s) orders placed')
                                 
@@ -205,7 +211,20 @@ export default {
             }
 
             // Execute orders
-            return binance.executeMultipleOrders(this.apiKeys[0].key, this.apiKeys[0].secret, orders);
+            if(orders.length > 5) {
+                console.log('Executing ' + orders.length + ' orders in batches of 5')
+                let promises = []
+                for(let i = 0; i < orders.length; i+=5) {
+                    if(i+5 > orders.length)
+                        promises.push(binance.executeMultipleOrders(this.apiKeys[0].key, this.apiKeys[0].secret, orders.slice(i)));
+                    else
+                        promises.push(binance.executeMultipleOrders(this.apiKeys[0].key, this.apiKeys[0].secret, orders.slice(i, i+5)));
+                }
+
+                return Promise.allSettled(promises);
+            } else {
+                return binance.executeMultipleOrders(this.apiKeys[0].key, this.apiKeys[0].secret, orders);
+            }
         }
     },
     mounted() {
