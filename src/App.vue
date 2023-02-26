@@ -324,6 +324,7 @@ export default {
         this.trading.positions.splice(index, 1);
 
         // Cancel stop loss/take profit orders
+        // TODO: we dont need to cancel reduce only limit orders if we close the position, they get cancelled automatically
         let openOrders = JSON.parse(localStorage.getItem('openOrders')) || [];
         let orderIds = []
         for (let order of openOrders) {
