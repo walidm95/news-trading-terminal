@@ -50,7 +50,9 @@ Amplify.configure(awsconfig);
                   :quoteAsset="trading.quoteAsset"
                   :apiKeys="trading.apiKeys"
                   :livePriceFeed="livePriceFeed"
-                  :precisionFormat="precisionFormat"
+                  :pricePrecision="getPricePrecision()"
+                  :quantityPrecision="getQuantityPrecision()"
+                  :tickSize="getTickSize()"
                   :lockSymbol="trading.lockSymbol"
                   :maxLevAndMaxNotional="maxLevAndMaxNotional"
                   @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
@@ -106,6 +108,7 @@ export default {
       binanceFuturesPing: null,
       binanceFuturesPingLoop: null,
       precisionFormat: {price:{}, quantity:{}},
+      tickSize: {},
       livePriceFeed: {},
       leverageBrackets: {},
       maxLevAndMaxNotional: {0: '0', 1: 0},
@@ -134,6 +137,24 @@ export default {
       let ticker = this.trading.tradingSymbol + this.trading.quoteAsset
       let leverageBracket = Object.entries(this.leverageBrackets[ticker])
       return leverageBracket[leverageBracket.length - 1]
+    },
+    getTickSize() {
+      if(this.trading.tradingSymbol + this.trading.quoteAsset in this.tickSize)
+        return this.tickSize[this.trading.tradingSymbol + this.trading.quoteAsset]
+      else
+        return 0.01
+    },
+    getPricePrecision() {
+      if(this.trading.tradingSymbol + this.trading.quoteAsset in this.precisionFormat.price)
+        return this.precisionFormat.price[this.trading.tradingSymbol + this.trading.quoteAsset]
+      else
+        return 2
+    },
+    getQuantityPrecision() {
+      if(this.trading.tradingSymbol + this.trading.quoteAsset in this.precisionFormat.quantity)
+        return this.precisionFormat.quantity[this.trading.tradingSymbol + this.trading.quoteAsset]
+      else
+        return 2
     },
     async getBinanceExchangeInfo() {
       try {
@@ -208,6 +229,9 @@ export default {
           // Set price precisions
           this.precisionFormat.price[symbol.symbol] = symbol.pricePrecision
           this.precisionFormat.quantity[symbol.symbol] = symbol.quantityPrecision
+
+          // Set tick sizes
+          this.tickSize[symbol.symbol] = Number(symbol.filters[0].tickSize)
         });
 
         this.symbols = symbolNames
@@ -300,6 +324,7 @@ export default {
         this.trading.positions.splice(index, 1);
 
         // Cancel stop loss/take profit orders
+        // TODO: we dont need to cancel reduce only limit orders if we close the position, they get cancelled automatically
         let openOrders = JSON.parse(localStorage.getItem('openOrders')) || [];
         let orderIds = []
         for (let order of openOrders) {

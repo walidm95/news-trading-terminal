@@ -39,8 +39,8 @@ function executeMarketOrder(apiKey, secretKey, symbol, side, quantity) {
     return executeOrder(apiKey, secretKey, params);
 }
 
-function executeLimitOrder(apiKey, secretKey, symbol, side, quantity, price) {
-    let params = `symbol=${symbol}&side=${side}&type=LIMIT&quantity=${quantity}&price=${price}`;
+function executeLimitOrder(apiKey, secretKey, symbol, side, quantity, price, reduceOnly) {
+    let params = `symbol=${symbol}&side=${side}&type=LIMIT&quantity=${quantity}&price=${price}&timeInForce=GTC&reduceOnly=${reduceOnly}`;
     return executeOrder(apiKey, secretKey, params);
 }
 
@@ -60,9 +60,13 @@ function executeCloseMarketOrder(apiKey, secretKey, symbol, side, quantity) {
 }
 
 function executeMultipleOrders(apiKey, secretKey, orders) {
-    // TODO: fix if necessary. For now sending one order at a time
-    var batchOrders = JSON.stringify(orders);
-    return executeSignedRequest(apiKey, secretKey, 'POST', '/fapi/v1/batchOrders', batchOrders)
+    //TODO: make batches of 5 orders
+    if(orders.length > 5) throw new Error('Maximum of 5 orders per request');
+    if(orders.length < 1) throw new Error('Minimum of 1 order per request');
+
+    var batchOrders = JSON.stringify(orders)
+    var params = `batchOrders=${encodeURIComponent(batchOrders)}`
+    return executeSignedRequest(apiKey, secretKey, 'POST', '/fapi/v1/batchOrders', params)
 }
 
 function cancelMultipleOrders(apiKey, secretKey, symbol, orderIdList) {
@@ -81,6 +85,7 @@ export default {
     executeStopLossOrder,
     executeTakeProfitOrder,
     executeCloseMarketOrder,
+    executeMultipleOrders,
     cancelMultipleOrders,
     getUserDataStreamListenKey,
     keepAliveUserDataStream,
