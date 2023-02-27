@@ -40,8 +40,8 @@ export default {
                     <label class="input-group-text" for="executionMode">Exit Mode</label>
                 </div>
                 <select class="custom-select custom-select-sm" id="executionMode" @change="$emit('exit-mode-changed', $event)">
-                    <option value="" selected>None</option>
-                    <option v-for="(mode, key) in ExecutionMode" :key="key" :value="mode">
+                    <option value="None" :selected="executionMode == 'None'">None</option>
+                    <option v-for="(mode, key) in ExecutionMode" :key="key" :value="mode" :selected="executionMode == mode">
                         {{ mode }}
                     </option>
                 </select>

@@ -141,7 +141,9 @@ export default {
 
                         if(takeProfitPromise) {
                             takeProfitPromise.then(response => {
-                                if (response.ok) {
+                                if(response.ok == undefined) {
+                                    return response
+                                } else if (response.ok) {
                                     return response.json()
                                 } else {
                                     return response.text().then(text => Promise.reject(text))
