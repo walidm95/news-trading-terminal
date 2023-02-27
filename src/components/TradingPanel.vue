@@ -17,7 +17,7 @@ export default {
             takeProfitPct: tradingParams.takeProfitPct ? tradingParams.takeProfitPct : null,
             executionMode: tradingParams.executionMode ? tradingParams.executionMode : '',
             orderSplit: tradingParams.orderSplit ? tradingParams.orderSplit : null,
-            orderSkewPct: tradingParams.orderSkewPct ? tradingParams.orderSkewPct : null,
+            startScalePct: tradingParams.startScalePct ? tradingParams.startScalePct : null,
         }
     },
     props: {
@@ -63,10 +63,10 @@ export default {
             tradingParams.orderSplit = this.orderSplit;
             localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
         },
-        onOrderSkewChanged(event) {
-            this.orderSkewPct = Number(event.target.value);
+        onStartScalePctChange(event) {
+            this.startScalePct = Number(event.target.value);
             let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
-            tradingParams.orderSkewPct = this.orderSkewPct;
+            tradingParams.startScalePct = this.startScalePct;
             localStorage.setItem('tradingParams', JSON.stringify(tradingParams));
         },
         onSymbolChanged(symbol) {
@@ -136,7 +136,7 @@ export default {
                         if(this.executionMode == ExecutionMode.LIMIT) {
                             takeProfitPromise = binance.executeLimitOrder(apiKey.key, apiKey.secret, ticker, side == 'BUY' ? 'SELL' : 'BUY', formattedQuantity, takeProfitPrice, "true");
                         } else if (this.executionMode == ExecutionMode.SCALE) {
-                            takeProfitPromise = this.executeScaleOutOrders(side == 'BUY' ? 'SELL' : 'BUY', dollarSize / latestPrice, this.orderSplit, takeProfitPrice);
+                            takeProfitPromise = this.executeScaleOutOrders(side == 'BUY' ? 'SELL' : 'BUY', dollarSize / latestPrice, this.orderSplit, takeProfitPrice, this.startScalePct);
                         }                
 
                         if(takeProfitPromise) {
@@ -190,13 +190,14 @@ export default {
                 });
             }
         },
-        executeScaleOutOrders(side, quantity, nbrOfOrders, takeProfitPrice) {
+        executeScaleOutOrders(side, quantity, nbrOfOrders, takeProfitPrice, startScalePct) {
             // Only linear scaling for now
 
             // Build list of orders
             let orders = []
             let latestPrice = this.livePriceFeed[this.tradingSymbol + this.quoteAsset];
-            let priceIncrement = side == 'SELL' ? (takeProfitPrice - latestPrice) / nbrOfOrders : (latestPrice - takeProfitPrice) / nbrOfOrders;
+            let startScalePrice = latestPrice * (1 + (side == 'SELL' ? 1 : -1) * startScalePct / 100);
+            let priceIncrement = side == 'SELL' ? (takeProfitPrice - startScalePrice) / nbrOfOrders : (startScalePrice - takeProfitPrice) / nbrOfOrders;
             
             // Must respect the expected format of the Binance API
             for(let i = 1; i <= nbrOfOrders; i++) {
@@ -206,7 +207,7 @@ export default {
                     symbol: this.tradingSymbol + this.quoteAsset,
                     side: side,
                     quantity: this.formatQuantityPrecision(quantity / nbrOfOrders),
-                    price: this.formatPricePrecision(latestPrice + (side == 'SELL' ? 1 : -1) * priceIncrement * i),
+                    price: this.formatPricePrecision(startScalePrice + (side == 'SELL' ? 1 : -1) * priceIncrement * i),
                     reduceOnly: 'true'
                 }
                 orders.push(order);
@@ -250,7 +251,7 @@ export default {
                     :quoteAsset="quoteAsset"
                     :lockSymbol="lockSymbol"
                     :executionMode="executionMode"
-                    :orderSkewPct="orderSkewPct"
+                    :startScalePct="startScalePct"
                     :orderSplit="orderSplit"
                     @trading-size-changed="onTradingSizeChanged"
                     @stop-loss-changed="onStopLossChanged"
@@ -258,7 +259,7 @@ export default {
                     @trading-symbol-changed="onSymbolChanged"
                     @quote-asset-changed="onQuoteAssetChanged"
                     @lock-symbol-toggled="$emit('lock-symbol-toggled')"
-                    @order-skew-changed="onOrderSkewChanged"
+                    @start-scale-changed="onStartScalePctChange"
                     @order-split-changed="onOrderSplitChanged"
                     @exit-mode-changed="onExitModeChanged"/>
             </li>

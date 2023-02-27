@@ -16,7 +16,7 @@ export default {
         lockSymbol: {type: Boolean, required: true},
         executionMode: {type: String, required: true},
         orderSplit: {type: Number, required: true},
-        orderSkewPct: {type: Number, required: true},
+        startScalePct: {type: Number, required: true}
     }
 }
 </script>
@@ -65,7 +65,7 @@ export default {
                 </div>
                 <input type="number" class="form-control" id="takeProfitPct" placeholder="Take Profit"
                     :value="takeProfitPct"
-                    :disabled="executionMode == ''"
+                    :disabled="executionMode == 'None'"
                     @focusout="$emit('take-profit-changed', $event)" />
                 <div class="input-group-append">
                     <span class="input-group-text">%</span>
@@ -109,11 +109,11 @@ export default {
             </div>
             <div class="col input-group input-group-sm mb-2">
                 <div class="input-group-prepend">
-                    <label class="input-group-text" for="orderSkew">Skew</label>
+                    <label class="input-group-text" for="startScale">Scale From</label>
                 </div>
-                <input type="input" class="form-control" id="orderSkew" placeholder="Order Skew"
-                    :value="orderSkewPct" :disabled="executionMode != ExecutionMode.SCALE"
-                    @focusout="$emit('order-skew-changed', $event)" />
+                <input type="input" class="form-control" id="startScale" placeholder="Scaling from"
+                    :value="startScalePct" :disabled="executionMode != ExecutionMode.SCALE"
+                    @focusout="$emit('start-scale-changed', $event)" />
                 <div class="input-group-append">
                     <span class="input-group-text">%</span>
                 </div>
