@@ -5,7 +5,7 @@ import TradingButtons from './TradingButtons.vue';
 
 <script>
 import binance from '../binance'
-import { ExecutionMode } from '../constants'
+import { ExecutionMode, ApiRoutes } from '../constants'
 
 let tradingParams = JSON.parse(localStorage.getItem('tradingParams')) || {};
 
@@ -18,6 +18,7 @@ export default {
             executionMode: tradingParams.executionMode ? tradingParams.executionMode : '',
             orderSplit: tradingParams.orderSplit ? tradingParams.orderSplit : null,
             startScalePct: tradingParams.startScalePct ? tradingParams.startScalePct : null,
+            nttWs: null,
         }
     },
     props: {
@@ -29,7 +30,8 @@ export default {
         tickSize: {type: Number, required: true},
         quantityPrecision: {type: Number, required: true},
         lockSymbol: {type: Boolean, required: true},
-        maxLevAndMaxNotional: {type: Object, required: true}
+        maxLevAndMaxNotional: {type: Object, required: true},
+        cognitoIdToken: {type: Object, required: true}
     },
     methods: {
         onTradingSizeChanged(event) {
@@ -228,10 +230,38 @@ export default {
             } else {
                 return binance.executeMultipleOrders(this.apiKeys[0].key, this.apiKeys[0].secret, orders);
             }
-        }
+        },
+        connectNttWs() {
+            //Get websocket api key
+            let headers = new Headers()
+            headers.append('Authorization', this.cognitoIdToken.jwtToken)
+
+            let url = ApiRoutes.GET_WS_API_KEY + `?user_id=${this.cognitoIdToken.payload['cognito:username']}`
+            let requestOptions = new Request(url, {
+                method: 'GET',
+                headers: headers,
+                redirect: 'follow'
+            })
+
+            fetch(requestOptions)
+            .then(response => response.text())
+            .then(result => {
+                console.log(result)
+                let wsUrl = ApiRoutes.CONNECT_WS + `?user_id=${this.cognitoIdToken.payload['cognito:username']}&api_key=${result}`
+                this.nttWs = new WebSocket(wsUrl);
+                this.nttWs.onopen = () => {
+                    console.log('nttWs opened')
+                }
+                this.nttWs.onmessage = (event) => {
+                    let data = JSON.parse(event.data);
+                }
+            })
+            .catch(error => console.log('error', error))
+        },
     },
     mounted() {
         console.log('TradingPanel mounted');
+        this.connectNttWs()
     }
 }
 </script>
