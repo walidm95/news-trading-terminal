@@ -55,6 +55,7 @@ Amplify.configure(awsconfig);
                   :tickSize="getTickSize()"
                   :lockSymbol="trading.lockSymbol"
                   :maxLevAndMaxNotional="maxLevAndMaxNotional"
+                  :cognitoIdToken="user.signInUserSession.idToken"
                   @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
                   @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
                   @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
