@@ -12,7 +12,7 @@ export default {
             wsAlive: false,
             pingInterval: null,
             pingTimeout: null,
-            pingIntervalTime: 10000,
+            pingIntervalTime: 5000,
             pingTimeoutTime: 2000
         }
     },
@@ -130,7 +130,8 @@ export default {
 
                 this.activeHeadline = 0;
                 this.notification_sound.play()
-                this.$emit('symbol-from-headline', symbol);
+                this.$emit('symbol-from-headline', symbol)
+                this.$emit('selected-headline', this.headlines[0]['title'])
             }
         },
         onDoubleClick(index) {
@@ -220,6 +221,6 @@ export default {
 <style scoped>
 .scrolled {
     overflow-y: auto;
-    height: 350px;
+    height: 360px;
 }
 </style>

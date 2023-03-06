@@ -37,7 +37,8 @@ Amplify.configure(awsconfig);
                   :symbols="symbols"
                   :livePriceFeed="livePriceFeed" 
                   :quoteAsset="trading.quoteAsset" 
-                  @symbol-from-headline="onSymbolChanged"/>
+                  @symbol-from-headline="onSymbolChanged"
+                  @selected-headline="onSelectedHeadline"/>
               </div>
               <div class="row mb-2 flex-fill">
                 <TradingViewChart :ticker="getTradingViewSymbolTicker()" :key="tradingViewComponentKey"/>
@@ -46,6 +47,7 @@ Amplify.configure(awsconfig);
             <div class="col">
               <div class="row flex-fill mb-2">
                 <TradingPanel
+                  :selectedHeadline="selectedHeadline"
                   :tradingSymbol="trading.tradingSymbol"
                   :quoteAsset="trading.quoteAsset"
                   :apiKeys="trading.apiKeys"
@@ -106,6 +108,7 @@ function forceChartRender() {
 export default {
   data() {
     return {
+      selectedHeadline: null,
       binanceFuturesPing: null,
       binanceFuturesPingLoop: null,
       precisionFormat: {price:{}, quantity:{}},
@@ -246,6 +249,9 @@ export default {
     },
     getTradingViewSymbolTicker() {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
+    },
+    onSelectedHeadline(headline) {
+      this.selectedHeadline = headline;
     },
     onSymbolChanged(symbol) {
       if(this.trading.lockSymbol) {

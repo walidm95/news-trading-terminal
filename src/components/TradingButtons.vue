@@ -11,6 +11,7 @@
             <button type="button" class="btn btn-danger btn-lg m-1 trading-buttons" @click="$emit('sell-button-clicked', $event)">{{ formatNumber(0.5 * maxTradingSize) }}</button>
             <button type="button" class="btn btn-danger btn-lg m-1 trading-buttons" @click="$emit('sell-button-clicked', $event)">{{ formatNumber(maxTradingSize) }}</button>
         </div>
+        <h6 v-if="nbrOfTradesFromWs > 0">Traded by {{ nbrOfTradesFromWs }} traders</h6>
     </div>
 </template>
 
@@ -25,6 +26,7 @@ export default {
     props: {
         maxTradingSize: {type: Number, required: true},
         maxLevAndNotional: {type: Object, required: true},
+        nbrOfTradesFromWs: {type: Number, required: true}
     },
     methods: {
         formatNumber(number) {
