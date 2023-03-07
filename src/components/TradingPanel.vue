@@ -23,8 +23,7 @@ export default {
             pingInterval: null,
             pingTimeout: null,
             pingIntervalTime: 10000,
-            pingTimeoutTime: 2000,
-            latestNewsTradesFromWs: 0
+            pingTimeoutTime: 2000
         }
     },
     props: {
@@ -38,7 +37,8 @@ export default {
         quantityPrecision: {type: Number, required: true},
         lockSymbol: {type: Boolean, required: true},
         maxLevAndMaxNotional: {type: Object, required: true},
-        cognitoIdToken: {type: Object, required: true}
+        cognitoIdToken: {type: Object, required: true},
+        clickedByTradersNbr: {type: Number, required: true}
     },
     methods: {
         onTradingSizeChanged(event) {
@@ -286,7 +286,7 @@ export default {
 
                     if(data['action'] == 'trade') {
                         console.log('someone traded the latest headline')
-                        this.latestNewsTradesFromWs += 1
+                        this.$emit('clicked-by-other-trader', data['data']['trader_id'])
                     }
                 }
             })
@@ -345,7 +345,7 @@ export default {
                 <TradingButtons 
                     :maxTradingSize="maxTradingSize"
                     :maxLevAndNotional="maxLevAndMaxNotional"
-                    :nbrOfTradesFromWs="latestNewsTradesFromWs"
+                    :clickedByTradersNbr="clickedByTradersNbr"
                     @buy-button-clicked="onBuyButtonClicked" 
                     @sell-button-clicked="onSellButtonClicked"/>
             </li>
