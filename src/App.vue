@@ -37,8 +37,7 @@ Amplify.configure(awsconfig);
                   :symbols="symbols"
                   :livePriceFeed="livePriceFeed" 
                   :quoteAsset="trading.quoteAsset" 
-                  @symbol-from-headline="onSymbolChanged"
-                  @selected-headline="onSelectedHeadline"/>
+                  @symbol-from-headline="onSymbolChanged"/>
               </div>
               <div class="row mb-2 flex-fill">
                 <TradingViewChart :ticker="getTradingViewSymbolTicker()" :key="tradingViewComponentKey"/>
@@ -110,6 +109,7 @@ function forceChartRender() {
 export default {
   data() {
     return {
+      new_trade_sound: new Audio('/new_trade.mp3'),
       clientsThatTraded: [],
       selectedHeadline: null,
       binanceFuturesPing: null,
@@ -253,11 +253,10 @@ export default {
     getTradingViewSymbolTicker() {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
     },
-    onSelectedHeadline(headline) {
-      this.selectedHeadline = headline
-      this.clickedByTradersNbr = []
-    },
     onSymbolChanged(symbol) {
+      this.selectedHeadline = this.news.headlines[0]
+      this.clientsThatTraded = []
+
       if(this.trading.lockSymbol) {
         return
       }
@@ -314,6 +313,7 @@ export default {
     onClickedByOtherTrader(trader_id) {
       if (!this.clientsThatTraded.includes(trader_id)) {
         this.clientsThatTraded.push(trader_id);
+        this.new_trade_sound.play()
       }
     },
     onOpenPosition(position) {
