@@ -46,6 +46,7 @@ Amplify.configure(awsconfig);
             <div class="col">
               <div class="row flex-fill mb-2">
                 <TradingPanel
+                  :selectedHeadline="selectedHeadline"
                   :tradingSymbol="trading.tradingSymbol"
                   :quoteAsset="trading.quoteAsset"
                   :apiKeys="trading.apiKeys"
@@ -56,13 +57,15 @@ Amplify.configure(awsconfig);
                   :lockSymbol="trading.lockSymbol"
                   :maxLevAndMaxNotional="maxLevAndMaxNotional"
                   :cognitoIdToken="user.signInUserSession.idToken"
+                  :clickedByTradersNbr="clientsThatTraded.length"
                   @trading-size-changed="trading.maxTradingSize=Number($event.target.value)"
                   @stop-loss-changed="trading.stopLossPct=Number($event.target.value)"
                   @take-profit-changed="trading.takeProfitPct=Number($event.target.value)"
                   @trading-symbol-changed="onSymbolChanged($event.target.value)"
                   @quote-asset-changed="onQuoteAssetChanged"
                   @position-opened="onOpenPosition"
-                  @lock-symbol-toggled="onLockSymbolToggled"/>
+                  @lock-symbol-toggled="onLockSymbolToggled"
+                  @clicked-by-other-trader="onClickedByOtherTrader"/>
               </div>
               <div class="row flex-fill mb-2" style="height: 345px">
                 <AccountApiKeys :apiKeys="trading.apiKeys" :username="user.username" @add-api-key="onAddApiKey($event, user.username)" @delete-api-key="onDeleteApiKey"/>
@@ -106,6 +109,9 @@ function forceChartRender() {
 export default {
   data() {
     return {
+      new_trade_sound: new Audio('/new_trade.mp3'),
+      clientsThatTraded: [],
+      selectedHeadline: null,
       binanceFuturesPing: null,
       binanceFuturesPingLoop: null,
       precisionFormat: {price:{}, quantity:{}},
@@ -248,6 +254,9 @@ export default {
       return "BINANCE:" + this.trading.tradingSymbol + this.trading.quoteAsset + "PERP";
     },
     onSymbolChanged(symbol) {
+      this.selectedHeadline = this.news.headlines[0]
+      this.clientsThatTraded = []
+
       if(this.trading.lockSymbol) {
         return
       }
@@ -300,6 +309,12 @@ export default {
     },
     onLockSymbolToggled() {
       this.trading.lockSymbol = !this.trading.lockSymbol;
+    },
+    onClickedByOtherTrader(trader_id) {
+      if (!this.clientsThatTraded.includes(trader_id)) {
+        this.clientsThatTraded.push(trader_id);
+        this.new_trade_sound.play()
+      }
     },
     onOpenPosition(position) {
       let inAppPositions = JSON.parse(localStorage.getItem('inAppPositions')) || [];

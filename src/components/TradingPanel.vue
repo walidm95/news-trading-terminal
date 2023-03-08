@@ -19,9 +19,15 @@ export default {
             orderSplit: tradingParams.orderSplit ? tradingParams.orderSplit : null,
             startScalePct: tradingParams.startScalePct ? tradingParams.startScalePct : null,
             nttWs: null,
+            wsAlive: false,
+            pingInterval: null,
+            pingTimeout: null,
+            pingIntervalTime: 10000,
+            pingTimeoutTime: 2000
         }
     },
     props: {
+        selectedHeadline: {type: String, required: true},
         tradingSymbol: {type: String, required: true},
         quoteAsset: {type: String, required: true },
         apiKeys: {type: Array, required: true},
@@ -31,7 +37,8 @@ export default {
         quantityPrecision: {type: Number, required: true},
         lockSymbol: {type: Boolean, required: true},
         maxLevAndMaxNotional: {type: Object, required: true},
-        cognitoIdToken: {type: Object, required: true}
+        cognitoIdToken: {type: Object, required: true},
+        clickedByTradersNbr: {type: Number, required: true}
     },
     methods: {
         onTradingSizeChanged(event) {
@@ -104,11 +111,26 @@ export default {
 
             for(let apiKey of this.apiKeys)
             {
-                // Execute order
+                // Parse size
                 sizeText = sizeText.replace('$','');
                 let multiplier = sizeText.endsWith('K') ? 1000 : sizeText.endsWith('M') ? 1000000 : 1;
                 let dollarSize = Number(sizeText.replace('K','').replace('M','')) * multiplier;
                 let latestPrice = this.livePriceFeed[this.tradingSymbol + this.quoteAsset]
+
+                // Send trade message to websocket for logging
+                if(this.nttWs) {
+                    this.nttWs.send(JSON.stringify({
+                        action: 'trade',
+                        data: {
+                            trader_id: this.cognitoIdToken.payload.email,
+                            ticker: this.tradingSymbol + this.quoteAsset,
+                            size: `${dollarSize/this.maxTradingSize*100}%`,
+                            side: side,
+                            entryPrice: latestPrice,
+                            newsHeadline: this.selectedHeadline ? this.selectedHeadline : 'N/A',
+                        }
+                    }))
+                }     
 
                 // Execute Binance order
                 let formattedQuantity = this.formatQuantityPrecision(dollarSize / latestPrice);
@@ -246,28 +268,54 @@ export default {
             fetch(requestOptions)
             .then(response => response.text())
             .then(result => {
-                console.log(result)
-                let wsUrl = ApiRoutes.CONNECT_WS + `?user_id=${this.cognitoIdToken.payload['cognito:username']}&api_key=${result}`
+                let api_key = result.split('"').join('')
+                let wsUrl = ApiRoutes.CONNECT_WS + `?user_id=${this.cognitoIdToken.payload['cognito:username']}&api_key=${api_key}`
                 this.nttWs = new WebSocket(wsUrl);
                 this.nttWs.onopen = () => {
                     console.log('nttWs opened')
+                    this.wsAlive = true
+                    this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime)
                 }
                 this.nttWs.onmessage = (event) => {
                     let data = JSON.parse(event.data);
+                    
+                    if(data['action'] == 'pong') {
+                        this.wsAlive = true
+                        clearTimeout(this.pingTimeout)
+                    }
+
+                    if(data['action'] == 'trade') {
+                        console.log('someone traded the latest headline')
+                        this.$emit('clicked-by-other-trader', data['data']['trader_id'])
+                    }
                 }
             })
             .catch(error => console.log('error', error))
         },
+        pingWebsocket() {
+            this.nttWs.send(JSON.stringify({action: 'ping'}))
+            this.pingTimeout = setTimeout(() => {
+                this.wsAlive = false
+                this.nttWs.close()
+                clearInterval(this.pingInterval)
+                this.connectNttWs()
+            }, this.pingTimeoutTime)
+        }
     },
     mounted() {
         console.log('TradingPanel mounted');
         this.connectNttWs()
+    },
+    beforeUnmount() {
+        this.nttWs.close()
+        clearInterval(this.pingInterval)
+        clearTimeout(this.pingTimeout)
     }
 }
 </script>
 
 <template>
-    <div class="card bg-dark text-white border-secondary" style="height: 400px">
+    <div class="card bg-dark text-white border-secondary" style="height: 410px">
         <div class="card-header h4 border-secondary">
             Trading Panel
         </div>
@@ -297,6 +345,7 @@ export default {
                 <TradingButtons 
                     :maxTradingSize="maxTradingSize"
                     :maxLevAndNotional="maxLevAndMaxNotional"
+                    :clickedByTradersNbr="clickedByTradersNbr"
                     @buy-button-clicked="onBuyButtonClicked" 
                     @sell-button-clicked="onSellButtonClicked"/>
             </li>
