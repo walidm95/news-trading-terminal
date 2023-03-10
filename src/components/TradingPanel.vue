@@ -272,7 +272,6 @@ export default {
                 let wsUrl = ApiRoutes.CONNECT_WS + `?user_id=${this.cognitoIdToken.payload['cognito:username']}&api_key=${api_key}`
                 this.nttWs = new WebSocket(wsUrl);
                 this.nttWs.onopen = () => {
-                    console.log('nttWs opened')
                     this.wsAlive = true
                     this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime)
                 }
@@ -303,7 +302,6 @@ export default {
         }
     },
     mounted() {
-        console.log('TradingPanel mounted');
         this.connectNttWs()
     },
     beforeUnmount() {

@@ -1,5 +1,6 @@
 <script>
 import NewsItem from './NewsItem.vue';
+const TREE_API_KEY = 'f82ff6449777948ce45809afca68017db54d86c02d0409ee5d2b223eaefc52b2'
 
 export default {
     data() {
@@ -43,10 +44,6 @@ export default {
             let symbol = this.headlines[index].symbol;
             this.$emit('symbol-from-headline', symbol);
         },
-        onWebsocketConnected(username) {
-            this.websocketUsername = username;
-            console.log('Websocket connected as ' + username)
-        },
         connectTreeOfAlphaWS() {
             if(this.pingTimeout) {
                 clearTimeout(this.pingTimeout)
@@ -55,6 +52,7 @@ export default {
             this.treeWs = new WebSocket('wss://news.treeofalpha.com/ws')
             this.treeWs.onopen = () => {
                 console.log('TreeOfAlphaWS connected')
+                this.treeWs.send('login ' + TREE_API_KEY)
                 this.wsAlive = true
                 this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime)
             }
@@ -73,6 +71,12 @@ export default {
                 }
 
                 let data = JSON.parse(event.data)
+
+                if (data.user) {
+                    console.log('TreeOfAlphaWS logged in as ' + data.user.username)
+                    return
+                }
+
                 console.log(data)
 
                 let type
@@ -167,11 +171,9 @@ export default {
         }
     },
     mounted() {
-        console.log("NewsFeed mounted")
         this.connectTreeOfAlphaWS()
     },
     beforeUnmount() {
-        console.log("NewsFeed beforeUnmount")
         if(this.treeWs) {
             this.treeWs.close()
         }
@@ -191,16 +193,6 @@ export default {
                 <div class="col">
                     <span v-if="wsAlive" class="badge bg-success float-right">Connected</span>
                     <span v-else class="badge bg-danger float-right">Disconnected</span>
-                    <!--span v-if="websocketConnected" class="badge bg-success float-right">{{ websocketUsername }}</span>
-                    <div v-else class="input-group input-group-sm">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text" id="inputGroup-sizing-sm">Websocket API Key</span>
-                        </div>
-                        <input type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm" :value="websocketApiKey">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-light" type="button" @click="onConnectWebsocket($event)">Connect</button>
-                        </div>
-                    </div-->
                 </div>
             </div>            
         </div>

@@ -85,39 +85,14 @@ export default {
                 });
         },
         onUserDataStreamMessage(event) {
-            let apiKeys = JSON.parse(localStorage.getItem('apiKeys'));
-
             let data = JSON.parse(event.data);
             if (data.e === 'ACCOUNT_UPDATE') {
-                let positions = {'add': [], 'remove': []}
-                for(let pos of data.a.P) {
-                    if (Number(pos.pa) == 0) {
-                        positions.remove.push({
-                            'account': apiKeys[0].name,
-                            'ticker': pos.s,
-                            'side': Number(pos.pa) > 0 ? 'BUY' : 'SELL',
-                            'size': Number(pos.pa),
-                            'entryPrice': Number(pos.ep),
-                            'upnl': Number(pos.up)
-                        });
-                    } else {
-                        positions.add.push({
-                            'account': apiKeys[0].name,
-                            'ticker': pos.s,
-                            'side': Number(pos.pa) > 0 ? 'BUY' : 'SELL',
-                            'size': Number(pos.pa),
-                            'entryPrice': Number(pos.ep),
-                            'upnl': Number(pos.up)
-                        });
-                    }
-                }
-                this.$emit('update-positions', positions);
+                this.$emit('update-positions');
             }
         }
     },
     mounted() {
-        // For now, update positions through a trade or the refresh button
-        //this.connectUserDataStream();
-    },
+        this.connectUserDataStream();
+    }
 }
 </script>

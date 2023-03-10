@@ -109,7 +109,8 @@ function forceChartRender() {
 export default {
   data() {
     return {
-      new_trade_sound: new Audio('/new_trade.mp3'),
+      lastAccountFetch: null,
+      newTradeSound: new Audio('/new_trade.mp3'),
       clientsThatTraded: [],
       selectedHeadline: null,
       binanceFuturesPing: null,
@@ -142,6 +143,11 @@ export default {
   methods: {
     getMaxLeverageAndNotional() {
       let ticker = this.trading.tradingSymbol + this.trading.quoteAsset
+
+      if (!this.leverageBrackets || !this.leverageBrackets[ticker]) {
+        return
+      }
+      
       let leverageBracket = Object.entries(this.leverageBrackets[ticker])
       return leverageBracket[leverageBracket.length - 1]
     },
@@ -313,7 +319,7 @@ export default {
     onClickedByOtherTrader(trader_id) {
       if (!this.clientsThatTraded.includes(trader_id)) {
         this.clientsThatTraded.push(trader_id);
-        this.new_trade_sound.play()
+        this.newTradeSound.play()
       }
     },
     onOpenPosition(position) {
@@ -381,28 +387,19 @@ export default {
         console.error(error);
       });
     },
-    onUpdatePosition(positions) {
-      for(let addPos of positions.add) {
-        this.trading.positions.push({
-          ticker: addPos.ticker,
-          side: addPos.side,
-          units: addPos.size,
-          entryPrice: addPos.entryPrice,
-          account: addPos.account,
-          upnl: 0,
-          markPrice: 0,
-          size: addPos.units * addPos.entryPrice
-        });
+    onUpdatePosition() {
+      // Fetch account data from API, max once per second
+      if (this.trading.apiKeys.length == 0) {
+        return;
       }
 
-      for(let removePos of positions.remove) {
-        for (let i = 0; i < this.trading.positions.length; i++) {
-          if (this.trading.positions[i].ticker == removePos.ticker && this.trading.positions[i].account == removePos.account) {
-            this.trading.positions.splice(i, 1);
-            break;
-          }
-        }
+      let now = new Date().getTime();
+      if (now - this.lastAccountFetch < 1000) {
+        return;
       }
+      this.lastAccountFetch = now;
+
+      this.fetchOpenPositions()
     },
     fetchOpenPositions() {
       let inAppPositions = JSON.parse(localStorage.getItem('inAppPositions')) || [];
@@ -473,8 +470,6 @@ export default {
     },
   },
   mounted: function() {
-    console.log("App mounted")
-
     this.connectBinanceMarkPriceStreamWS();
     this.getBinanceSymbolsWithNames();
 
