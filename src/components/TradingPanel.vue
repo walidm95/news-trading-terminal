@@ -276,11 +276,16 @@ export default {
                     this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime)
                 }
                 this.nttWs.onmessage = (event) => {
+                    if(!event.data) {
+                        return
+                    }
+                    
                     let data = JSON.parse(event.data);
                     
                     if(data['action'] == 'pong') {
                         this.wsAlive = true
                         clearTimeout(this.pingTimeout)
+                        return
                     }
 
                     if(data['action'] == 'trade') {
