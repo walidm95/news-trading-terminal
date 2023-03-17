@@ -279,7 +279,7 @@ export default {
                     if(!event.data) {
                         return
                     }
-                    
+
                     let data = JSON.parse(event.data);
                     
                     if(data['action'] == 'pong') {
@@ -289,7 +289,6 @@ export default {
                     }
 
                     if(data['action'] == 'trade') {
-                        console.log('someone traded the latest headline')
                         this.$emit('clicked-by-other-trader', data['data']['trader_id'])
                     }
                 }
