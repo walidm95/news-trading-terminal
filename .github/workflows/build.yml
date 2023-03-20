@@ -45,9 +45,8 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y
       
       - name: Create ./src/aws-exports.js file required for aws cognito
-        run: |
-            echo "create ./src/aws-exports file"
-            echo ${{ vars.AWS_EXPORTS }} > ./src/aws-exports.js
+        run: 
+          echo "export default {aws_cognito_region:${{ secrets.AWS_REGION }},aws_user_pools_id:${{ secrets.AWS_COGNITO_USER_POOL_ID }},aws_user_pools_web_client_id:${{ secrets.AWS_COGNITO_USER_POOL_CLIENT_ID }}}" > ./src/aws-exports.js
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
