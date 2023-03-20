@@ -47,7 +47,7 @@ jobs:
       - name: Create ./src/aws-exports.js file required for aws cognito
         run: |
             echo "create ./src/aws-exports file"
-            echo ${{ secrets.AWS_EXPORTS }} > ./src/aws-exports.js
+            echo ${{ vars.AWS_EXPORTS }} > ./src/aws-exports.js
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
