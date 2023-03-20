@@ -52,12 +52,14 @@ jobs:
       - name: Install app dependencies from lockfile and build web
         # NOTE: comment out && yarn build if frontend does not have build script
         run: yarn install --frozen-lockfile && yarn build
+      
+      - name: Create ./src/aws-exports.js file required for aws cognito
+        run: |
+            echo "create ./src/aws-exports file"
+            echo ${{ secrets.AWS_EXPORTS }} > ./src/aws-exports.js
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
-        run: |
-          echo "create ./src/aws-exports file"
-          echo ${{ secrets.AWS_EXPORTS }} > ./src/aws-exports.js
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
