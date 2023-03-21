@@ -8,9 +8,11 @@ phases:
       nodejs: latest
     commands:
       # Install Rust (Stable)
-      - Invoke-WebRequest -Uri https://sh.rustup.rs -OutFile rustup-init.sh
-      - .\rustup-init.sh -y
+      - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
+      - .\rustup-init.exe -y
+      - RefreshEnv
       - rustc --version
+
       # Install yarn
       - npm install -g yarn
 
