@@ -11,6 +11,9 @@ phases:
       - Invoke-WebRequest -Uri https://sh.rustup.rs -OutFile rustup-init.sh
       - .\rustup-init.sh -y
 
+      # Install yarn
+      - npm install -g yarn
+
   pre_build:
     commands:
       - dir
