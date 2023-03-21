@@ -8,7 +8,9 @@ phases:
       nodejs: latest
     commands:
       # Install Rust (Stable)
-      - curl https://sh.rustup.rs -sSf | sh -s -- -y
+      #- curl https://sh.rustup.rs -sSf | sh -s -- -y
+      - curl https://sh.rustup.rs -sSfo rustup-init.sh
+      - rustup-init.sh -y
 
   pre_build:
     commands:
