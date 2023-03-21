@@ -37,3 +37,7 @@ phases:
   post_build:
     commands:
       - echo "Success"
+  
+  cache:
+    paths:
+      - $env:USERPROFILE\.cargo\registry\**\*
