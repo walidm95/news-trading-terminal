@@ -1,0 +1,15 @@
+version: 0.2
+
+env:
+  git-credential-helper: yes
+phases:
+  pre_build:
+    commands:
+      - ls -lt
+  build:
+    commands:
+      - git log | head -100
+      - git status
+  post_build:
+    commands:
+      - echo "Success"
