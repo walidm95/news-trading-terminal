@@ -3,13 +3,37 @@ version: 0.2
 env:
   git-credential-helper: yes
 phases:
+  install:
+    runtime-versions:
+      nodejs: latest
+    commands:
+      # Install Rust (Stable)
+      - curl https://sh.rustup.rs -sSf | sh -s -- -y
+
   pre_build:
     commands:
       - dir
+      # Create ./src/aws-exports.js file required for AWS Cognito
+      - echo "export default {aws_cognito_region:'$AWS_REGION',aws_user_pools_id:'$AWS_COGNITO_USER_POOL_ID',aws_user_pools_web_client_id:'$AWS_COGNITO_USER_POOL_CLIENT_ID'}" > ./src/aws-exports.js
+
+      # Install dependencies (ubuntu only)
+      - |
+        if [[ $CODEBUILD_BUILD_IMAGE == *"ubuntu"* ]]; then
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
+        fi
   build:
     commands:
-      - git log | head -100
       - git status
+
+      # Build changelog
+      - echo "changelog=- ADD CHANGELOG" >> $CODEBUILD_SRC_DIR/GITHUB_OUTPUT
+
+      # Install app dependencies from lockfile and build web
+      - yarn install --frozen-lockfile
+
+      - yarn tauri build
+
   post_build:
     commands:
       - echo "Success"
