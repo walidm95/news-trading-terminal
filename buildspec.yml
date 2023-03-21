@@ -5,7 +5,7 @@ env:
 phases:
   pre_build:
     commands:
-      - ls -lt
+      - dir
   build:
     commands:
       - git log | head -100
