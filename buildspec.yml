@@ -8,10 +8,8 @@ phases:
       nodejs: latest
     commands:
       # Install Rust (Stable)
-      #- curl https://sh.rustup.rs -sSf | sh -s -- -y
-      - Remove-item alias:curl
-      - curl https://sh.rustup.rs -sSfo rustup-init.sh
-      - rustup-init.sh -y
+      - Invoke-WebRequest -Uri https://sh.rustup.rs -OutFile rustup-init.sh
+      - .\rustup-init.sh -y
 
   pre_build:
     commands:
