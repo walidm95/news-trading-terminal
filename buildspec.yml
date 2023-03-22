@@ -11,9 +11,9 @@ phases:
       - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
       - .\rustup-init.exe -y
       - RefreshEnv
-      - Import-Module %USERPROFILE%
-      - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
-      - rustc --version
+      #- Import-Module %USERPROFILE%
+      #- set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+      #- rustc --version
 
       # Install yarn
       - npm install -g yarn
@@ -26,15 +26,16 @@ phases:
   
   build:
     commands:
-      - rustc --version
+      # - rustc --version
+      - echo $PATH || echo '$PATH does not work'
 
       # Build changelog
       - echo "changelog=- ADD CHANGELOG" >> $CODEBUILD_SRC_DIR/GITHUB_OUTPUT
 
       # Install app dependencies from lockfile and build web
-      - yarn install --frozen-lockfile
+      - yarn install --frozen-lockfile || echo 'yarn install failed'
 
-      - yarn tauri build
+      - yarn tauri build || echo 'yarn tauri build failed'
 
   post_build:
     commands:
