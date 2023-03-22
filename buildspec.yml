@@ -11,8 +11,10 @@ phases:
       - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
       - .\rustup-init.exe -y
       - RefreshEnv
-      - Try { $env:PATH += ";${env:USERPROFILE}\.cargo\bin" } Catch { Write-Host "Failed to add .cargo/bin to PATH" }
+      - $env:RUST_BACKTRACE=1
+      - Try { $env:Path += ";${env:USERPROFILE}\.cargo\bin" } Catch { Write-Host "Failed to add .cargo/bin to Path" }
       - gci env:* | sort-object name
+      - echo $env:Path
       - rustc --version
       
 
@@ -34,7 +36,6 @@ phases:
 
       # Install app dependencies from lockfile and build web
       - yarn install --frozen-lockfile
-      - $env:RUST_BACKTRACE=1
       - yarn tauri build
 
   post_build:
