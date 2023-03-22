@@ -1,6 +1,8 @@
 version: 0.2
 
 env:
+  variables:
+    RUST_BACKTRACE: "1"
   git-credential-helper: yes
 phases:
   install:
@@ -15,7 +17,7 @@ phases:
       - Try { $env:Path += ";${env:USERPROFILE}\.cargo\bin" } Catch { Write-Host "Failed to add .cargo/bin to Path" }
       - gci env:* | sort-object name
       - echo $env:Path
-      - rustc --version
+      #- rustc --version
       
 
       # Install yarn
