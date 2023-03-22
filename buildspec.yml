@@ -11,7 +11,7 @@ phases:
       - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
       - .\rustup-init.exe -y
       - RefreshEnv
-      
+      - Import-Module %USERPROFILE%
       - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
       - rustc --version
 
