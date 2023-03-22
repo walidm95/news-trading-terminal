@@ -13,6 +13,7 @@ phases:
       - RefreshEnv
       - Try { $env:PATH += ";${env:USERPROFILE}\.cargo\bin" } Catch { Write-Host "Failed to add .cargo/bin to PATH" }
       - Try { rustc --version } Catch { Write-Host "Failed to call rustc"}
+      - dir env:
 
       # Install yarn
       - npm install -g yarn
