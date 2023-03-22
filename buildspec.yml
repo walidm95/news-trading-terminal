@@ -16,7 +16,7 @@ phases:
       - RefreshEnv
       - gci env:* | sort-object name
       - echo $path
-      #- rustc --version
+      - rustc --version
       
 
       # Install yarn
@@ -30,7 +30,7 @@ phases:
   build:
     commands:
       # - rustc --version
-      - Try { echo ${env:USERPROFILE} } Catch { Write-Host "Failed to echo userprofile" }
+      - echo $env:path
 
       # Build changelog
       - echo "changelog=- ADD CHANGELOG" >> $CODEBUILD_SRC_DIR/GITHUB_OUTPUT
