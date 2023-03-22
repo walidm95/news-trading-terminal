@@ -3,6 +3,7 @@ version: 0.2
 env:
   variables:
     RUST_BACKTRACE: "full"
+    TEST: $env:Path + ";${env:USERPROFILE}\.cargo\bin"
   git-credential-helper: yes
 phases:
   install:
