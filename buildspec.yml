@@ -12,8 +12,9 @@ phases:
       - .\rustup-init.exe -y
       - RefreshEnv
       - Try { $env:PATH += ";${env:USERPROFILE}\.cargo\bin" } Catch { Write-Host "Failed to add .cargo/bin to PATH" }
-      - Try { rustc --version } Catch { Write-Host "Failed to call rustc"}
-      - Get-ChildItem Env:* | Select-Object -Property Name,Value
+      - gci env:* | sort-object name
+      - rustc --version
+      
 
       # Install yarn
       - npm install -g yarn
