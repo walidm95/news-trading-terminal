@@ -27,15 +27,15 @@ phases:
   build:
     commands:
       # - rustc --version
-      - echo $PATH || echo '$PATH does not work'
+      - echo $PATH -OR echo '$PATH does not work'
 
       # Build changelog
       - echo "changelog=- ADD CHANGELOG" >> $CODEBUILD_SRC_DIR/GITHUB_OUTPUT
 
       # Install app dependencies from lockfile and build web
-      - yarn install --frozen-lockfile || echo 'yarn install failed'
+      - yarn install --frozen-lockfile -OR echo 'yarn install failed'
 
-      - yarn tauri build || echo 'yarn tauri build failed'
+      - yarn tauri build -OR echo 'yarn tauri build failed'
 
   post_build:
     commands:
