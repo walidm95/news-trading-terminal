@@ -12,9 +12,8 @@ phases:
       # Install Rust (Stable)
       - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
       - .\rustup-init.exe -y
-      - RefreshEnv
-      - $env:RUST_BACKTRACE=1
       - Try { $env:Path += ";${env:USERPROFILE}\.cargo\bin" } Catch { Write-Host "Failed to add .cargo/bin to Path" }
+      - RefreshEnv
       - gci env:* | sort-object name
       - echo $env:Path
       #- rustc --version
