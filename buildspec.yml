@@ -13,9 +13,10 @@ phases:
       - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
       - .\rustup-init.exe -y
       - $path += ";${env:USERPROFILE}\.cargo\bin"
+      - $env:path += ";${env:USERPROFILE}\.cargo\bin"
       - RefreshEnv
-      - gci env:* | sort-object name
       - echo $path
+      - echo $env:path
       - rustc --version
       
 
