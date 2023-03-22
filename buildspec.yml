@@ -3,7 +3,6 @@ version: 0.2
 env:
   variables:
     RUST_BACKTRACE: "full"
-    TEST: $env:Path + ";${env:USERPROFILE}\.cargo\bin"
   git-credential-helper: yes
 phases:
   install:
@@ -13,10 +12,10 @@ phases:
       # Install Rust (Stable)
       - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
       - .\rustup-init.exe -y
-      - Try { $env:Path += ";${env:USERPROFILE}\.cargo\bin" } Catch { Write-Host "Failed to add .cargo/bin to Path" }
+      - $path += ";${env:USERPROFILE}\.cargo\bin"
       - RefreshEnv
       - gci env:* | sort-object name
-      - echo $env:Path
+      - echo $path
       #- rustc --version
       
 
