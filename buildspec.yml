@@ -18,15 +18,11 @@ phases:
       - echo $Path
       - echo $env:Path
       - gci env:* | sort-object name
-
       - [Environment]::SetEnvironmentVariable('Path', $Path, 'Machine')
       - echo $Path
       - echo $env:Path
       - gci env:* | sort-object name
-
       - rustc --version
-      
-
       # Install yarn
       - npm install -g yarn
 
