@@ -20,22 +20,21 @@ phases:
 
   pre_build:
     commands:
-      - dir
       # Create ./src/aws-exports.js file required for AWS Cognito
       - echo "export default {aws_cognito_region:'$AWS_REGION',aws_user_pools_id:'$AWS_COGNITO_USER_POOL_ID',aws_user_pools_web_client_id:'$AWS_COGNITO_USER_POOL_CLIENT_ID'}" > ./src/aws-exports.js
   
   build:
     commands:
       # - rustc --version
-      - echo $PATH -OR echo '$PATH does not work'
+      - Try { echo ${env:USERPROFILE} } Catch { Write-Host "Failed to echo userprofile" }
 
       # Build changelog
       - echo "changelog=- ADD CHANGELOG" >> $CODEBUILD_SRC_DIR/GITHUB_OUTPUT
 
       # Install app dependencies from lockfile and build web
-      - yarn install --frozen-lockfile -OR echo 'yarn install failed'
+      - yarn install --frozen-lockfile
 
-      - yarn tauri build -OR echo 'yarn tauri build failed'
+      - yarn tauri build
 
   post_build:
     commands:
