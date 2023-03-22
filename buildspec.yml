@@ -11,7 +11,7 @@ phases:
       - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
       - .\rustup-init.exe -y
       - RefreshEnv
-      - rustc --version
+      # - rustc --version
 
       # Install yarn
       - npm install -g yarn
@@ -24,7 +24,7 @@ phases:
   
   build:
     commands:
-      - rustc --version
+      # - rustc --version
 
       # Build changelog
       - echo "changelog=- ADD CHANGELOG" >> $CODEBUILD_SRC_DIR/GITHUB_OUTPUT
@@ -37,7 +37,3 @@ phases:
   post_build:
     commands:
       - echo "Success"
-  
-  cache:
-    paths:
-      - $env:USERPROFILE\.cargo\registry\**\*
