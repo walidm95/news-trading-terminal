@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    RUST_BACKTRACE: "1"
+    RUST_BACKTRACE: "full"
   git-credential-helper: yes
 phases:
   install:
