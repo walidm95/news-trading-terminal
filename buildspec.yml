@@ -11,9 +11,8 @@ phases:
       - Invoke-WebRequest https://win.rustup.rs -OutFile rustup-init.exe
       - .\rustup-init.exe -y
       - RefreshEnv
-      #- Import-Module %USERPROFILE%
-      #- set PATH=%PATH%;%USERPROFILE%\.cargo\bin
-      #- rustc --version
+      - Try { $env:PATH += ";${env:USERPROFILE}\.cargo\bin" } Catch { Write-Host "Failed to add .cargo/bin to PATH" }
+      - Try { rustc --version } Catch { Write-Host "Failed to call rustc"}
 
       # Install yarn
       - npm install -g yarn
@@ -33,7 +32,7 @@ phases:
 
       # Install app dependencies from lockfile and build web
       - yarn install --frozen-lockfile
-
+      - $env:RUST_BACKTRACE=1
       - yarn tauri build
 
   post_build:
