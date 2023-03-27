@@ -29,7 +29,7 @@ Amplify.configure(awsconfig);
           </div>
         </template>
         <template v-slot="{ user, signOut }" >
-          <h4 class="text-center p-2">News Trading Terminal<small class="float-right" :class="binanceFuturesPing > 500 ? 'text-danger' : 'text-secondary'">{{ binanceFuturesPing }} ms</small></h4>
+          <h4 class="text-center p-2"><small class="float-left text-secondary">{{ version }}</small>News Trading Terminal<small class="float-right" :class="binanceFuturesPing > 500 ? 'text-danger' : 'text-secondary'">{{ binanceFuturesPing }} ms</small></h4>
           <div class="row">
             <div class="col mr-2 column-panel">
               <div class="row mb-2 flex-fill">
@@ -99,6 +99,7 @@ Amplify.configure(awsconfig);
 <script>
 import { ref } from 'vue';
 import binance from './binance'
+import { getVersion } from '@tauri-apps/api/app';
 
 // Required to re-render chart
 var tradingViewComponentKey = ref(0);
@@ -109,6 +110,7 @@ function forceChartRender() {
 export default {
   data() {
     return {
+      version: null,
       lastAccountFetch: null,
       newTradeSound: new Audio('/new_trade.mp3'),
       clientsThatTraded: [],
@@ -141,6 +143,9 @@ export default {
   },
   components: { NewsFeed, TradingPanel },
   methods: {
+    async getAppVersion() {
+      this.version = await getVersion();
+    },
     getMaxLeverageAndNotional() {
       let ticker = this.trading.tradingSymbol + this.trading.quoteAsset
 
@@ -470,6 +475,8 @@ export default {
     },
   },
   mounted: function() {
+    this.getAppVersion();
+    
     this.connectBinanceMarkPriceStreamWS();
     this.getBinanceSymbolsWithNames();
 
