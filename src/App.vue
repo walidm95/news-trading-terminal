@@ -376,6 +376,10 @@ export default {
       this.trading.lockSymbol = !this.trading.lockSymbol;
     },
     onClickedByOtherTrader(trader_id) {
+      if(trader_id == this.currentUserIdToken.payload["email"]) {
+        return
+      }
+
       if (!this.clientsThatTraded.includes(trader_id)) {
         this.clientsThatTraded.push(trader_id);
         this.newTradeSound.play();
