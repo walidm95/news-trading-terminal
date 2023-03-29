@@ -118,11 +118,6 @@ export default {
         return;
       }
 
-      if (this.apiKeys.length > 1) {
-        alert("Multiple API Keys are not supported yet");
-        return;
-      }
-
       for (let apiKey of this.apiKeys) {
         // Parse size
         sizeText = sizeText.replace("$", "");
@@ -214,7 +209,11 @@ export default {
 
               if (takeProfitPromise) {
                 takeProfitPromise
-                  .then((response) => {
+                  .then((response, error) => {
+                    if (error) {
+                      alert("error sending orders");
+                      return;
+                    }
                     if (response.ok == undefined) {
                       return response;
                     } else if (response.ok) {
@@ -225,31 +224,37 @@ export default {
                         .then((text) => Promise.reject(text));
                     }
                   })
-                  .then((data) => {
-                    console.log("Take profit(s) orders placed");
-
-                    if (this.executionMode == ExecutionMode.LIMIT) {
-                      data = [data];
+                  .then((orders, error) => {
+                    if (error) {
+                      alert("error sending orders");
+                      return;
                     }
 
-                    for (let order of data) {
-                      if (data.code) {
-                        alert(data.msg);
-                        return;
+                    let orderIds =
+                      JSON.parse(localStorage.getItem("openOrders")) || [];
+
+                    if(this.executionMode == ExecutionMode.LIMIT) {
+                      // orders is only one order if its limit mode
+                      orders = [orders]
+                    }
+                    for (let order of orders) {
+                      if (order.code) {
+                        console.log(order.msg);
+                        continue;
                       }
 
-                      let orderIds =
-                        JSON.parse(localStorage.getItem("openOrders")) || [];
+                      console.log("Take profit(s) orders placed");
+
                       orderIds.push({
                         accountName: apiKey.name,
                         ticker: order.symbol,
                         orderId: order.orderId,
                       });
-                      localStorage.setItem(
-                        "openOrders",
-                        JSON.stringify(orderIds)
-                      );
                     }
+                    localStorage.setItem(
+                      "openOrders",
+                      JSON.stringify(orderIds)
+                    );
                   });
               }
             }
@@ -324,36 +329,38 @@ export default {
         orders.push(order);
       }
 
-      // Execute orders
-      if (orders.length > 5) {
-        console.log("Executing " + orders.length + " orders in batches of 5");
-        let promises = [];
-        for (let i = 0; i < orders.length; i += 5) {
-          if (i + 5 > orders.length)
-            promises.push(
-              binance.executeMultipleOrders(
-                this.apiKeys[0].key,
-                this.apiKeys[0].secret,
-                orders.slice(i)
-              )
-            );
-          else
-            promises.push(
-              binance.executeMultipleOrders(
-                this.apiKeys[0].key,
-                this.apiKeys[0].secret,
-                orders.slice(i, i + 5)
-              )
-            );
-        }
+      // Execute
+      for (let apiKey of this.apiKeys) {
+        if (orders.length > 5) {
+          console.log("Executing " + orders.length + " orders in batches of 5");
+          let promises = [];
+          for (let i = 0; i < orders.length; i += 5) {
+            if (i + 5 > orders.length)
+              promises.push(
+                binance.executeMultipleOrders(
+                  apiKey.key,
+                  apiKey.secret,
+                  orders.slice(i)
+                )
+              );
+            else
+              promises.push(
+                binance.executeMultipleOrders(
+                  apiKey.key,
+                  apiKey.secret,
+                  orders.slice(i, i + 5)
+                )
+              );
+          }
 
-        return Promise.allSettled(promises);
-      } else {
-        return binance.executeMultipleOrders(
-          this.apiKeys[0].key,
-          this.apiKeys[0].secret,
-          orders
-        );
+          return Promise.allSettled(promises);
+        } else {
+          return binance.executeMultipleOrders(
+            apiKey.key,
+            apiKey.secret,
+            orders
+          );
+        }
       }
     },
     connectNttWs() {
@@ -423,10 +430,12 @@ export default {
     },
   },
   mounted() {
-    this.connectNttWs();
+    //this.connectNttWs();
   },
   beforeUnmount() {
-    this.nttWs.close();
+    if (this.nttWs) {
+      this.nttWs.close();
+    }
     clearInterval(this.pingInterval);
     clearTimeout(this.pingTimeout);
   },
