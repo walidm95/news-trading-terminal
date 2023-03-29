@@ -7,7 +7,7 @@
     "withGlobalTauri": true
   },
   "package": {
-    "productName": "News Trading Terminal",
+    "productName": "news-trading-terminal",
     "version": "0.2.3"
   },
   "tauri": {
