@@ -199,6 +199,8 @@ export default {
                 );
               } else if (this.executionMode == ExecutionMode.SCALE) {
                 takeProfitPromise = this.executeScaleOutOrders(
+                  apiKey.key,
+                  apiKey.secret,
                   side == "BUY" ? "SELL" : "BUY",
                   dollarSize / latestPrice,
                   this.orderSplit,
@@ -233,23 +235,25 @@ export default {
                     let orderIds =
                       JSON.parse(localStorage.getItem("openOrders")) || [];
 
-                    if(this.executionMode == ExecutionMode.LIMIT) {
+                    if (this.executionMode == ExecutionMode.LIMIT) {
                       // orders is only one order if its limit mode
-                      orders = [orders]
+                      orders = [orders];
                     }
                     for (let order of orders) {
                       if (order.code) {
-                        console.log(order.msg);
+                        alert(order.msg);
                         continue;
                       }
 
                       console.log("Take profit(s) orders placed");
 
-                      orderIds.push({
-                        accountName: apiKey.name,
-                        ticker: order.symbol,
-                        orderId: order.orderId,
-                      });
+                      if (order.orderId) {
+                        orderIds.push({
+                          accountName: apiKey.name,
+                          ticker: order.symbol,
+                          orderId: order.orderId,
+                        });
+                      }
                     }
                     localStorage.setItem(
                       "openOrders",
@@ -294,14 +298,14 @@ export default {
       }
     },
     executeScaleOutOrders(
+      apiKey,
+      apiSecret,
       side,
       quantity,
       nbrOfOrders,
       takeProfitPrice,
       startScalePct
     ) {
-      // Only linear scaling for now
-
       // Build list of orders
       let orders = [];
       let latestPrice =
@@ -330,37 +334,27 @@ export default {
       }
 
       // Execute
-      for (let apiKey of this.apiKeys) {
-        if (orders.length > 5) {
-          console.log("Executing " + orders.length + " orders in batches of 5");
-          let promises = [];
-          for (let i = 0; i < orders.length; i += 5) {
-            if (i + 5 > orders.length)
-              promises.push(
-                binance.executeMultipleOrders(
-                  apiKey.key,
-                  apiKey.secret,
-                  orders.slice(i)
-                )
-              );
-            else
-              promises.push(
-                binance.executeMultipleOrders(
-                  apiKey.key,
-                  apiKey.secret,
-                  orders.slice(i, i + 5)
-                )
-              );
-          }
-
-          return Promise.allSettled(promises);
-        } else {
-          return binance.executeMultipleOrders(
-            apiKey.key,
-            apiKey.secret,
-            orders
-          );
+      if (orders.length > 5) {
+        console.log("Executing " + orders.length + " orders in batches of 5");
+        let promises = [];
+        for (let i = 0; i < orders.length; i += 5) {
+          if (i + 5 > orders.length)
+            promises.push(
+              binance.executeMultipleOrders(apiKey, apiSecret, orders.slice(i))
+            );
+          else
+            promises.push(
+              binance.executeMultipleOrders(
+                apiKey,
+                apiSecret,
+                orders.slice(i, i + 5)
+              )
+            );
         }
+
+        return Promise.allSettled(promises);
+      } else {
+        return binance.executeMultipleOrders(apiKey, apiSecret, orders);
       }
     },
     connectNttWs() {
@@ -430,7 +424,7 @@ export default {
     },
   },
   mounted() {
-    //this.connectNttWs();
+    this.connectNttWs();
   },
   beforeUnmount() {
     if (this.nttWs) {

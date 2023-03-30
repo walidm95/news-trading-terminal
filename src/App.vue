@@ -108,8 +108,8 @@ Amplify.configure(awsconfig);
             />
           </div>
           <button class="float-right" @click="signOut">Sign Out</button>
-          <button class="float-right mr-2" @click="resetLocalStorage">
-            Reset Storage
+          <button class="float-right mr-2" @click="resetLocalOrders">
+            Reset Orders
           </button>
         </template>
       </authenticator>
@@ -172,8 +172,7 @@ export default {
   },
   components: { NewsFeed, TradingPanel },
   methods: {
-    resetLocalStorage() {
-      localStorage.setItem("inAppPositions", JSON.stringify([]));
+    resetLocalOrders() {
       localStorage.setItem("openOrders", JSON.stringify([]));
     },
     async getAppVersion() {
@@ -523,7 +522,6 @@ export default {
       let inAppPositions =
         JSON.parse(localStorage.getItem("inAppPositions")) || [];
 
-      let positions = [];
       this.trading.positions = [];
 
       for (let apiKey of this.trading.apiKeys) {
@@ -541,7 +539,7 @@ export default {
                 if (
                   position.positionAmt != 0 &&
                   inAppPositions.some(
-                    (inAppPos) => inAppPos.ticker == position.symbol
+                    (inAppPos) => inAppPos.ticker == position.symbol && inAppPos.account == apiKey.name
                   )
                 ) {
                   let positionData = {
@@ -565,6 +563,16 @@ export default {
                   ) {
                     this.trading.positions.push(positionData);
                   }
+                } else if (
+                  inAppPositions.some(
+                    (inAppPos) => inAppPos.ticker == position.symbol && inAppPos.account == apiKey.name
+                  )
+                ) {
+                  // A position has been closed outside of the app, remove it from memory
+                  inAppPositions = inAppPositions.filter(
+                    (inAppPos) => !(inAppPos.ticker === position.symbol && inAppPos.account === apiKey.name)
+                  );
+                  localStorage.setItem("inAppPositions", JSON.stringify(inAppPositions))
                 }
               }
             });
