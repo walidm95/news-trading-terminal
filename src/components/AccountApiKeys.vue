@@ -3,7 +3,7 @@
         <div class="card-header h4 border-secondary">
             API Keys
         </div>
-        <div class="table-responsive table-bordered table-striped table-dark" style="overflow-x: hidden">
+        <div class="table-responsive table-bordered table-striped table-dark" style="overflow-x: hidden;overflow-y: auto; height:244px">
             <table class="table">
                 <thead>
                     <tr>
