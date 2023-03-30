@@ -108,6 +108,9 @@ Amplify.configure(awsconfig);
             />
           </div>
           <button class="float-right" @click="signOut">Sign Out</button>
+          <button class="float-right mr-2" @click="resetLocalOrders">
+            Reset Orders
+          </button>
         </template>
       </authenticator>
     </div>
@@ -169,6 +172,9 @@ export default {
   },
   components: { NewsFeed, TradingPanel },
   methods: {
+    resetLocalOrders() {
+      localStorage.setItem("openOrders", JSON.stringify([]));
+    },
     async getAppVersion() {
       this.version = await getVersion();
     },
@@ -246,6 +252,8 @@ export default {
       if (this.trading.apiKeys.length == 0) {
         return;
       }
+
+      // Note: since data is the same for all accounts, just use first account
       let apiKey = this.trading.apiKeys[0];
       let promise = binance.getNotionalAndLeverageBrackets(
         apiKey.key,
@@ -376,8 +384,8 @@ export default {
       this.trading.lockSymbol = !this.trading.lockSymbol;
     },
     onClickedByOtherTrader(trader_id) {
-      if(trader_id == this.currentUserIdToken.payload["email"]) {
-        return
+      if (trader_id == this.currentUserIdToken.payload["email"]) {
+        return;
       }
 
       if (!this.clientsThatTraded.includes(trader_id)) {
@@ -388,7 +396,10 @@ export default {
     onOpenPosition(position) {
       let inAppPositions =
         JSON.parse(localStorage.getItem("inAppPositions")) || [];
-      inAppPositions.push(position.ticker);
+      inAppPositions.push({
+        account: position.account,
+        ticker: position.ticker,
+      });
       localStorage.setItem("inAppPositions", JSON.stringify(inAppPositions));
 
       this.fetchOpenPositions();
@@ -414,22 +425,47 @@ export default {
       promise
         .then((response) => {
           console.log(response);
+          let posToRemove = this.trading.positions[index];
+
+          // Remove from positions
           this.trading.positions.splice(index, 1);
 
+          // Remove from inAppPositions
+          let inAppPositions =
+            JSON.parse(localStorage.getItem("inAppPositions")) || [];
+
+          let newInAppPositions = [];
+          for (let inAppPos of inAppPositions) {
+            if (
+              inAppPos.account == posToRemove.account &&
+              inAppPos.ticker == posToRemove.ticker
+            ) {
+              // We skip it
+              continue;
+            } else {
+              newInAppPositions.push(inAppPos);
+            }
+          }
+
+          localStorage.setItem(
+            "inAppPositions",
+            JSON.stringify(newInAppPositions)
+          );
+
           // Cancel stop loss/take profit orders
-          // TODO: we dont need to cancel reduce only limit orders if we close the position, they get cancelled automatically
+          // Note: we dont need to cancel reduce only limit orders if we close the position, they get cancelled automatically
           let openOrders = JSON.parse(localStorage.getItem("openOrders")) || [];
-          let orderIds = [];
+          let cancelorderIds = [];
           for (let order of openOrders) {
             if (
               order.ticker == position.ticker &&
               order.accountName == position.account
             ) {
-              orderIds.push(order.orderId);
+              cancelorderIds.push(order.orderId);
             }
           }
 
-          if (orderIds.length == 0) {
+          if (cancelorderIds.length == 0) {
             return;
           }
 
@@ -437,7 +473,7 @@ export default {
             apiKey.key,
             apiKey.secret,
             position.ticker,
-            orderIds
+            cancelorderIds
           );
           cancelOrdersPromise
             .then((response) => response.json())
@@ -445,17 +481,16 @@ export default {
               if (data.code) {
                 alert(data.msg);
               } else {
-                for (let order of data) {
-                  if (order.status == "CANCELED") {
-                    for (let i = 0; i < openOrders.length; i++) {
-                      if (openOrders[i].orderId == order.orderId) {
-                        openOrders.splice(i, 1);
-                        break;
-                      }
-                    }
-                  }
-                }
-                localStorage.setItem("openOrders", JSON.stringify(openOrders));
+                let newOpenOrders = openOrders.filter((order) => {
+                  return !cancelorderIds.some(
+                    (canceledOrderId) => canceledOrderId === order.orderId
+                  );
+                });
+
+                localStorage.setItem(
+                  "openOrders",
+                  JSON.stringify(newOpenOrders)
+                );
               }
 
               // Fetch positions
@@ -487,20 +522,15 @@ export default {
       let inAppPositions =
         JSON.parse(localStorage.getItem("inAppPositions")) || [];
 
-      // TODO: handle multiple api keys
-      let positions = [];
-      if (this.trading.apiKeys.length == 0) {
-        this.trading.positions = positions;
-        return;
-      }
-      binance
-        .getAccount(this.trading.apiKeys[0].key, this.trading.apiKeys[0].secret)
-        .then(
+      this.trading.positions = [];
+
+      for (let apiKey of this.trading.apiKeys) {
+        binance.getAccount(apiKey.key, apiKey.secret).then(
           (response) => {
             let data = response.json();
             data.then((account) => {
               if (account.positions == undefined) {
-                this.trading.positions = positions;
+                console.log("positions undefined");
                 return;
               }
 
@@ -508,39 +538,50 @@ export default {
                 // Only add positions that were traded through the app
                 if (
                   position.positionAmt != 0 &&
-                  inAppPositions.includes(position.symbol)
+                  inAppPositions.some(
+                    (inAppPos) => inAppPos.ticker == position.symbol && inAppPos.account == apiKey.name
+                  )
                 ) {
                   let positionData = {
                     ticker: position.symbol,
                     side: position.positionAmt > 0 ? "BUY" : "SELL",
                     units: Math.abs(position.positionAmt),
                     entryPrice: position.entryPrice,
-                    account: this.trading.apiKeys[0].name,
+                    account: apiKey.name,
                     upnl: position.unrealizedProfit,
                     markPrice: position.markPrice,
                     size: position.positionAmt * position.markPrice,
                   };
 
-                  positions.push(positionData);
+                  // Add open positions
+                  if (
+                    !this.trading.positions.some(
+                      (pos) =>
+                        pos.ticker === positionData.ticker &&
+                        pos.account === positionData.account
+                    )
+                  ) {
+                    this.trading.positions.push(positionData);
+                  }
+                } else if (
+                  inAppPositions.some(
+                    (inAppPos) => inAppPos.ticker == position.symbol && inAppPos.account == apiKey.name
+                  )
+                ) {
+                  // A position has been closed outside of the app, remove it from memory
+                  inAppPositions = inAppPositions.filter(
+                    (inAppPos) => !(inAppPos.ticker === position.symbol && inAppPos.account === apiKey.name)
+                  );
+                  localStorage.setItem("inAppPositions", JSON.stringify(inAppPositions))
                 }
               }
-              this.trading.positions = positions;
-
-              // Reset inAppPositions
-              inAppPositions = [];
-              for (let position of positions) {
-                inAppPositions.push(position.ticker);
-              }
-              localStorage.setItem(
-                "inAppPositions",
-                JSON.stringify(inAppPositions)
-              );
             });
           },
           (error) => {
             alert(error);
           }
         );
+      }
     },
     async getCoinNames() {
       let resp = await fetch(

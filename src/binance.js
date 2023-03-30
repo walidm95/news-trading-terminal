@@ -60,7 +60,6 @@ function executeCloseMarketOrder(apiKey, secretKey, symbol, side, quantity) {
 }
 
 function executeMultipleOrders(apiKey, secretKey, orders) {
-    //TODO: make batches of 5 orders
     if(orders.length > 5) throw new Error('Maximum of 5 orders per request');
     if(orders.length < 1) throw new Error('Minimum of 1 order per request');
 

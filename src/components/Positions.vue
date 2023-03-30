@@ -1,98 +1,148 @@
 <template>
-    <div class="card mb-2 bg-dark text-white border-secondary" style="height: 300px">
-        <div class="card-header h4 border-secondary">
-            Positions ({{ positions.length }})
-            <button class="btn btn-dark float-right" @click="$emit('refresh-positions')"><i class="bi bi-arrow-clockwise"></i></button>
-        </div>
-        <div class="table-responsive table-bordered table-striped table-dark" style="overflow-x: hidden">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th scope="col" class="text-white text-center">Account</th>
-                        <th scope="col" class="text-white text-center">Ticker</th>
-                        <th scope="col" class="text-white text-center">Side</th>
-                        <th scope="col" class="text-white text-center">Size</th>
-                        <th scope="col" class="text-white text-center">Entry Price</th>
-                        <th scope="col" class="text-white text-center">Mark Price</th>
-                        <th scope="col" class="text-white text-center">uPNL</th>
-                        <th scope="col" class="text-white text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(pos, index) in positions">
-                        <th scope="row" class="text-white text-center align-middle">{{ pos.account }}</th>
-                        <td class="text-white text-center align-middle">{{ pos.ticker }}</td>
-                        <td class="text-white text-center align-middle">{{ pos.side }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.size) }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.entryPrice, pos.ticker) }}</td>
-                        <td class="text-white text-center align-middle">{{ formatNumber(pos.markPrice, pos.ticker) }}</td>
-                        <td class="text-center align-middle" :class="pos.upnl > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(pos.upnl) }}</td>
-                        <td class="text-center align-middle">
-                            <button type="button" class="btn btn-danger" @click="$emit('close-position', index)">Close</button>
-                            &nbsp;
-                            <button type="button" class="btn btn-info" @click="$emit('select-symbol', pos.ticker)">Select</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+  <div
+    class="card mb-2 bg-dark text-white border-secondary"
+    style="height: 300px"
+  >
+    <div class="card-header h4 border-secondary">
+      Positions ({{ positions.length }})
+      <button
+        class="btn btn-dark float-right"
+        @click="$emit('refresh-positions')"
+      >
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
     </div>
+    <div
+      class="table-responsive table-bordered table-striped table-dark"
+      style="overflow-x: hidden"
+    >
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col" class="text-white text-center">Account</th>
+            <th scope="col" class="text-white text-center">Ticker</th>
+            <th scope="col" class="text-white text-center">Side</th>
+            <th scope="col" class="text-white text-center">Size</th>
+            <th scope="col" class="text-white text-center">Entry Price</th>
+            <th scope="col" class="text-white text-center">Mark Price</th>
+            <th scope="col" class="text-white text-center">uPNL</th>
+            <th scope="col" class="text-white text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(pos, index) in positions">
+            <th scope="row" class="text-white text-center align-middle">
+              {{ pos.account }}
+            </th>
+            <td class="text-white text-center align-middle">
+              {{ pos.ticker }}
+            </td>
+            <td class="text-white text-center align-middle">{{ pos.side }}</td>
+            <td class="text-white text-center align-middle">
+              {{ formatNumber(pos.size) }}
+            </td>
+            <td class="text-white text-center align-middle">
+              {{ formatNumber(pos.entryPrice, pos.ticker) }}
+            </td>
+            <td class="text-white text-center align-middle">
+              {{ formatNumber(pos.markPrice, pos.ticker) }}
+            </td>
+            <td
+              class="text-center align-middle"
+              :class="pos.upnl > 0 ? 'text-success' : 'text-danger'"
+            >
+              {{ formatNumber(pos.upnl) }}
+            </td>
+            <td class="text-center align-middle">
+              <button
+                type="button"
+                class="btn btn-danger"
+                @click="$emit('close-position', index)"
+              >
+                Close
+              </button>
+              &nbsp;
+              <button
+                type="button"
+                class="btn btn-info"
+                @click="$emit('select-symbol', pos.ticker)"
+              >
+                Select
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
 
 <script>
-import binance from '../binance.js';
+import binance from "../binance.js";
 
 var formatter = new Intl.NumberFormat("en-US", {
-    style:"currency",
-    currency: "USD",
-    maximumFractionDigits: 7
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 7,
 });
 
 export default {
-    data() {
-        return {
-            listenKey: null,
-            userDataStream: null,
-            keepAliveInterval: null
-        }
+  data() {
+    return {
+      listenKeys: {},
+      userDataStreams: {},
+      keepAliveIntervals: {},
+    };
+  },
+  props: {
+    positions: { type: Array, required: true },
+    pricePrecisions: { type: Object, required: true },
+  },
+  methods: {
+    formatNumber(number, ticker) {
+      number = parseFloat(number);
+      return formatter.format(
+        number.toFixed(ticker ? this.pricePrecisions[ticker] : 2)
+      );
     },
-    props: {
-        positions: {type: Array, required: true},
-        pricePrecisions: {type: Object, required: true}
-    },
-    methods: {
-        formatNumber(number, ticker) {
-            number = parseFloat(number);
-            return formatter.format(number.toFixed(ticker ? this.pricePrecisions[ticker] : 2));
-        },
-        connectUserDataStream() {
-            // TODO: support multiple accounts
-            let apiKeys = JSON.parse(localStorage.getItem('apiKeys'));
-
-            let promise = binance.getUserDataStreamListenKey(apiKeys[0].key, apiKeys[0].secret);
-            promise.then(response => response.json())
-                .then(data => {
-                    if (data.code) {
-                        alert(data.msg);
-                    } else {
-                        this.listenKey = data.listenKey;
-                        this.userDataStream = new WebSocket('wss://fstream.binance.com/ws/' + this.listenKey);
-                        this.userDataStream.onmessage = this.onUserDataStreamMessage;
-                        this.keepAliveInterval = setInterval(() => {
-                            binance.keepAliveUserDataStream(apiKeys[0].key, apiKeys[0].secret, this.listenKey);
-                        }, 30000);
-                    }
-                });
-        },
-        onUserDataStreamMessage(event) {
-            let data = JSON.parse(event.data);
-            if (data.e === 'ACCOUNT_UPDATE') {
-                this.$emit('update-positions');
+    connectUserDataStream() {
+      let apiKeys = JSON.parse(localStorage.getItem("apiKeys"));
+      for (let apiKey of apiKeys) {
+        let promise = binance.getUserDataStreamListenKey(
+          apiKey.key,
+          apiKey.secret
+        );
+        promise
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.code) {
+              alert(data.msg);
+            } else {
+              this.listenKeys[apiKey.name] = data.listenKey;
+              this.userDataStreams[apiKey.name] = new WebSocket(
+                "wss://fstream.binance.com/ws/" + this.listenKeys[apiKey.name]
+              );
+              this.userDataStreams[apiKey.name].onmessage = this.onUserDataStreamMessage;
+              this.keepAliveIntervals[apiKey.name] = setInterval(() => {
+                binance.keepAliveUserDataStream(
+                  apiKey.key,
+                  apiKey.secret,
+                  this.listenKeys[apiKey.name]
+                );
+              }, 30000);
             }
-        }
+          });
+      }
     },
-    mounted() {
-        this.connectUserDataStream();
-    }
-}
+    onUserDataStreamMessage(event) {
+      let data = JSON.parse(event.data);
+      if (data.e === "ACCOUNT_UPDATE") {
+        this.$emit("update-positions");
+      }
+    },
+  },
+  mounted() {
+    this.connectUserDataStream();
+  },
+};
 </script>
