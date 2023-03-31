@@ -390,7 +390,7 @@ export default {
             console.log("nttWs error");
             console.log(error);
           };
-          this.nttWs.conclose = () => {
+          this.nttWs.onclose = () => {
             console.log("nttWs close");
             clearTimeout(this.pingTimeout);
           };
