@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "news-trading-terminal",
-    "version": "0.2.5"
+    "version": "0.3.0"
   },
   "tauri": {
     "allowlist": {
@@ -28,12 +28,6 @@
     },
     "bundle": {
       "active": true,
-      "category": "DeveloperTool",
-      "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -41,23 +35,8 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.newstradingterminal.dev",
-      "longDescription": "",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [],
-      "shortDescription": "",
-      "targets": "all",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
+      "identifier": "com.ntt.dev",
+      "targets": "all"
     },
     "security": {
       "csp": null
@@ -65,7 +44,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://x84rvsm4qg.execute-api.us-east-1.amazonaws.com/releases/{{target}}?version={{current_version}}"
+        "https://x84rvsm4qg.execute-api.us-east-1.amazonaws.com/releases/v2/{{target}}?version={{current_version}}"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERGNDAwNzRDMTI5MjYzRjAKUldUd1k1SVNUQWRBM3lYMG5abGJjQVAyZWR5NXpNbEpWWXdlOVRrdnZmSndabFh3WnZHcUtkREYK"
@@ -73,10 +52,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 1200,
         "resizable": true,
-        "title": "news-trading-terminal",
-        "width": 1000
+        "title": "News Trading Terminal",
+        "width": 1000,
+        "height": 1200
       }
     ]
   }
