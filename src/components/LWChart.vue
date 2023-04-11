@@ -233,7 +233,7 @@ export default {
 
       this.priceSeries.setData(this.priceData);
 
-      this.chart.timeScale().subscribeVisibleLogicalRangeChange(this.onVisibleRangeChanged)
+      this.chart.timeScale().subscribeVisibleLogicalRangeChange(this.onVisibleRangeChanged);
     },
     reloadChartData() {
       if (this.chart) {

@@ -44,7 +44,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://x84rvsm4qg.execute-api.us-east-1.amazonaws.com/releases/v2/{{target}}?version={{current_version}}"
+        "https://x84rvsm4qg.execute-api.us-east-1.amazonaws.com/releases/{{target}}?version={{current_version}}"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERGNDAwNzRDMTI5MjYzRjAKUldUd1k1SVNUQWRBM3lYMG5abGJjQVAyZWR5NXpNbEpWWXdlOVRrdnZmSndabFh3WnZHcUtkREYK"
