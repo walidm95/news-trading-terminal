@@ -1,7 +1,8 @@
-# Tauri + Vue 3
+# News Trading Terminal (NTT)
 
-This template should help get you started developing with Tauri + Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+NTT is a convenient app that merges up-to-date cryptocurrency news with an intuitive trading panel, enabling quick and informed trading decisions based on current market insights.
 
-## Recommended IDE Setup
+Here is what it looks like:
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+![Alt text for the image](public/ntt-screenshot.png)
+

@@ -28,6 +28,8 @@ export default {
   },
   methods: {
     onSelectHeadline(index) {
+      this.$emit("active-headline-index-changed", index);
+
       this.activeHeadline = index;
       this.$emit("symbol-from-headline", this.headlines[index].symbol);
     },
@@ -104,11 +106,14 @@ export default {
           btcPrice: this.livePriceFeed["BTC" + this.quoteAsset] ? this.livePriceFeed["BTC" + this.quoteAsset] : 0,
         });
 
-        this.activeHeadline = 0;
         if (this.playNotificationSound) {
           this.notification_sound.play();
         }
+
+        this.activeHeadline = 0;
         this.$emit("symbol-from-headline", symbol);
+        this.$emit("update-headlines", this.headlines);
+        this.$emit("active-headline-index-changed", 0);
       };
     },
     getPriceChange(index) {

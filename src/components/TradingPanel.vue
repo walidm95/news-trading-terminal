@@ -43,7 +43,8 @@ export default {
     tickSize: { type: Number, required: true },
     cognitoIdToken: { type: Object, required: true },
     clickedByTradersNbr: { type: Number, required: true },
-    selectedHeadline: { type: String, required: true },
+    activeHeadline: { type: Object, required: true },
+    activeHeadlineIndex: { type: Number, required: true },
     generalSettings: { type: Object, required: true },
   },
   methods: {
@@ -62,17 +63,17 @@ export default {
 
       for (let api of this.apiKeys) {
         // Send trade message to websocket
-        if (this.nttWs) {
+        if (this.nttWs && this.activeHeadlineIndex == 0 && this.activeHeadline && this.tradingSymbol == this.activeHeadline.symbol) {
           this.nttWs.send(
             JSON.stringify({
-              action: "trade2",
+              action: "trade",
               data: {
                 trader_id: this.cognitoIdToken.payload.email,
                 ticker: this.tradingSymbol + this.quoteAsset,
                 size: `${(dollarSize / this.maxSize) * 100}%`,
                 side: side,
                 entryPrice: this.latestPrice,
-                newsHeadline: this.selectedHeadline ? this.selectedHeadline : "N/A",
+                newsHeadline: this.activeHeadline ? this.activeHeadline : "N/A",
               },
             })
           );

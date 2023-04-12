@@ -23,7 +23,6 @@ export default {
       version: null,
       newTradeSound: new Audio("/new_trade.mp3"),
       clientsThatTraded: [],
-      selectedHeadline: null,
       binanceFuturesPing: null,
       binanceFuturesPingLoop: null,
       precisionFormat: { price: {}, quantity: {} },
@@ -34,7 +33,7 @@ export default {
       symbols: [],
       news: {
         headlines: [],
-        activeHeadline: 0,
+        activeHeadlineIndex: 0,
       },
       trading: {
         tradingSymbol: "BTC",
@@ -168,8 +167,13 @@ export default {
         forceChartRender();
       }
     },
+    onUpdateHeadlines(headlines) {
+      this.news.headlines = headlines;
+    },
+    onActiveHeadlineChanged(index) {
+      this.news.activeHeadlineIndex = index;
+    },
     onSymbolChanged(symbol) {
-      this.selectedHeadline = this.news.headlines[0];
       this.clientsThatTraded = [];
 
       if (this.trading.lockSymbol) {
@@ -515,6 +519,8 @@ export default {
             :live-price-feed="livePriceFeed"
             :play-notification-sound="generalSettings.playHeadlineNotification"
             @symbol-from-headline="onSymbolChanged"
+            @update-headlines="onUpdateHeadlines"
+            @active-headline-index-changed="onActiveHeadlineChanged"
           ></NewsFeed>
         </v-col>
         <v-col>
@@ -539,8 +545,9 @@ export default {
             :cognito-id-token="cognitoIdToken"
             :clicked-by-traders-nbr="0"
             :accounts-positions="trading.positions"
-            :selected-headline="news.headlines[news.activeHeadline]"
             :general-settings="generalSettings"
+            :active-headline="news.headlines[news.activeHeadlineIndex]"
+            :active-headline-index="news.activeHeadlineIndex"
           ></TradingPanel>
         </v-col>
       </v-row>
