@@ -1,36 +1,33 @@
 <template>
-    <div class="card bg-dark text-white border-secondary">
-        <div class="card-header h4 border-secondary">
-            {{ ticker.replace("BINANCE:", "") }}
-        </div>
-        <Chart
-            :options="{
-                autosize: true,
-                interval: '1',
-                symbol: ticker,
-                timezone: getLocaleTimezone(),
-                theme: 'dark',
-                hide_top_toolbar: true,
-                hide_legend: true
-            }"
-            style="height: 300px"
-        />
-    </div>
+  <v-card>
+    <Chart
+      class="pb-1 pt-1 pl-1 pr-1"
+      :options="{
+        autosize: true,
+        interval: '1',
+        symbol: `BINANCE:${ticker}`,
+        timezone: getLocaleTimezone(),
+        theme: 'dark',
+        hide_top_toolbar: true,
+        hide_legend: false,
+      }"
+      style="height: 100%"
+    />
+  </v-card>
 </template>
-  
+
 <script>
-//Note: for better speed, I would need to cache all symbols data and use https://github.com/tradingview/lightweight-charts
-import { Chart } from 'vue-tradingview-widgets';
+import { Chart } from "vue-tradingview-widgets";
 
 export default {
-    props: {
-        ticker: {type: String, required: true}
+  props: {
+    ticker: { type: String, required: true },
+  },
+  components: { Chart },
+  methods: {
+    getLocaleTimezone() {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
     },
-    components: { Chart },
-    methods: {
-        getLocaleTimezone() {
-            return Intl.DateTimeFormat().resolvedOptions().timeZone;
-        }
-    }
-}
+  },
+};
 </script>

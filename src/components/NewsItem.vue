@@ -1,30 +1,30 @@
 <script>
 export default {
   props: {
-    headline: {type: Object, required: true},
-    selected: {type: Boolean, required: true},
-    expand: {type: Boolean, required: true},
-    priceChange: {type: Number, required: true},
-    btcPriceChange: {type: Number, required: true}
-  }
-}
+    symbol: { type: String, required: true },
+    type: { type: String, required: true },
+    title: { type: String, required: true },
+    body: { type: String, required: true },
+    link: { type: String, required: true },
+    timestamp: { type: String, required: true },
+    selected: { type: Boolean, required: true },
+    priceChange: { type: Number, required: true },
+    btcPriceChange: { type: Number, required: true },
+  },
+};
 </script>
 
 <template>
-    <li class="list-group-item" :class="{'bg-dark': !selected, 'bg-white': selected, 'text-white': !selected, 'text-dark': selected}">
-        <div>
-          <h6 class="card-text" :class="{'truncate': !expand && headline.body && headline.body.length > 500}"><span :class="{'text-info': !selected, 'text-primary': selected}" v-show="headline.type == 'twitter'"><i class="bi bi-twitter"></i> {{ headline.title }}: </span>{{ headline.body }}&nbsp;<a class="float-right" v-show="headline.link" :href="headline.link" target="_blank">Link</a></h6>
-          <small class="d-inline" :class="{'text-muted': !selected, 'text-dark': selected}"><i class="bi bi-clock"></i> {{ headline.time.toLocaleString('en-US', {timeZoneName: 'short'}) }}</small>
-          <small class="float-right font-weight-bold d-inline">{{ headline.symbol }} <span :class="priceChange> 0 ? 'text-success' : 'text-danger'">{{ priceChange.toFixed(2) }}%</span></small>
-          <small class="float-right font-weight-bold d-inline">BTC <span :class="btcPriceChange> 0 ? 'text-success' : 'text-danger'">{{ btcPriceChange.toFixed(2) }}% &nbsp;</span></small>
-        </div>
-      </li>
+  <v-list-item :active="selected" :ripple="false">
+    <h4 class="text-info" v-show="type == 'twitter'"><v-icon icon="mdi-twitter" size="small" />{{ title }}&nbsp;</h4>
+    <h4 :class="!selected ? 'text-truncate' : ''">{{ body }}<a class="float-right pl-2" :href="link" target="_blank">Link</a></h4>
+    <small class="float-left text-grey"
+      ><v-icon icon="mdi-clock-outline" size="x-small" /> {{ timestamp.toLocaleString("en-US", { timeZoneName: "short" }) }}</small
+    >
+    <small class="float-right pl-2 font-weight-bold"
+      >BTC&nbsp;<span :class="btcPriceChange > 0 ? 'text-green' : 'text-red'">{{ btcPriceChange.toFixed(2) }}%</span>&nbsp;&nbsp;{{
+        symbol
+      }}&nbsp;<span :class="priceChange > 0 ? 'text-green' : 'text-red'">{{ priceChange.toFixed(2) }}%</span></small
+    >
+  </v-list-item>
 </template>
-
-<style scoped>
-.truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-</style>

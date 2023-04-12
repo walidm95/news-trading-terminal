@@ -1,31 +1,27 @@
 <script setup>
-import TradingParameters from "./TradingParameters.vue";
-import TradingButtons from "./TradingButtons.vue";
+import TradingSettingsDialog from "./TradingSettingsDialog.vue";
+import TradingButton from "./TradingButton.vue";
 </script>
 
 <script>
 import binance from "../binance";
 import { ExecutionMode, ApiRoutes } from "../constants";
 
-let tradingParams = JSON.parse(localStorage.getItem("tradingParams")) || {};
-
 export default {
   data() {
     return {
-      maxTradingSize: tradingParams.maxTradingSize
-        ? tradingParams.maxTradingSize
-        : null,
-      stopLossPct: tradingParams.stopLossPct ? tradingParams.stopLossPct : null,
-      takeProfitPct: tradingParams.takeProfitPct
-        ? tradingParams.takeProfitPct
-        : null,
-      executionMode: tradingParams.executionMode
-        ? tradingParams.executionMode
-        : "",
-      orderSplit: tradingParams.orderSplit ? tradingParams.orderSplit : null,
-      startScalePct: tradingParams.startScalePct
-        ? tradingParams.startScalePct
-        : null,
+      maxSize: null,
+      selectedEntryMode: null,
+      selectedExitMode: null,
+      stopLoss: null,
+      takeProfit: null,
+      scaleFrom: null,
+      scaleTo: null,
+      nbrScaleOrders: null,
+      marketProportion: null,
+      entryScaleTo: null,
+      symbolLocked: false,
+      density: "compact",
       nttWs: null,
       wsAlive: false,
       pingInterval: null,
@@ -35,75 +31,23 @@ export default {
     };
   },
   props: {
-    selectedHeadline: { type: String, required: true },
     tradingSymbol: { type: String, required: true },
     quoteAsset: { type: String, required: true },
-    apiKeys: { type: Array, required: true },
-    livePriceFeed: { type: Object, required: true },
-    pricePrecision: { type: Number, required: true },
-    tickSize: { type: Number, required: true },
-    quantityPrecision: { type: Number, required: true },
     lockSymbol: { type: Boolean, required: true },
-    maxLevAndMaxNotional: { type: Object, required: true },
+    accountsBalance: { type: Object, required: true },
+    accountsPositions: { type: Array, required: true },
+    apiKeys: { type: Array, required: true },
+    latestPrice: { type: Array, required: true },
+    pricePrecision: { type: Array, required: true },
+    quantityPrecision: { type: Array, required: true },
+    tickSize: { type: Number, required: true },
     cognitoIdToken: { type: Object, required: true },
     clickedByTradersNbr: { type: Number, required: true },
+    activeHeadline: { type: Object, required: true },
+    activeHeadlineIndex: { type: Number, required: true },
+    generalSettings: { type: Object, required: true },
   },
   methods: {
-    onTradingSizeChanged(event) {
-      //TODO: simplify these methods
-      this.maxTradingSize = Number(event.target.value);
-      let tradingParams =
-        JSON.parse(localStorage.getItem("tradingParams")) || {};
-      tradingParams.maxTradingSize = this.maxTradingSize;
-      localStorage.setItem("tradingParams", JSON.stringify(tradingParams));
-    },
-    onStopLossChanged(event) {
-      this.stopLossPct = Number(event.target.value);
-      let tradingParams =
-        JSON.parse(localStorage.getItem("tradingParams")) || {};
-      tradingParams.stopLossPct = this.stopLossPct;
-      localStorage.setItem("tradingParams", JSON.stringify(tradingParams));
-    },
-    onTakeProfitChanged(event) {
-      this.takeProfitPct = Number(event.target.value);
-      let tradingParams =
-        JSON.parse(localStorage.getItem("tradingParams")) || {};
-      tradingParams.takeProfitPct = this.takeProfitPct;
-      localStorage.setItem("tradingParams", JSON.stringify(tradingParams));
-    },
-    onExitModeChanged(event) {
-      this.executionMode = event.target.value;
-      let tradingParams =
-        JSON.parse(localStorage.getItem("tradingParams")) || {};
-      tradingParams.executionMode = this.executionMode;
-      localStorage.setItem("tradingParams", JSON.stringify(tradingParams));
-    },
-    onOrderSplitChanged(event) {
-      this.orderSplit = Number(event.target.value);
-      let tradingParams =
-        JSON.parse(localStorage.getItem("tradingParams")) || {};
-      tradingParams.orderSplit = this.orderSplit;
-      localStorage.setItem("tradingParams", JSON.stringify(tradingParams));
-    },
-    onStartScalePctChange(event) {
-      this.startScalePct = Number(event.target.value);
-      let tradingParams =
-        JSON.parse(localStorage.getItem("tradingParams")) || {};
-      tradingParams.startScalePct = this.startScalePct;
-      localStorage.setItem("tradingParams", JSON.stringify(tradingParams));
-    },
-    onSymbolChanged(symbol) {
-      this.$emit("trading-symbol-changed", symbol);
-    },
-    onQuoteAssetChanged(event) {
-      this.$emit("quote-asset-changed", event.target.value);
-    },
-    onBuyButtonClicked(event) {
-      this.executeOrder("BUY", event.target.innerText);
-    },
-    onSellButtonClicked(event) {
-      this.executeOrder("SELL", event.target.innerText);
-    },
     formatQuantityPrecision(quantity) {
       return quantity.toFixed(this.quantityPrecision);
     },
@@ -112,100 +56,110 @@ export default {
       price -= price % this.tickSize;
       return price.toFixed(this.pricePrecision);
     },
-    executeOrder(side, sizeText) {
-      if (this.apiKeys.length == 0) {
-        alert("API Keys are required to trade");
-        return;
-      }
+    onExecuteTrade(args) {
+      let dollarSize = args[0];
+      let side = args[1];
+      console.log(`${side} ${dollarSize} of ${this.tradingSymbol}`);
 
-      for (let apiKey of this.apiKeys) {
-        // Parse size
-        sizeText = sizeText.replace("$", "");
-        let multiplier = sizeText.endsWith("K")
-          ? 1000
-          : sizeText.endsWith("M")
-          ? 1000000
-          : 1;
-        let dollarSize =
-          Number(sizeText.replace("K", "").replace("M", "")) * multiplier;
-        let latestPrice =
-          this.livePriceFeed[this.tradingSymbol + this.quoteAsset];
-
-        // Send trade message to websocket for logging
-        if (this.nttWs) {
+      for (let api of this.apiKeys) {
+        // Send trade message to websocket
+        if (this.nttWs && this.activeHeadlineIndex == 0 && this.activeHeadline && this.tradingSymbol == this.activeHeadline.symbol) {
           this.nttWs.send(
             JSON.stringify({
               action: "trade",
               data: {
                 trader_id: this.cognitoIdToken.payload.email,
                 ticker: this.tradingSymbol + this.quoteAsset,
-                size: `${(dollarSize / this.maxTradingSize) * 100}%`,
+                size: `${(dollarSize / this.maxSize) * 100}%`,
                 side: side,
-                entryPrice: latestPrice,
-                newsHeadline: this.selectedHeadline
-                  ? this.selectedHeadline
-                  : "N/A",
+                entryPrice: this.latestPrice,
+                newsHeadline: this.activeHeadline ? this.activeHeadline : "N/A",
               },
             })
           );
         }
 
         // Execute Binance order
-        let formattedQuantity = this.formatQuantityPrecision(
-          dollarSize / latestPrice
-        );
+        let formattedQuantity = this.formatQuantityPrecision(dollarSize / this.latestPrice);
         let ticker = this.tradingSymbol + this.quoteAsset;
-        let orderPromise = binance.executeMarketOrder(
-          apiKey.key,
-          apiKey.secret,
-          ticker,
-          side,
-          formattedQuantity
-        );
 
-        orderPromise
+        let marketOrderPromise;
+        if (this.selectedEntryMode == ExecutionMode.entry.MARKET) {
+          marketOrderPromise = binance.executeMarketOrder(api.key, api.secret, ticker, side, formattedQuantity);
+        } else if (this.selectedEntryMode == ExecutionMode.entry.MKT_SCALE) {
+          // Market order the desired portion
+          let dollarSizeToMarket = dollarSize * (this.marketProportion / 100);
+          let formattedQtyToMarket = this.formatQuantityPrecision(dollarSizeToMarket / this.latestPrice);
+          marketOrderPromise = binance.executeMarketOrder(api.key, api.secret, ticker, side, formattedQtyToMarket);
+
+          let formattedQtyToLimit = this.formatQuantityPrecision((dollarSize - dollarSizeToMarket) / this.latestPrice);
+          this.executeScaleOrders(
+            api.key,
+            api.secret,
+            side,
+            formattedQtyToLimit,
+            this.generalSettings.nbrOfOrdersForScaling,
+            0,
+            this.entryScaleTo,
+            false,
+            false
+          ).then((data) => {
+            if (data.code) {
+              alert(data.msg);
+            } else {
+              console.log("Scale in limit orders placed");
+            }
+          });
+        }
+
+        if (!marketOrderPromise) {
+          alert("Error executing order");
+          return;
+        }
+
+        marketOrderPromise
           .then((response) => response.json())
           .then((data) => {
             if (data.code) {
               alert(data.msg);
             } else {
               this.$emit("position-opened", {
-                account: apiKey.name,
+                account: api.name,
                 ticker: this.tradingSymbol + this.quoteAsset,
                 size: dollarSize,
                 side: side,
-                entryPrice: latestPrice,
-                markPrice: latestPrice,
+                entryPrice: this.latestPrice,
+                markPrice: this.latestPrice,
                 upnl: 0,
                 units: Number(data.origQty),
               });
 
               // Take profit
               let takeProfitPromise;
-              let takeProfitPrice =
-                side == "BUY"
-                  ? latestPrice * (1 + this.takeProfitPct / 100)
-                  : latestPrice * (1 - this.takeProfitPct / 100);
-              takeProfitPrice = this.formatPricePrecision(takeProfitPrice);
-              if (this.executionMode == ExecutionMode.LIMIT) {
+              if (this.selectedExitMode == ExecutionMode.exit.LIMIT) {
+                let takeProfitPrice = side == "BUY" ? this.latestPrice * (1 + this.takeProfit / 100) : this.latestPrice * (1 - this.takeProfit / 100);
+                takeProfitPrice = this.formatPricePrecision(takeProfitPrice);
+
                 takeProfitPromise = binance.executeLimitOrder(
-                  apiKey.key,
-                  apiKey.secret,
+                  api.key,
+                  api.secret,
                   ticker,
                   side == "BUY" ? "SELL" : "BUY",
                   formattedQuantity,
                   takeProfitPrice,
                   "true"
                 );
-              } else if (this.executionMode == ExecutionMode.SCALE) {
-                takeProfitPromise = this.executeScaleOutOrders(
-                  apiKey.key,
-                  apiKey.secret,
+              } else if (this.selectedExitMode == ExecutionMode.exit.SCALE) {
+                takeProfitPromise = this.executeScaleOrders(
+                  api.key,
+                  api.secret,
                   side == "BUY" ? "SELL" : "BUY",
-                  dollarSize / latestPrice,
-                  this.orderSplit,
-                  takeProfitPrice,
-                  this.startScalePct
+                  dollarSize / this.latestPrice,
+                  this.generalSettings.nbrOfOrdersForScaling,
+                  this.scaleFrom,
+                  this.scaleTo,
+                  true,
+                  true
                 );
               }
 
@@ -221,9 +175,7 @@ export default {
                     } else if (response.ok) {
                       return response.json();
                     } else {
-                      return response
-                        .text()
-                        .then((text) => Promise.reject(text));
+                      return response.text().then((text) => Promise.reject(text));
                     }
                   })
                   .then((orders, error) => {
@@ -232,10 +184,7 @@ export default {
                       return;
                     }
 
-                    let orderIds =
-                      JSON.parse(localStorage.getItem("openOrders")) || [];
-
-                    if (this.executionMode == ExecutionMode.LIMIT) {
+                    if (this.selectedExitMode == ExecutionMode.exit.LIMIT) {
                       // orders is only one order if its limit mode
                       orders = [orders];
                     }
@@ -246,90 +195,67 @@ export default {
                       }
 
                       console.log("Take profit(s) orders placed");
-
-                      if (order.orderId) {
-                        orderIds.push({
-                          accountName: apiKey.name,
-                          ticker: order.symbol,
-                          orderId: order.orderId,
-                        });
-                      }
                     }
-                    localStorage.setItem(
-                      "openOrders",
-                      JSON.stringify(orderIds)
-                    );
                   });
               }
             }
           });
 
         // Stop loss
-        let stopLossPrice =
-          side == "BUY"
-            ? latestPrice * (1 - this.stopLossPct / 100)
-            : latestPrice * (1 + this.stopLossPct / 100);
-        let stopLossPromise = binance.executeStopLossOrder(
-          apiKey.key,
-          apiKey.secret,
-          ticker,
-          side == "BUY" ? "SELL" : "BUY",
-          formattedQuantity,
-          this.formatPricePrecision(stopLossPrice)
-        );
+        if (this.stopLoss > 0) {
+          let stopLossPrice = side == "BUY" ? this.latestPrice * (1 - this.stopLoss / 100) : this.latestPrice * (1 + this.stopLoss / 100);
+          let stopLossPromise = binance.executeStopLossOrder(
+            api.key,
+            api.secret,
+            ticker,
+            side == "BUY" ? "SELL" : "BUY",
+            formattedQuantity,
+            this.formatPricePrecision(stopLossPrice)
+          );
 
-        stopLossPromise
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.code) {
-              alert(data.msg);
-            } else {
-              console.log("Stop loss order placed");
-              let orderIds =
-                JSON.parse(localStorage.getItem("openOrders")) || [];
-              orderIds.push({
-                accountName: apiKey.name,
-                ticker: data.symbol,
-                orderId: data.orderId,
-              });
-              localStorage.setItem("openOrders", JSON.stringify(orderIds));
-            }
-          });
+          stopLossPromise
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.code) {
+                alert(data.msg);
+              } else {
+                console.log("Stop loss order placed");
+              }
+            });
+        }
       }
     },
-    executeScaleOutOrders(
-      apiKey,
-      apiSecret,
-      side,
-      quantity,
-      nbrOfOrders,
-      takeProfitPrice,
-      startScalePct
-    ) {
+    executeScaleOrders(apiKey, apiSecret, side, quantity, nbrOfOrders, scaleFromPct, scaleToPct, reduceOnly, takeProfitOrder) {
       // Build list of orders
       let orders = [];
-      let latestPrice =
-        this.livePriceFeed[this.tradingSymbol + this.quoteAsset];
-      let startScalePrice =
-        latestPrice * (1 + ((side == "SELL" ? 1 : -1) * startScalePct) / 100);
-      let priceIncrement =
-        side == "SELL"
-          ? (takeProfitPrice - startScalePrice) / nbrOfOrders
-          : (startScalePrice - takeProfitPrice) / nbrOfOrders;
+      let scaleFromPrice = this.latestPrice * (1 + ((side == "SELL" ? 1 : -1) * scaleFromPct) / 100);
+      let scaleToPrice = this.latestPrice * (1 + ((side == "SELL" ? 1 : -1) * scaleToPct) / 100);
+      let priceIncrement = side == "SELL" ? (scaleToPrice - scaleFromPrice) / nbrOfOrders : (scaleFromPrice - scaleToPrice) / nbrOfOrders;
 
       // Must respect the expected format of the Binance API
       for (let i = 1; i <= nbrOfOrders; i++) {
-        let order = {
-          type: "LIMIT",
-          timeInForce: "GTC",
-          symbol: this.tradingSymbol + this.quoteAsset,
-          side: side,
-          quantity: this.formatQuantityPrecision(quantity / nbrOfOrders),
-          price: this.formatPricePrecision(
-            startScalePrice + (side == "SELL" ? 1 : -1) * priceIncrement * i
-          ),
-          reduceOnly: "true",
-        };
+        let order;
+        if (takeProfitOrder) {
+          order = {
+            type: "TAKE_PROFIT_MARKET",
+            symbol: this.tradingSymbol + this.quoteAsset,
+            side: side,
+            quantity: this.formatQuantityPrecision(quantity / nbrOfOrders),
+            stopPrice: this.formatPricePrecision(scaleFromPrice + (side == "SELL" ? 1 : -1) * priceIncrement * i),
+            reduceOnly: reduceOnly.toString(),
+          };
+        } else {
+          order = {
+            type: "LIMIT",
+            timeInForce: "GTC",
+            symbol: this.tradingSymbol + this.quoteAsset,
+            side: side,
+            quantity: this.formatQuantityPrecision(quantity / nbrOfOrders),
+            price: this.formatPricePrecision(scaleFromPrice + (side == "SELL" ? 1 : -1) * priceIncrement * i),
+            reduceOnly: reduceOnly.toString(),
+          };
+        }
+
         orders.push(order);
       }
 
@@ -338,18 +264,8 @@ export default {
         console.log("Executing " + orders.length + " orders in batches of 5");
         let promises = [];
         for (let i = 0; i < orders.length; i += 5) {
-          if (i + 5 > orders.length)
-            promises.push(
-              binance.executeMultipleOrders(apiKey, apiSecret, orders.slice(i))
-            );
-          else
-            promises.push(
-              binance.executeMultipleOrders(
-                apiKey,
-                apiSecret,
-                orders.slice(i, i + 5)
-              )
-            );
+          if (i + 5 > orders.length) promises.push(binance.executeMultipleOrders(apiKey, apiSecret, orders.slice(i)));
+          else promises.push(binance.executeMultipleOrders(apiKey, apiSecret, orders.slice(i, i + 5)));
         }
 
         return Promise.allSettled(promises);
@@ -357,14 +273,53 @@ export default {
         return binance.executeMultipleOrders(apiKey, apiSecret, orders);
       }
     },
+    loadTradingParams() {
+      let tradingParams = JSON.parse(localStorage.getItem("tradingParams")) || {};
+
+      if (Object.keys(tradingParams).length != 0) {
+        this.maxSize = tradingParams.maxSize;
+        this.selectedEntryMode = tradingParams.selectedEntryMode;
+        this.selectedExitMode = tradingParams.selectedExitMode;
+        this.stopLoss = tradingParams.stopLoss;
+        this.takeProfit = tradingParams.takeProfit;
+        this.scaleFrom = tradingParams.scaleFrom;
+        this.scaleTo = tradingParams.scaleTo;
+        this.nbrScaleOrders = tradingParams.nbrScaleOrders;
+        this.marketProportion = tradingParams.marketProportion;
+        this.entryScaleTo = tradingParams.entryScaleTo;
+      }
+    },
+    storeTradingParams() {
+      let tradingParams = {
+        maxSize: this.maxSize,
+        selectedEntryMode: this.selectedEntryMode,
+        selectedExitMode: this.selectedExitMode,
+        stopLoss: this.stopLoss,
+        takeProfit: this.takeProfit,
+        scaleFrom: this.scaleFrom,
+        scaleTo: this.scaleTo,
+        nbrScaleOrders: this.nbrScaleOrders,
+        marketProportion: this.marketProportion,
+        entryScaleTo: this.entryScaleTo,
+      };
+
+      localStorage.setItem("tradingParams", JSON.stringify(tradingParams));
+    },
+    onAddApiKey(data) {
+      this.$emit("add-api-key", data);
+    },
+    onDeleteApiKey(index) {
+      this.$emit("delete-api-key", index);
+    },
+    onUpdateGeneralSettings(settings) {
+      this.$emit("update-general-settings", settings);
+    },
     connectNttWs() {
       //Get websocket api key
       let headers = new Headers();
       headers.append("Authorization", this.cognitoIdToken.jwtToken);
 
-      let url =
-        ApiRoutes.GET_WS_API_KEY +
-        `?user_id=${this.cognitoIdToken.payload["cognito:username"]}`;
+      let url = ApiRoutes.GET_WS_API_KEY + `?user_id=${this.cognitoIdToken.payload["cognito:username"]}`;
       let requestOptions = new Request(url, {
         method: "GET",
         headers: headers,
@@ -375,16 +330,11 @@ export default {
         .then((response) => response.text())
         .then((result) => {
           let api_key = result.split('"').join("");
-          let wsUrl =
-            ApiRoutes.CONNECT_WS +
-            `?user_id=${this.cognitoIdToken.payload["cognito:username"]}&api_key=${api_key}`;
+          let wsUrl = ApiRoutes.CONNECT_WS + `?user_id=${this.cognitoIdToken.payload["cognito:username"]}&api_key=${api_key}`;
           this.nttWs = new WebSocket(wsUrl);
           this.nttWs.onopen = () => {
             this.wsAlive = true;
-            this.pingInterval = setInterval(
-              this.pingWebsocket,
-              this.pingIntervalTime
-            );
+            this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime);
           };
           this.nttWs.onerror = (error) => {
             console.log("nttWs error");
@@ -422,8 +372,23 @@ export default {
         this.connectNttWs();
       }, this.pingTimeoutTime);
     },
+    getTotalAccountsBalance() {
+      let total = 0;
+      for (let account of Object.keys(this.accountsBalance)) {
+        total += this.accountsBalance[account];
+      }
+      return total.toFixed(2);
+    },
+    getTotalPositionsNotional() {
+      let total = 0;
+      for (let pos of this.accountsPositions) {
+        total += pos.size;
+      }
+      return total.toFixed(2);
+    },
   },
   mounted() {
+    this.loadTradingParams();
     this.connectNttWs();
   },
   beforeUnmount() {
@@ -437,42 +402,177 @@ export default {
 </script>
 
 <template>
-  <div class="card bg-dark text-white border-secondary" style="height: 410px">
-    <div class="card-header h4 border-secondary">Trading Panel</div>
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item bg-dark text-white border-secondary">
-        <TradingParameters
-          :maxTradingSize="maxTradingSize"
-          :stopLossPct="stopLossPct"
-          :takeProfitPct="takeProfitPct"
-          :tradingSymbol="tradingSymbol"
-          :quoteAsset="quoteAsset"
-          :lockSymbol="lockSymbol"
-          :executionMode="executionMode"
-          :startScalePct="startScalePct"
-          :orderSplit="orderSplit"
-          @trading-size-changed="onTradingSizeChanged"
-          @stop-loss-changed="onStopLossChanged"
-          @take-profit-changed="onTakeProfitChanged"
-          @trading-symbol-changed="onSymbolChanged"
-          @quote-asset-changed="onQuoteAssetChanged"
-          @lock-symbol-toggled="$emit('lock-symbol-toggled')"
-          @start-scale-changed="onStartScalePctChange"
-          @order-split-changed="onOrderSplitChanged"
-          @exit-mode-changed="onExitModeChanged"
-        />
-      </li>
-      <li
-        class="list-group-item text-center bg-dark text-white border-secondary"
-      >
-        <TradingButtons
-          :maxTradingSize="maxTradingSize"
-          :maxLevAndNotional="maxLevAndMaxNotional"
-          :clickedByTradersNbr="clickedByTradersNbr"
-          @buy-button-clicked="onBuyButtonClicked"
-          @sell-button-clicked="onSellButtonClicked"
-        />
-      </li>
-    </ul>
-  </div>
+  <v-card>
+    <v-card-title
+      >Trading Panel<TradingSettingsDialog
+        class="float-right"
+        :api-keys="apiKeys"
+        :general-settings="generalSettings"
+        @add-api-key="onAddApiKey"
+        @delete-api-key="onDeleteApiKey"
+        @update-general-settings="onUpdateGeneralSettings"
+        @close-dialog="onCloseDialog()"
+      ></TradingSettingsDialog
+    ></v-card-title>
+    <v-card-text>
+      <h4>
+        Balance: {{ getTotalAccountsBalance() }}<span class="float-right">Exposure: {{ getTotalPositionsNotional() }}</span>
+      </h4>
+      &nbsp;
+      <v-form>
+        <v-row>
+          <v-col class="pb-0">
+            <v-select
+              hide-details="auto"
+              :density="density"
+              class="text-truncate"
+              v-model="selectedEntryMode"
+              label="Entry Mode"
+              :items="Object.values(ExecutionMode.entry)"
+              @update:modelValue="storeTradingParams"
+            ></v-select>
+          </v-col>
+          <v-col class="pb-0" v-show="selectedEntryMode == ExecutionMode.entry.MKT_SCALE">
+            <v-text-field
+              hide-details="auto"
+              :density="density"
+              label="Market Portion"
+              suffix="%"
+              v-model="marketProportion"
+              type="number"
+              hint="% of trading size"
+              @update:modelValue="storeTradingParams"
+            >
+            </v-text-field>
+          </v-col>
+          <v-col class="pb-0" v-show="selectedEntryMode == ExecutionMode.entry.MKT_SCALE">
+            <v-text-field
+              hide-details="auto"
+              :density="density"
+              label="Scale to"
+              suffix="%"
+              v-model="entryScaleTo"
+              type="number"
+              hint="away from current price"
+              @update:modelValue="storeTradingParams"
+            >
+            </v-text-field>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pb-0">
+            <v-select
+              hide-details="auto"
+              :density="density"
+              v-model="selectedExitMode"
+              label="Exit Mode"
+              :items="Object.values(ExecutionMode.exit)"
+              @update:modelValue="storeTradingParams"
+            ></v-select>
+          </v-col>
+          <v-col class="pb-0" v-show="selectedExitMode == ExecutionMode.exit.LIMIT">
+            <v-text-field
+              hide-details="auto"
+              :density="density"
+              label="Take Profit"
+              suffix="%"
+              v-model="takeProfit"
+              type="number"
+              @update:modelValue="storeTradingParams"
+            >
+            </v-text-field>
+          </v-col>
+          <v-col class="pb-0" v-show="selectedExitMode == ExecutionMode.exit.SCALE">
+            <v-text-field
+              hide-details="auto"
+              :density="density"
+              label="From"
+              suffix="%"
+              v-model="scaleFrom"
+              type="number"
+              @update:modelValue="storeTradingParams"
+            >
+            </v-text-field>
+          </v-col>
+          <v-col class="pb-0" v-show="selectedExitMode == ExecutionMode.exit.SCALE">
+            <v-text-field
+              hide-details="auto"
+              :density="density"
+              label="To"
+              suffix="%"
+              v-model="scaleTo"
+              type="number"
+              @update:modelValue="storeTradingParams"
+            >
+            </v-text-field>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pb-0">
+            <v-text-field
+              hide-details="auto"
+              :density="density"
+              label="Max Size"
+              prefix="$"
+              v-model="maxSize"
+              @update:modelValue="storeTradingParams"
+            ></v-text-field>
+          </v-col>
+          <v-col class="pb-0">
+            <v-text-field
+              hide-details="auto"
+              :density="density"
+              label="Stop Loss"
+              suffix="%"
+              v-model="stopLoss"
+              type="number"
+              @update:modelValue="storeTradingParams"
+            >
+            </v-text-field>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pb-0">
+            <div style="display: flex; align-items: center">
+              <v-text-field
+                hide-details="auto"
+                :disabled="lockSymbol"
+                :density="density"
+                label="Trading Symbol"
+                :model-value="tradingSymbol"
+                @focusout="$emit('trading-symbol-changed', $event.target.value)"
+              ></v-text-field>
+              &nbsp; &nbsp;
+              <span class="float-right">
+                <v-icon :icon="lockSymbol ? 'mdi-lock' : 'mdi-lock-open-variant'" @click="$emit('lock-symbol-toggled')"></v-icon>
+              </span>
+            </div>
+          </v-col>
+          <v-col class="pb-5">
+            <v-select
+              hide-details="auto"
+              :disabled="lockSymbol"
+              :density="density"
+              :model-value="quoteAsset"
+              label="Quote Asset"
+              :items="['USDT', 'BUSD']"
+              @update:modelValue="$emit('quote-asset-changed', $event)"
+            ></v-select>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-row justify="center">
+              <TradingButton :amount="maxSize * 0.25" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :amount="maxSize * 0.5" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :amount="maxSize" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :amount="maxSize * 0.25" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :amount="maxSize * 0.5" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :amount="maxSize" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+            </v-row>
+          </v-col>
+        </v-row>
+      </v-form>
+    </v-card-text>
+  </v-card>
 </template>

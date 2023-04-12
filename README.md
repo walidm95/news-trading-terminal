@@ -1,7 +1,6 @@
-# News Trading Terminal
+# News Trading Terminal (NTT)
 
-Tauri + Vue
+NTT is a convenient app that merges up-to-date cryptocurrency news with an intuitive trading panel, enabling quick and informed trading decisions based on current market insights.
 
-## Recommended IDE Setup
+![Screenshot](public/ntt-screenshot.png)
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
