@@ -53,11 +53,6 @@ export default {
     <authenticator :hide-sign-up="true" :login-mechanisms="['email']">
       <template v-slot:header>
         <div style="padding: var(--amplify-space-large); text-align: center">
-          <!--img
-                  class="amplify-image"
-                  alt="Amplify logo"
-                  src="https://docs.amplify.aws/assets/logo-dark.svg"
-                /-->
           <h1>News Trading Terminal</h1>
         </div>
       </template>
@@ -68,13 +63,3 @@ export default {
     </authenticator>
   </v-app>
 </template>
-
-<style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
-}
-</style>

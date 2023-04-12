@@ -507,7 +507,9 @@ export default {
 </script>
 
 <template>
-  <v-app-bar title="News Trading Terminal" style="text-align: center"></v-app-bar>
+  <v-app-bar style="text-align: center">
+    <v-app-bar-title><span class="float-left text-grey">{{ version }}</span>News Trading Terminal</v-app-bar-title>
+  </v-app-bar>
   <v-main>
     <v-container fluid>
       <v-row>
@@ -579,7 +581,6 @@ export default {
       </v-row>
     </v-container>
   </v-main>
-  <v-footer>{{ version }}</v-footer>
 </template>
 
 <style scoped>
