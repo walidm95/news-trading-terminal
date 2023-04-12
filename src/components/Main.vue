@@ -508,7 +508,10 @@ export default {
 
 <template>
   <v-app-bar style="text-align: center">
-    <v-app-bar-title><span class="float-left text-grey">{{ version }}</span>News Trading Terminal</v-app-bar-title>
+    <v-app-bar-title
+      ><span class="float-left text-grey">{{ version }}</span
+      >News Trading Terminal</v-app-bar-title
+    >
   </v-app-bar>
   <v-main>
     <v-container fluid>
@@ -520,6 +523,7 @@ export default {
             :quote-asset="trading.quoteAsset"
             :live-price-feed="livePriceFeed"
             :play-notification-sound="generalSettings.playHeadlineNotification"
+            :nbr-of-trades-latest-headline="clientsThatTraded.length"
             @symbol-from-headline="onSymbolChanged"
             @update-headlines="onUpdateHeadlines"
             @active-headline-index-changed="onActiveHeadlineChanged"
@@ -545,7 +549,6 @@ export default {
             :price-precision="precisionFormat.price[trading.tradingSymbol + trading.quoteAsset]"
             :quantity-precision="precisionFormat.quantity[trading.tradingSymbol + trading.quoteAsset]"
             :cognito-id-token="cognitoIdToken"
-            :clicked-by-traders-nbr="0"
             :accounts-positions="trading.positions"
             :general-settings="generalSettings"
             :active-headline="news.headlines[news.activeHeadlineIndex]"

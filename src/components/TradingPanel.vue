@@ -42,7 +42,6 @@ export default {
     quantityPrecision: { type: Array, required: true },
     tickSize: { type: Number, required: true },
     cognitoIdToken: { type: Object, required: true },
-    clickedByTradersNbr: { type: Number, required: true },
     activeHeadline: { type: Object, required: true },
     activeHeadlineIndex: { type: Number, required: true },
     generalSettings: { type: Object, required: true },

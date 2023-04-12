@@ -25,6 +25,7 @@ export default {
     symbols: { type: Object, required: true },
     livePriceFeed: { type: Object, required: true },
     playNotificationSound: { type: Boolean, required: true },
+    nbrOfTradesLatestHeadline: { type: Number, required: true },
   },
   methods: {
     onSelectHeadline(index) {
@@ -183,6 +184,7 @@ export default {
         :selected="activeHeadline == index"
         :priceChange="getPriceChange(index)"
         :btcPriceChange="getBtcPriceChange(index)"
+        :nbrOfTrades="index == 0 ? nbrOfTradesLatestHeadline : 0"
         @click="onSelectHeadline(index)"
       ></NewsItem>
     </v-list>
