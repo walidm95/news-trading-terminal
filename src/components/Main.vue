@@ -11,12 +11,6 @@ import { ref } from "vue";
 import binance from "../binance";
 import { getVersion } from "@tauri-apps/api/app";
 
-// Required to re-render chart
-var tradingViewComponentKey = ref(0);
-function forceChartRender() {
-  tradingViewComponentKey.value += 1;
-}
-
 export default {
   data() {
     return {
@@ -164,7 +158,6 @@ export default {
     onQuoteAssetChanged(quoteAsset) {
       if (quoteAsset != "") {
         this.trading.quoteAsset = quoteAsset;
-        forceChartRender();
       }
     },
     onUpdateHeadlines(headlines) {
@@ -188,7 +181,6 @@ export default {
 
       if (Object.keys(this.symbols).includes(symbol)) {
         this.trading.tradingSymbol = symbol;
-        forceChartRender();
       } else {
         var temp = this.trading.tradingSymbol;
         this.trading.tradingSymbol = "";
@@ -198,6 +190,8 @@ export default {
       }
 
       this.maxLevAndMaxNotional = this.getMaxLeverageAndNotional();
+
+      this.fetchOpenOrders();
     },
     onAddApiKey(data) {
       if (data.key != "" && data.secret != "" && data.account != "") {
@@ -228,7 +222,7 @@ export default {
     },
     onOpenPosition(position) {
       let clientPositions = JSON.parse(localStorage.getItem("clientPositions")) || [];
-      clientPositions.push(position.ticker);
+      clientPositions.push(position);
       localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
 
       this.fetchOpenPositions();
@@ -255,6 +249,7 @@ export default {
         .then((response) => {
           console.log(response);
           this.trading.positions.splice(index, 1);
+          localStorage.setItem("clientPositions", JSON.stringify(this.trading.positions));
 
           // Cancel stop loss/take profit orders
           let clientOrderIds = [];
@@ -407,7 +402,7 @@ export default {
 
               for (let position of account.positions) {
                 // Only add positions that were traded through the app
-                if (position.positionAmt != 0 && clientPositions.includes(position.symbol)) {
+                if (position.positionAmt != 0 && clientPositions.some((position) => position.symbol === position.symbol)) {
                   let positionData = {
                     ticker: position.symbol,
                     side: position.positionAmt > 0 ? "BUY" : "SELL",
@@ -427,7 +422,7 @@ export default {
               // Reset clientPositions
               clientPositions = [];
               for (let position of positions) {
-                clientPositions.push(position.ticker);
+                clientPositions.push(position);
               }
               localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
             });

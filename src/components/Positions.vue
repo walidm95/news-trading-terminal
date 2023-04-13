@@ -16,7 +16,7 @@
       <tbody>
         <tr v-for="(pos, index) in positions">
           <td class="text-center text-subtitle-2 pr-0 pl-2">{{ pos.account }}</td>
-          <td class="text-center text-subtitle-2 pr-0 pl-2">{{ pos.ticker.replace("USDT", "") }}</td>
+          <td class="text-center text-subtitle-2 pr-0 pl-2" @click="onTickerClick(pos.ticker)">{{ pos.ticker.replace("USDT", "") }}</td>
           <td class="text-center text-subtitle-2 pr-0 pl-2" :class="pos.side == 'BUY' ? 'text-green' : 'text-red'">
             {{ formatNumber(pos.size) }}
           </td>
@@ -61,6 +61,9 @@ export default {
     pricePrecisions: { type: Object, required: true },
   },
   methods: {
+    onTickerClick(ticker) {
+      this.$emit("select-symbol", ticker);
+    },
     formatNumber(number, ticker) {
       number = parseFloat(number);
       return formatter.format(number.toFixed(ticker ? this.pricePrecisions[ticker] : 2));

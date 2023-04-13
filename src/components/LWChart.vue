@@ -300,8 +300,11 @@ export default {
       this.reloadChartData();
     },
     tradeInfo: function (newTradeInfo) {
-      this.removeTradeLines();
-      this.addTradeLines(newTradeInfo);
+      // Give time to load price series
+      setTimeout(() => {
+        this.removeTradeLines();
+        this.addTradeLines(newTradeInfo);
+      }, 1000);
     },
   },
   mounted() {
