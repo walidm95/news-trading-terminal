@@ -402,7 +402,7 @@ export default {
 
               for (let position of account.positions) {
                 // Only add positions that were traded through the app
-                if (position.positionAmt != 0 && clientPositions.some((position) => position.symbol === position.symbol)) {
+                if (position.positionAmt != 0 && clientPositions.some((clientPosition) => clientPosition.ticker === position.symbol)) {
                   let positionData = {
                     ticker: position.symbol,
                     side: position.positionAmt > 0 ? "BUY" : "SELL",
@@ -417,7 +417,6 @@ export default {
                   positions.push(positionData);
                 }
               }
-              this.trading.positions = positions;
 
               // Reset clientPositions
               clientPositions = [];
@@ -425,6 +424,8 @@ export default {
                 clientPositions.push(position);
               }
               localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
+
+              this.trading.positions = clientPositions;
             });
 
             this.fetchOpenOrders();
