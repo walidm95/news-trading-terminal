@@ -264,49 +264,50 @@ export default {
           }
 
           // Execute
-          let allPromises;
-          if (clientOrderIds.length > 10) {
-            console.log("Cancelling " + clientOrderIds.length + " orders in batches of 10");
-            let promises = [];
-            for (let i = 0; i < clientOrderIds.length; i += 5) {
-              if (i + 5 > clientOrderIds.length)
-                promises.push(binance.cancelMultipleOrders(apiKey.key, apiKey.secret, position.ticker, clientOrderIds.slice(i), true));
-              else promises.push(binance.cancelMultipleOrders(apiKey.key, apiKey.secret, position.ticker, clientOrderIds.slice(i, i + 10), true));
-            }
-
-            Promise.allSettled(promises)
-              .then((data) => {
-                if (data.code) {
-                  alert(data.msg);
-                }
-
-                // Fetch positions
-                this.trading.chartTradeInfo = {};
-                this.fetchOpenPositions();
-              })
-              .catch((error) => {
-                console.error(error);
-              });
-          } else {
-            binance
-              .cancelMultipleOrders(apiKey.key, apiKey.secret, position.ticker, clientOrderIds, true)
-              .then((data) => {
-                if (data.code) {
-                  alert(data.msg);
-                }
-
-                // Fetch positions
-                this.trading.chartTradeInfo = {};
-                this.fetchOpenPositions();
-              })
-              .catch((error) => {
-                console.error(error);
-              });
-          }
+          this.cancelOrdersForSymbol(apiKey.key, apiKey.secret, position.ticker, clientOrderIds);
         })
         .catch((error) => {
           console.error(error);
         });
+    },
+    cancelOrdersForSymbol(apiKey, apiSecret, ticker, clientOrderIds) {
+      if (clientOrderIds.length > 10) {
+        console.log("Cancelling " + clientOrderIds.length + " orders in batches of 10");
+        let promises = [];
+        for (let i = 0; i < clientOrderIds.length; i += 5) {
+          if (i + 5 > clientOrderIds.length) promises.push(binance.cancelMultipleOrders(apiKey, apiSecret, ticker, clientOrderIds.slice(i), true));
+          else promises.push(binance.cancelMultipleOrders(apiKey, apiSecret, ticker, clientOrderIds.slice(i, i + 10), true));
+        }
+
+        Promise.allSettled(promises)
+          .then((data) => {
+            if (data.code) {
+              alert(data.msg);
+            }
+
+            // Fetch positions
+            this.trading.chartTradeInfo = {};
+            this.fetchOpenPositions();
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      } else {
+        binance
+          .cancelMultipleOrders(apiKey, apiSecret, ticker, clientOrderIds, true)
+          .then((data) => {
+            if (data.code) {
+              alert(data.msg);
+            }
+
+            // Fetch positions
+            this.trading.chartTradeInfo = {};
+            this.fetchOpenPositions();
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
     },
     getTradeInfo() {
       let tradeInfo = {};
@@ -374,8 +375,27 @@ export default {
             }
             this.trading.openOrders = clientOrders;
             this.trading.chartTradeInfo = this.getTradeInfo();
+
+            // Cancel orders that are open without a position
+            this.cancelOrdersWithoutPosition();
           });
         });
+      }
+    },
+    cancelOrdersWithoutPosition() {
+      let orderIdsToCancel = {};
+
+      for (let order of this.trading.openOrders) {
+        if (!this.trading.positions.some((position) => position.ticker == order.symbol)) {
+          orderIdsToCancel[order.symbol] = orderIdsToCancel[order.symbol] ? orderIdsToCancel[order.symbol] : [];
+          orderIdsToCancel[order.symbol].push(order.clientOrderId);
+        }
+      }
+
+      for (let symbol of Object.keys(orderIdsToCancel)) {
+        for (let apiKey of this.trading.apiKeys) {
+          this.cancelOrdersForSymbol(apiKey.key, apiKey.secret, symbol, orderIdsToCancel[symbol]);
+        }
       }
     },
     fetchOpenPositions() {
