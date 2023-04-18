@@ -297,7 +297,7 @@ export default {
   },
   watch: {
     ticker: function (newTicker) {
-      this.reloadChartData();
+      if (newTicker !== "USDT" && newTicker !== "BUSD") this.reloadChartData();
     },
     tradeInfo: function (newTradeInfo) {
       // Give time to load price series

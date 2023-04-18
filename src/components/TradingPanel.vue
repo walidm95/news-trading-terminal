@@ -540,6 +540,7 @@ export default {
                 label="Trading Symbol"
                 :model-value="tradingSymbol"
                 @focusout="$emit('trading-symbol-changed', $event.target.value)"
+                @keyup.enter="$emit('trading-symbol-changed', $event.target.value)"
               ></v-text-field>
               &nbsp; &nbsp;
               <span class="float-right">
