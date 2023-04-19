@@ -39,22 +39,24 @@ export default {
     async fetchPriceData() {
       const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${this.ticker}&interval=${this.interval}`;
       const response = await fetch(url);
-      const data = await response.json();
+      if (response.ok) {
+        const data = await response.json();
 
-      this.priceData = data.map((candle) => ({
-        // We convert the epoch to locale and feed it to the chart, since we can't display locale date on crosshair
-        time: (new Date(candle[0]).getTime() - new Date(candle[0]).getTimezoneOffset() * 60 * 1000) / 1000,
-        open: parseFloat(candle[1]),
-        high: parseFloat(candle[2]),
-        low: parseFloat(candle[3]),
-        close: parseFloat(candle[4]),
-      }));
+        this.priceData = data.map((candle) => ({
+          // We convert the epoch to locale and feed it to the chart, since we can't display locale date on crosshair
+          time: (new Date(candle[0]).getTime() - new Date(candle[0]).getTimezoneOffset() * 60 * 1000) / 1000,
+          open: parseFloat(candle[1]),
+          high: parseFloat(candle[2]),
+          low: parseFloat(candle[3]),
+          close: parseFloat(candle[4]),
+        }));
 
-      this.volumeData = data.map((candle) => ({
-        time: (new Date(candle[0]).getTime() - new Date(candle[0]).getTimezoneOffset() * 60 * 1000) / 1000,
-        value: parseFloat(candle[5]),
-        color: candle[4] > candle[1] ? "rgba(111, 185, 143, 0.4)" : "rgba(232, 94, 89, 0.4)",
-      }));
+        this.volumeData = data.map((candle) => ({
+          time: (new Date(candle[0]).getTime() - new Date(candle[0]).getTimezoneOffset() * 60 * 1000) / 1000,
+          value: parseFloat(candle[5]),
+          color: candle[4] > candle[1] ? "rgba(111, 185, 143, 0.4)" : "rgba(232, 94, 89, 0.4)",
+        }));
+      }
 
       return;
     },
@@ -262,7 +264,7 @@ export default {
       }
     },
     onVisibleRangeChanged(newVisibleLogicalRange) {
-      const firstIndex = Math.round(newVisibleLogicalRange.from)
+      const firstIndex = Math.round(newVisibleLogicalRange.from);
       const visibleBars = this.priceData.slice(firstIndex >= 0 ? firstIndex : 0);
 
       // Calculate max top to bottom range
