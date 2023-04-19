@@ -160,6 +160,10 @@ export default {
         this.trading.quoteAsset = quoteAsset;
       }
     },
+    onToggleApiKey(index) {
+      this.trading.apiKeys[index].enabled = !this.trading.apiKeys[index].enabled;
+      localStorage.setItem("apiKeys", JSON.stringify(this.trading.apiKeys));
+    },
     onUpdateHeadlines(headlines) {
       this.news.headlines = headlines;
     },
@@ -200,6 +204,7 @@ export default {
           account: data.account,
           key: data.key,
           secret: data.secret,
+          enabled: data.enabled
         });
 
         localStorage.setItem("apiKeys", JSON.stringify(this.trading.apiKeys));
@@ -232,6 +237,9 @@ export default {
 
       let apiKey;
       for (let key of this.trading.apiKeys) {
+        if (!key.enabled) {
+          continue;
+        }
         if (key.account == position.account) {
           apiKey = key;
           break;
@@ -364,6 +372,9 @@ export default {
     fetchOpenOrders() {
       let clientOrders = [];
       for (let apiKey of this.trading.apiKeys) {
+        if (!apiKey.enabled) {
+          continue;
+        }
         binance.getOrders(apiKey.key, apiKey.secret).then((response) => {
           let data = response.json();
           data.then((orders) => {
@@ -394,6 +405,9 @@ export default {
 
       for (let symbol of Object.keys(orderIdsToCancel)) {
         for (let apiKey of this.trading.apiKeys) {
+          if (!apiKey.enabled) {
+            continue;
+          }
           this.cancelOrdersForSymbol(apiKey.key, apiKey.secret, symbol, orderIdsToCancel[symbol]);
         }
       }
@@ -409,6 +423,9 @@ export default {
 
       this.trading.accountBalances = {};
       for (let apiKey of this.trading.apiKeys) {
+        if (!apiKey.enabled) {
+          continue;
+        }
         binance.getAccount(apiKey.key, apiKey.secret).then(
           (response) => {
             let data = response.json();
@@ -504,6 +521,9 @@ export default {
 
     this.trading.apiKeys = JSON.parse(localStorage.getItem("apiKeys")) || [];
     for (let i = 0; i < this.trading.apiKeys.length; i++) {
+      if (this.trading.apiKeys[i].enabled == undefined) {
+        this.trading.apiKeys[i].enabled = true;
+      }
       if (this.trading.apiKeys[i].userId != this.cognitoIdToken.payload["cognito:username"]) {
         this.onDeleteApiKey(i);
       }
@@ -560,6 +580,7 @@ export default {
             @position-opened="onOpenPosition"
             @lock-symbol-toggled="onLockSymbolToggled"
             @quote-asset-changed="onQuoteAssetChanged"
+            @toggle-api-key="onToggleApiKey"
             :tick-size="getTickSize()"
             :latest-price="livePriceFeed[trading.tradingSymbol + trading.quoteAsset]"
             :price-precision="precisionFormat.price[trading.tradingSymbol + trading.quoteAsset]"

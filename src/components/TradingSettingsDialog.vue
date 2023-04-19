@@ -31,10 +31,14 @@ export default {
         account: this.newAccount,
         key: this.newApiKey,
         secret: this.newApiSecret,
+        enabled: true,
       });
       this.newAccount = "";
       this.newApiKey = "";
       this.newApiSecret = "";
+    },
+    onToggleApiKey(index) {
+      this.$emit("toggle-api-key", index);
     },
   },
   watch: {
@@ -83,15 +87,15 @@ export default {
             <thead>
               <tr>
                 <th class="text-center text-subtitle-2 pr-0">Name</th>
-                <th class="text-center text-subtitle-2 pr-0">Key</th>
+                <th class="text-center text-subtitle-2 pr-0" style="width: 30%">Key</th>
                 <th class="text-center text-subtitle-2 pr-0">Secret</th>
                 <th class="text-center text-subtitle-2 pr-0">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(api, index) in apiKeys">
-                <td>{{ api.account }}</td>
-                <td>{{ api.key }}</td>
+              <tr v-for="(api, index) in apiKeys" class="text-center">
+                <td><v-checkbox hide-details="true" :model-value="api.enabled" :label="api.account" @click="onToggleApiKey(index)"></v-checkbox></td>
+                <td>{{ api.key.slice(0, 10) + " ... " + api.key.slice(-10) }}</td>
                 <td>***</td>
                 <td class="pt-1 pb-1">
                   <v-btn rounded="lg" variant="tonal" color="red" @click="$emit('delete-api-key', index)"> Delete </v-btn>

@@ -71,6 +71,9 @@ export default {
     connectUserDataStream() {
       let apiKeys = JSON.parse(localStorage.getItem("apiKeys")) || [];
       for (let apiKey of apiKeys) {
+        if (!apiKey.enabled) {
+          continue;
+        }
         let promise = binance.getUserDataStreamListenKey(apiKey.key, apiKey.secret);
         promise
           .then((response) => response.json())

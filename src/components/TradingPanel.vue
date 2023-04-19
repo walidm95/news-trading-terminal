@@ -61,6 +61,9 @@ export default {
       console.log(`${side} ${dollarSize} of ${this.tradingSymbol}`);
 
       for (let api of this.apiKeys) {
+        if (!api.enabled) {
+          continue;
+        }
         // Send trade message to websocket
         if (this.nttWs && this.activeHeadlineIndex == 0 && this.activeHeadline && this.tradingSymbol == this.activeHeadline.symbol) {
           this.nttWs.send(
@@ -313,6 +316,9 @@ export default {
     onUpdateGeneralSettings(settings) {
       this.$emit("update-general-settings", settings);
     },
+    onToggleApiKey(index) {
+      this.$emit("toggle-api-key", index);
+    },
     connectNttWs() {
       //Get websocket api key
       let headers = new Headers();
@@ -411,6 +417,7 @@ export default {
         @delete-api-key="onDeleteApiKey"
         @update-general-settings="onUpdateGeneralSettings"
         @close-dialog="onCloseDialog()"
+        @toggle-api-key="onToggleApiKey"
       ></TradingSettingsDialog
     ></v-card-title>
     <v-card-text>
