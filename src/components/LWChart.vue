@@ -262,7 +262,8 @@ export default {
       }
     },
     onVisibleRangeChanged(newVisibleLogicalRange) {
-      let visibleBars = this.priceData.slice(Math.round(newVisibleLogicalRange.from));
+      const firstIndex = Math.round(newVisibleLogicalRange.from)
+      const visibleBars = this.priceData.slice(firstIndex >= 0 ? firstIndex : 0);
 
       // Calculate max top to bottom range
       this.calculateMaxRangePct(visibleBars);
