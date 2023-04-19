@@ -207,7 +207,9 @@ export default {
 
       this.maxLevAndMaxNotional = this.getMaxLeverageAndNotional();
 
-      this.fetchOpenOrders();
+      for (let apiKey of this.trading.apiKeys) {
+        this.fetchOpenOrders(apiKey);
+      }
     },
     onAddApiKey(data) {
       if (data.key != "" && data.secret != "" && data.account != "") {
@@ -242,7 +244,7 @@ export default {
       clientPositions.push(position);
       localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
 
-      this.fetchOpenPositions();
+      //this.fetchOpenPositions();
     },
     onClosePosition(index) {
       let position = this.trading.positions[index];
@@ -384,41 +386,38 @@ export default {
       return tradeInfo;
     },
     onUpdatePosition() {
-      // Fetch account data from API, max once per second
-      if (this.trading.apiKeys.length == 0) {
-        return;
-      }
-
       this.fetchOpenPositions();
     },
-    fetchOpenOrders() {
+    fetchOpenOrders(api) {
       let clientOrders = [];
-      for (let apiKey of this.trading.apiKeys) {
-        if (!apiKey.enabled) {
-          continue;
-        }
-        binance
-          .getOrders(apiKey.key, apiKey.secret)
-          .then((response) => {
-            let data = response.json();
-            data.then((orders) => {
-              for (let order of orders) {
-                if (order.clientOrderId.startsWith("ntt_")) {
-                  order.account = apiKey.account;
-                  clientOrders.push(order);
+      if (!api.enabled) {
+        return;
+      }
+      for (let pos of this.trading.positions) {
+        if (pos.account == api.account) {
+          binance
+            .getOrders(api.key, api.secret, pos.symbol)
+            .then((response) => {
+              let data = response.json();
+              data.then((orders) => {
+                for (let order of orders) {
+                  if (order.clientOrderId.startsWith("ntt_")) {
+                    order.account = api.account;
+                    clientOrders.push(order);
+                  }
                 }
-              }
-              this.trading.openOrders = clientOrders;
-              this.trading.chartTradeInfo = this.getTradeInfo();
+                this.trading.openOrders = clientOrders;
+                this.trading.chartTradeInfo = this.getTradeInfo();
 
-              // Cancel orders that are open without a position
-              this.cancelOrdersWithoutPosition();
+                // Cancel orders that are open without a position
+                this.cancelOrdersWithoutPosition();
+              });
+            })
+            .catch((error) => {
+              this.debugLogs.unshift(`error on fetchOpenOrders: ${error}`);
+              console.error(error);
             });
-          })
-          .catch((error) => {
-            this.debugLogs.unshift(`error on fetchOpenOrders: ${error}`);
-            console.error(error);
-          });
+        }
       }
     },
     cancelOrdersWithoutPosition() {
@@ -493,9 +492,9 @@ export default {
                 localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
 
                 this.trading.positions = clientPositions;
-              });
 
-              this.fetchOpenOrders();
+                this.fetchOpenOrders(apiKey);
+              });
             },
             (error) => {
               this.debugLogs.unshift(`error on fetchOpenPositions: ${error}`);
@@ -565,9 +564,9 @@ export default {
     }
 
     this.fetchOpenPositions();
-    this.getBinanceMaxLeverageBrackets();
+    //this.getBinanceMaxLeverageBrackets(); // Not using for now
 
-    this.binanceFuturesPingLoop = setInterval(this.calculateBinanceFuturesPing, 2000);
+    //this.binanceFuturesPingLoop = setInterval(this.calculateBinanceFuturesPing, 2000); // Not using for now
 
     this.getGeneralSettings();
   },
@@ -651,7 +650,6 @@ export default {
             :pricePrecisions="precisionFormat.price"
             @close-position="onClosePosition"
             @select-symbol="onSymbolChanged"
-            @refresh-positions="fetchOpenPositions"
             @update-positions="onUpdatePosition"
           />
         </v-col>
