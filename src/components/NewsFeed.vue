@@ -41,17 +41,22 @@ export default {
 
       this.newsWebsocket = new WebSocket("wss://news.treeofalpha.com/ws");
       this.newsWebsocket.onopen = () => {
-        console.log("TreeOfAlphaWS connected");
+        const msg = "TreeOfAlphaWS connected";
+        this.$emit("add-debug-log", msg);
+        console.log(msg);
         this.newsWebsocket.send("login " + TREE_API_KEY);
         this.wsAlive = true;
         this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime);
       };
       this.newsWebsocket.onerror = (error) => {
-        console.log("TreeOfAlphaWS error");
-        console.log(error);
+        const msg = "TreeOfAlphaWS error";
+        this.$emit("add-debug-log", msg);
+        console.log(msg);
       };
       this.newsWebsocket.onclose = () => {
-        console.log("TreeOfAlphaWS closed");
+        const msg = "TreeOfAlphaWS closed";
+        this.$emit("add-debug-log", msg);
+        console.log(msg);
         clearTimeout(this.pingTimeout);
       };
       this.newsWebsocket.onmessage = (event) => {
@@ -63,10 +68,13 @@ export default {
         let data = JSON.parse(event.data);
 
         if (data.user) {
-          console.log("TreeOfAlphaWS logged in as " + data.user.username);
+          const msg = "TreeOfAlphaWS logged in" //as " + data.user.username;
+          this.$emit("add-debug-log", msg);
+          console.log(msg);
           return;
         }
 
+        this.$emit("add-debug-log", data.body ? data.body : data.title);
         console.log(data);
 
         let type = data.info && data.info.twitterId ? "twitter" : data.source;
@@ -76,13 +84,17 @@ export default {
         if (data.coin) {
           symbol = data.coin;
           if (!this.symbols[symbol]) {
-            console.log("symbol not in symbols list. Skipping");
+            const msg = "symbol not in symbols list. Skipping";
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
             return;
           }
         } else if (data.symbols && data.symbols.length > 0) {
           symbol = data.symbols[0].split("_")[0];
           if (!this.symbols[symbol]) {
-            console.log("symbol not in symbols list. Skipping");
+            const msg = "symbol not in symbols list. Skipping";
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
             return;
           }
         } else {
@@ -90,7 +102,9 @@ export default {
         }
 
         if (symbol == "") {
-          console.log("no symbol found. Skipping");
+          const msg = "no symbol found. Skipping";
+          this.$emit("add-debug-log", msg);
+          console.log(msg);
           return;
         }
 
@@ -130,7 +144,9 @@ export default {
     pingWebsocket() {
       this.newsWebsocket.send("ping");
       this.pingTimeout = setTimeout(() => {
-        console.log("ping timeout");
+        const msg = "ping timeout";
+        this.$emit("add-debug-log", msg);
+        console.log(msg);
         this.wsAlive = false;
 
         this.newsWebsocket.close();

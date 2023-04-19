@@ -62,7 +62,7 @@ export default {
     },
     formatNumber(number, ticker) {
       number = parseFloat(number);
-      const fixedDecimals = ticker ? this.pricePrecisions[ticker] : 2
+      const fixedDecimals = ticker ? this.pricePrecisions[ticker] : 2;
       return formatter.format(number.toFixed(fixedDecimals >= 5 ? 5 : fixedDecimals));
     },
     connectUserDataStream() {
@@ -77,6 +77,7 @@ export default {
           .then((data) => {
             if (data.code) {
               alert(data.msg);
+              this.$emit("add-debug-log", data.msg);
             } else {
               this.listenKeys[apiKey.account] = data.listenKey;
               this.userDataStreams[apiKey.account] = new WebSocket("wss://fstream.binance.com/ws/" + this.listenKeys[apiKey.account]);
@@ -85,6 +86,10 @@ export default {
                 binance.keepAliveUserDataStream(apiKey.key, apiKey.secret, this.listenKeys[apiKey.account]);
               }, 30000);
             }
+          })
+          .catch((error) => {
+            this.debugLogs.unshift(`error on connectUserDataStream: ${error}`);
+            console.error(error);
           });
       }
     },

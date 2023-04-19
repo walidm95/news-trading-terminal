@@ -9,6 +9,7 @@ export default {
       playTraderNotification: null,
       playHeadlineNotification: null,
       nbrOfOrdersForScaling: null,
+      showDebugLogs: null,
     };
   },
   props: {
@@ -24,6 +25,7 @@ export default {
         playHeadlineNotification: this.playHeadlineNotification,
         playTraderNotification: this.playTraderNotification,
         nbrOfOrdersForScaling: this.nbrOfOrdersForScaling,
+        showDebugLogs: this.showDebugLogs,
       });
     },
     onAddApiKey() {
@@ -46,6 +48,7 @@ export default {
       this.playHeadlineNotification = newSettings.playHeadlineNotification;
       this.playTraderNotification = newSettings.playTraderNotification;
       this.nbrOfOrdersForScaling = newSettings.nbrOfOrdersForScaling;
+      this.showDebugLogs = newSettings.showDebugLogs;
     },
   },
 };
@@ -77,6 +80,9 @@ export default {
                   label="Number Of Orders For Scaling"
                   v-model="nbrOfOrdersForScaling"
                 ></v-text-field>
+              </v-col>
+              <v-col>
+                <v-checkbox density="compact" label="Show Debug Logs" v-model="showDebugLogs"></v-checkbox>
               </v-col>
             </v-row>
           </v-card-text>

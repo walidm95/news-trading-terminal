@@ -17,19 +17,6 @@ export default {
     };
   },
   methods: {
-    async getCurrentUser() {
-      const currentUser = await Auth.currentAuthenticatedUser();
-      const currentSession = currentUser.signInUserSession;
-      this.cognitoIdToken = currentSession.idToken;
-
-      // Token expires every hour, so refresh it every 55min
-      setInterval(() => {
-        currentUser.refreshSession(currentSession.refreshToken, (err, session) => {
-          console.log("cognito id token refreshed");
-          this.cognitoIdToken = session.idToken;
-        });
-      }, 55 * 60 * 1000);
-    },
     getCognitoIdToken(user) {
       const currentSession = user.signInUserSession;
       this.cognitoIdToken = currentSession.idToken;
@@ -38,7 +25,7 @@ export default {
       setInterval(() => {
         user.refreshSession(currentSession.refreshToken, (err, session) => {
           console.log("cognito id token refreshed");
-          this.cognitoIdToken = session.idToken;
+            this.cognitoIdToken = session.idToken;
         });
       }, 55 * 60 * 1000);
 

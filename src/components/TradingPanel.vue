@@ -58,7 +58,9 @@ export default {
     onExecuteTrade(args) {
       let dollarSize = args[0];
       let side = args[1];
-      console.log(`${side} ${dollarSize} of ${this.tradingSymbol}`);
+      const msg = `${side} ${dollarSize} of ${this.tradingSymbol}`;
+      this.$emit("add-debug-log", msg);
+      console.log(msg);
 
       for (let api of this.apiKeys) {
         if (!api.enabled) {
@@ -108,14 +110,18 @@ export default {
           ).then((data) => {
             if (data.code) {
               alert(data.msg);
+              this.$emit("add-debug-log", data.msg);
             } else {
-              console.log("Scale in limit orders placed");
+              const msg = "Scale in limit orders placed";
+              this.$emit("add-debug-log", msg);
+              console.log(msg);
             }
           });
         }
 
         if (!marketOrderPromise) {
           alert("Error executing order");
+          this.$emit("add-debug-log", 'marketOrderPromise is undefined');
           return;
         }
 
@@ -124,6 +130,7 @@ export default {
           .then((data) => {
             if (data.code) {
               alert(data.msg);
+              this.$emit("add-debug-log", data.msg);
             } else {
               this.$emit("position-opened", {
                 account: api.name,
@@ -170,6 +177,7 @@ export default {
                   .then((response, error) => {
                     if (error) {
                       alert("error sending orders");
+                      this.$emit("add-debug-log", 'error sending take profit orders');
                       return;
                     }
                     if (response.ok == undefined) {
@@ -183,6 +191,7 @@ export default {
                   .then((orders, error) => {
                     if (error) {
                       alert("error sending orders");
+                      this.$emit("add-debug-log", 'error sending take profit orders');
                       return;
                     }
 
@@ -193,14 +202,25 @@ export default {
                     for (let order of orders) {
                       if (order.code) {
                         alert(order.msg);
+                        this.$emit("add-debug-log", order.msg);
                         continue;
                       }
 
-                      console.log("Take profit(s) orders placed");
+                      const msg = "Take profit(s) orders placed";
+                      this.$emit("add-debug-log", msg);
+                      console.log(msg);
                     }
+                  })
+                  .catch((error) => {
+                    this.debugLogs.unshift(`error on takeProfit: ${error}`);
+                    console.error(error);
                   });
               }
             }
+          })
+          .catch((error) => {
+            this.debugLogs.unshift(`error on onExecuteTrade: ${error}`);
+            console.error(error);
           });
 
         // Stop loss
@@ -220,9 +240,16 @@ export default {
             .then((data) => {
               if (data.code) {
                 alert(data.msg);
+                this.$emit("add-debug-log", data.msg);
               } else {
-                console.log("Stop loss order placed");
+                const msg = "Stop loss order placed";
+                this.$emit("add-debug-log", msg);
+                console.log(msg);
               }
+            })
+            .catch((error) => {
+              this.debugLogs.unshift(`error on stopLoss: ${error}`);
+              console.error(error);
             });
         }
       }
@@ -263,7 +290,9 @@ export default {
 
       // Execute
       if (orders.length > 5) {
-        console.log("Executing " + orders.length + " orders in batches of 5");
+        const msg = "Executing " + orders.length + " orders in batches of 5";
+        this.$emit("add-debug-log", msg);
+        console.log(msg);
         let promises = [];
         for (let i = 0; i < orders.length; i += 5) {
           if (i + 5 > orders.length) promises.push(binance.executeMultipleOrders(apiKey, apiSecret, orders.slice(i)));
@@ -342,11 +371,14 @@ export default {
             this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime);
           };
           this.nttWs.onerror = (error) => {
-            console.log("nttWs error");
-            console.log(error);
+            const msg = `nttWs error: ${error.toString()}`;
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
           };
           this.nttWs.onclose = () => {
-            console.log("nttWs close");
+            const msg = "nttWs close";
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
             clearTimeout(this.pingTimeout);
           };
           this.nttWs.onmessage = (event) => {
@@ -366,7 +398,11 @@ export default {
             }
           };
         })
-        .catch((error) => console.log("error", error));
+        .catch((error) => {
+          const msg = error;
+          this.$emit("add-debug-log", msg);
+          console.log("error", msg);
+        });
     },
     pingWebsocket() {
       this.nttWs.send(JSON.stringify({ action: "ping" }));

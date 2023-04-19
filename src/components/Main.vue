@@ -4,10 +4,10 @@ import TradingPanel from "./TradingPanel.vue";
 import TradinViewChart from "./TradingViewChart.vue";
 import LWChart from "./LWChart.vue";
 import Positions from "./Positions.vue";
+import DebugLogs from "./DebugLogs.vue";
 </script>
 
 <script>
-import { ref } from "vue";
 import binance from "../binance";
 import { getVersion } from "@tauri-apps/api/app";
 
@@ -25,6 +25,7 @@ export default {
       leverageBrackets: {},
       maxLevAndMaxNotional: { 0: "0", 1: 0 },
       symbols: [],
+      debugLogs: [],
       news: {
         headlines: [],
         activeHeadlineIndex: 0,
@@ -80,6 +81,7 @@ export default {
         let exchangeInfo = await response.json();
         return exchangeInfo;
       } catch (error) {
+        this.debugLogs.unshift(`error on getBinanceExchangeInfo: ${error}`);
         console.error(error);
       }
     },
@@ -114,6 +116,7 @@ export default {
         .then((data) => {
           if (data.code) {
             alert(data.msg);
+            this.debugLogs.unshift(`error on getBinanceMaxLeverageBrackets: ${data.msg}`);
           } else {
             for (let symbol of data) {
               this.leverageBrackets[symbol.symbol] = {};
@@ -124,13 +127,19 @@ export default {
           }
 
           this.maxLevAndMaxNotional = this.getMaxLeverageAndNotional();
+        })
+        .catch((error) => {
+          this.debugLogs.unshift(`error on getBinanceMaxLeverageBrackets: ${error}`);
+          console.error(error);
         });
     },
     getBinanceSymbolsWithNames() {
       Promise.allSettled([this.getBinanceExchangeInfo(), this.getCoinNames()]).then((values) => {
         let symbolNames = {};
         if (values[0].status == "rejected" || values[1].status == "rejected") {
-          console.log("Error getting exchange info or coins list");
+          const msg = "Error getting exchange info or coins list";
+          this.debugLogs.unshift(msg);
+          console.log(msg);
           return;
         }
 
@@ -170,6 +179,9 @@ export default {
     onActiveHeadlineChanged(index) {
       this.news.activeHeadlineIndex = index;
     },
+    onDebugLog(msg) {
+      this.debugLogs.unshift(msg);
+    },
     onSymbolChanged(symbol) {
       this.clientsThatTraded = [];
 
@@ -204,7 +216,7 @@ export default {
           account: data.account,
           key: data.key,
           secret: data.secret,
-          enabled: data.enabled
+          enabled: data.enabled,
         });
 
         localStorage.setItem("apiKeys", JSON.stringify(this.trading.apiKeys));
@@ -255,7 +267,10 @@ export default {
       );
       promise
         .then((response) => {
-          console.log(response);
+          const msg = response.ok ? "Position closed" : "Error while closing position";
+          this.debugLogs.unshift(msg);
+          console.log(msg);
+
           this.trading.positions.splice(index, 1);
           localStorage.setItem("clientPositions", JSON.stringify(this.trading.positions));
 
@@ -275,12 +290,15 @@ export default {
           this.cancelOrdersForSymbol(apiKey.key, apiKey.secret, position.ticker, clientOrderIds);
         })
         .catch((error) => {
+          this.debugLogs.unshift(`error on onClosePosition: ${error}`);
           console.error(error);
         });
     },
     cancelOrdersForSymbol(apiKey, apiSecret, ticker, clientOrderIds) {
       if (clientOrderIds.length > 10) {
-        console.log("Cancelling " + clientOrderIds.length + " orders in batches of 10");
+        const msg = "Cancelling " + clientOrderIds.length + " orders in batches of 10";
+        this.debugLogs.unshift(msg);
+        console.log(msg);
         let promises = [];
         for (let i = 0; i < clientOrderIds.length; i += 5) {
           if (i + 5 > clientOrderIds.length) promises.push(binance.cancelMultipleOrders(apiKey, apiSecret, ticker, clientOrderIds.slice(i), true));
@@ -291,6 +309,7 @@ export default {
           .then((data) => {
             if (data.code) {
               alert(data.msg);
+              this.debugLogs.unshift(`error on cancelOrdersForSymbol: ${data.msg}`);
             }
 
             // Fetch positions
@@ -298,6 +317,7 @@ export default {
             this.fetchOpenPositions();
           })
           .catch((error) => {
+            this.debugLogs.unshift(`error on cancelOrdersForSymbol: ${error}`);
             console.error(error);
           });
       } else {
@@ -306,6 +326,7 @@ export default {
           .then((data) => {
             if (data.code) {
               alert(data.msg);
+              this.debugLogs.unshift(`error on cancelMultipleOrders: ${data.msg}`);
             }
 
             // Fetch positions
@@ -313,6 +334,7 @@ export default {
             this.fetchOpenPositions();
           })
           .catch((error) => {
+            this.debugLogs.unshift(`error on cancelMultipleOrders: ${error}`);
             console.error(error);
           });
       }
@@ -375,22 +397,28 @@ export default {
         if (!apiKey.enabled) {
           continue;
         }
-        binance.getOrders(apiKey.key, apiKey.secret).then((response) => {
-          let data = response.json();
-          data.then((orders) => {
-            for (let order of orders) {
-              if (order.clientOrderId.startsWith("ntt_")) {
-                order.account = apiKey.account;
-                clientOrders.push(order);
+        binance
+          .getOrders(apiKey.key, apiKey.secret)
+          .then((response) => {
+            let data = response.json();
+            data.then((orders) => {
+              for (let order of orders) {
+                if (order.clientOrderId.startsWith("ntt_")) {
+                  order.account = apiKey.account;
+                  clientOrders.push(order);
+                }
               }
-            }
-            this.trading.openOrders = clientOrders;
-            this.trading.chartTradeInfo = this.getTradeInfo();
+              this.trading.openOrders = clientOrders;
+              this.trading.chartTradeInfo = this.getTradeInfo();
 
-            // Cancel orders that are open without a position
-            this.cancelOrdersWithoutPosition();
+              // Cancel orders that are open without a position
+              this.cancelOrdersWithoutPosition();
+            });
+          })
+          .catch((error) => {
+            this.debugLogs.unshift(`error on fetchOpenOrders: ${error}`);
+            console.error(error);
           });
-        });
       }
     },
     cancelOrdersWithoutPosition() {
@@ -426,51 +454,58 @@ export default {
         if (!apiKey.enabled) {
           continue;
         }
-        binance.getAccount(apiKey.key, apiKey.secret).then(
-          (response) => {
-            let data = response.json();
-            data.then((account) => {
-              this.trading.accountBalances[apiKey.account] = parseFloat(account.totalWalletBalance);
+        binance
+          .getAccount(apiKey.key, apiKey.secret)
+          .then(
+            (response) => {
+              let data = response.json();
+              data.then((account) => {
+                this.trading.accountBalances[apiKey.account] = parseFloat(account.totalWalletBalance);
 
-              if (account.positions == undefined) {
-                this.trading.positions = positions;
-                return;
-              }
-
-              for (let position of account.positions) {
-                // Only add positions that were traded through the app
-                if (position.positionAmt != 0 && clientPositions.some((clientPosition) => clientPosition.ticker === position.symbol)) {
-                  let positionData = {
-                    ticker: position.symbol,
-                    side: position.positionAmt > 0 ? "BUY" : "SELL",
-                    units: Math.abs(position.positionAmt),
-                    entryPrice: position.entryPrice,
-                    account: apiKey.account,
-                    upnl: position.unrealizedProfit,
-                    markPrice: this.livePriceFeed[position.symbol],
-                    size: parseFloat(position.notional),
-                  };
-
-                  positions.push(positionData);
+                if (account.positions == undefined) {
+                  this.trading.positions = positions;
+                  return;
                 }
-              }
 
-              // Reset clientPositions
-              clientPositions = [];
-              for (let position of positions) {
-                clientPositions.push(position);
-              }
-              localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
+                for (let position of account.positions) {
+                  // Only add positions that were traded through the app
+                  if (position.positionAmt != 0 && clientPositions.some((clientPosition) => clientPosition.ticker === position.symbol)) {
+                    let positionData = {
+                      ticker: position.symbol,
+                      side: position.positionAmt > 0 ? "BUY" : "SELL",
+                      units: Math.abs(position.positionAmt),
+                      entryPrice: position.entryPrice,
+                      account: apiKey.account,
+                      upnl: position.unrealizedProfit,
+                      markPrice: this.livePriceFeed[position.symbol],
+                      size: parseFloat(position.notional),
+                    };
 
-              this.trading.positions = clientPositions;
-            });
+                    positions.push(positionData);
+                  }
+                }
 
-            this.fetchOpenOrders();
-          },
-          (error) => {
-            alert(error);
-          }
-        );
+                // Reset clientPositions
+                clientPositions = [];
+                for (let position of positions) {
+                  clientPositions.push(position);
+                }
+                localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
+
+                this.trading.positions = clientPositions;
+              });
+
+              this.fetchOpenOrders();
+            },
+            (error) => {
+              this.debugLogs.unshift(`error on fetchOpenPositions: ${error}`);
+              alert(error);
+            }
+          )
+          .catch((error) => {
+            this.debugLogs.unshift(`error on fetchOpenPositions: ${error}`);
+            console.error(error);
+          });
       }
     },
     async getCoinNames() {
@@ -563,6 +598,7 @@ export default {
             @symbol-from-headline="onSymbolChanged"
             @update-headlines="onUpdateHeadlines"
             @active-headline-index-changed="onActiveHeadlineChanged"
+            @add-debug-log="onDebugLog"
           ></NewsFeed>
         </v-col>
         <v-col>
@@ -581,6 +617,7 @@ export default {
             @lock-symbol-toggled="onLockSymbolToggled"
             @quote-asset-changed="onQuoteAssetChanged"
             @toggle-api-key="onToggleApiKey"
+            @add-debug-log="onDebugLog"
             :tick-size="getTickSize()"
             :latest-price="livePriceFeed[trading.tradingSymbol + trading.quoteAsset]"
             :price-precision="precisionFormat.price[trading.tradingSymbol + trading.quoteAsset]"
@@ -618,6 +655,9 @@ export default {
             @update-positions="onUpdatePosition"
           />
         </v-col>
+      </v-row>
+      <v-row class="pl-2">
+        <DebugLogs v-if="this.generalSettings.showDebugLogs" style="width: 99%; height: 300px" :logs="debugLogs"></DebugLogs>
       </v-row>
     </v-container>
   </v-main>
