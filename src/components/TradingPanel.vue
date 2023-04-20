@@ -102,26 +102,39 @@ export default {
             api.secret,
             side,
             formattedQtyToLimit,
-            this.generalSettings.nbrOfOrdersForScaling,
+            this.generalSettings.nbrOfSplitOrders,
             0,
             this.entryScaleTo,
             false,
             false
-          ).then((data) => {
-            if (data.code) {
-              alert(data.msg);
-              this.$emit("add-debug-log", data.msg);
-            } else {
-              const msg = "Scale in limit orders placed";
-              this.$emit("add-debug-log", msg);
-              console.log(msg);
+          ).then((values) => {
+            let promises = values.length ? values : [{ status: "fulfilled", value: values }];
+            for (let prom of promises) {
+              if (prom.status != "fulfilled") {
+                const msg = "promise for placing scale in orders failed";
+                this.$emit("add-debug-log", msg);
+                console.log(msg);
+              } else {
+                prom.value.json().then((orders) => {
+                  for (let order of orders) {
+                    if (order.code) {
+                      console.log(order.msg);
+                      this.$emit("add-debug-log", order.msg);
+                    } else {
+                      const msg = "Scale in limit order placed";
+                      this.$emit("add-debug-log", msg);
+                      console.log(msg);
+                    }
+                  }
+                });
+              }
             }
           });
         }
 
         if (!marketOrderPromise) {
           alert("Error executing order");
-          this.$emit("add-debug-log", 'marketOrderPromise is undefined');
+          this.$emit("add-debug-log", "marketOrderPromise is undefined");
           return;
         }
 
@@ -164,7 +177,7 @@ export default {
                   api.secret,
                   side == "BUY" ? "SELL" : "BUY",
                   dollarSize / this.latestPrice,
-                  this.generalSettings.nbrOfOrdersForScaling,
+                  this.generalSettings.nbrOfSplitOrders,
                   this.scaleFrom,
                   this.scaleTo,
                   true,
@@ -177,7 +190,7 @@ export default {
                   .then((response, error) => {
                     if (error) {
                       alert("error sending orders");
-                      this.$emit("add-debug-log", 'error sending take profit orders');
+                      this.$emit("add-debug-log", "error sending take profit orders");
                       return;
                     }
                     if (response.ok == undefined) {
@@ -191,7 +204,7 @@ export default {
                   .then((orders, error) => {
                     if (error) {
                       alert("error sending orders");
-                      this.$emit("add-debug-log", 'error sending take profit orders');
+                      this.$emit("add-debug-log", "error sending take profit orders");
                       return;
                     }
 
@@ -201,7 +214,7 @@ export default {
                     }
                     for (let order of orders) {
                       if (order.code) {
-                        alert(order.msg);
+                        console.log(order.msg);
                         this.$emit("add-debug-log", order.msg);
                         continue;
                       }

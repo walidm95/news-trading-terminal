@@ -8,8 +8,9 @@ export default {
       newApiSecret: "",
       playTraderNotification: null,
       playHeadlineNotification: null,
-      nbrOfOrdersForScaling: null,
+      nbrOfSplitOrders: null,
       showDebugLogs: null,
+      nbrOfOrderRules: [(v) => !!v || "Required", (v) => v >= 0 || "Must be positive", (v) => v < 10 || "Must be less than 10"],
     };
   },
   props: {
@@ -18,13 +19,18 @@ export default {
   },
   methods: {
     close() {
+      // Validate data
+      if (this.nbrOfSplitOrders < 0 || this.nbrOfSplitOrders > 9) {
+        return;
+      }
+
       this.dialog = false;
 
       // Update general settings
       this.$emit("update-general-settings", {
         playHeadlineNotification: this.playHeadlineNotification,
         playTraderNotification: this.playTraderNotification,
-        nbrOfOrdersForScaling: this.nbrOfOrdersForScaling,
+        nbrOfSplitOrders: this.nbrOfSplitOrders,
         showDebugLogs: this.showDebugLogs,
       });
     },
@@ -47,7 +53,7 @@ export default {
     generalSettings: function (newSettings) {
       this.playHeadlineNotification = newSettings.playHeadlineNotification;
       this.playTraderNotification = newSettings.playTraderNotification;
-      this.nbrOfOrdersForScaling = newSettings.nbrOfOrdersForScaling;
+      this.nbrOfSplitOrders = newSettings.nbrOfSplitOrders;
       this.showDebugLogs = newSettings.showDebugLogs;
     },
   },
@@ -77,8 +83,11 @@ export default {
                   density="compact"
                   hide-details="auto"
                   type="number"
-                  label="Number Of Orders For Scaling"
-                  v-model="nbrOfOrdersForScaling"
+                  min="0"
+                  max="9"
+                  :rules="nbrOfOrderRules"
+                  label="Number of split orders"
+                  v-model="nbrOfSplitOrders"
                 ></v-text-field>
               </v-col>
               <v-col>
@@ -109,7 +118,7 @@ export default {
               </tr>
             </tbody>
           </v-table>
-          <v-card-actions>
+          <v-card-actions v-if="apiKeys.length < 6">
             <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Account" v-model="newAccount"></v-text-field>
             <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Key" v-model="newApiKey"></v-text-field>
             <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Secret" v-model="newApiSecret"></v-text-field>

@@ -99,7 +99,7 @@ export default {
         clearTimeout(this.updateAfterTimeout);
         this.updateAfterTimeout = setTimeout(() => {
           this.$emit("update-positions");
-        }, 1000);
+        }, 500);
       }
     },
   },

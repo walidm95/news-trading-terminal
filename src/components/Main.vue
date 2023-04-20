@@ -207,9 +207,7 @@ export default {
 
       this.maxLevAndMaxNotional = this.getMaxLeverageAndNotional();
 
-      for (let apiKey of this.trading.apiKeys) {
-        this.fetchOpenOrders(apiKey);
-      }
+      this.fetchOpenOrders();
     },
     onAddApiKey(data) {
       if (data.key != "" && data.secret != "" && data.account != "") {
@@ -243,8 +241,6 @@ export default {
       let clientPositions = JSON.parse(localStorage.getItem("clientPositions")) || [];
       clientPositions.push(position);
       localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
-
-      //this.fetchOpenPositions();
     },
     onClosePosition(index) {
       let position = this.trading.positions[index];
@@ -285,6 +281,8 @@ export default {
           }
 
           if (clientOrderIds.length == 0) {
+            console.log("No orders to cancel");
+            this.debugLogs.unshift("No orders to cancel");
             return;
           }
 
@@ -323,6 +321,10 @@ export default {
             console.error(error);
           });
       } else {
+        const msg = "Cancelling " + clientOrderIds.length + " orders";
+        this.debugLogs.unshift(msg);
+        console.log(msg);
+
         binance
           .cancelMultipleOrders(apiKey, apiSecret, ticker, clientOrderIds, true)
           .then((data) => {
@@ -388,13 +390,13 @@ export default {
     onUpdatePosition() {
       this.fetchOpenPositions();
     },
-    fetchOpenOrders(api) {
-      let clientOrders = [];
-      if (!api.enabled) {
-        return;
-      }
+    fetchOpenOrders() {
+      this.trading.openOrders = [];
+
       for (let pos of this.trading.positions) {
-        if (pos.account == api.account) {
+        let api = this.trading.apiKeys.filter((a) => a.account == pos.account)[0];
+        if (api && api.enabled) {
+          let clientOrders = [];
           binance
             .getOrders(api.key, api.secret, pos.symbol)
             .then((response) => {
@@ -406,11 +408,9 @@ export default {
                     clientOrders.push(order);
                   }
                 }
-                this.trading.openOrders = clientOrders;
-                this.trading.chartTradeInfo = this.getTradeInfo();
 
-                // Cancel orders that are open without a position
-                this.cancelOrdersWithoutPosition();
+                this.trading.openOrders.push(...clientOrders);
+                this.trading.chartTradeInfo = this.getTradeInfo();
               });
             })
             .catch((error) => {
@@ -485,15 +485,15 @@ export default {
                 }
 
                 // Reset clientPositions
-                clientPositions = [];
-                for (let position of positions) {
-                  clientPositions.push(position);
+                if (this.resetClientPositionTimeout) {
+                  clearTimeout(this.resetClientPositionTimeout);
                 }
-                localStorage.setItem("clientPositions", JSON.stringify(clientPositions));
+                this.resetClientPositionTimeout = setTimeout(() => {
+                  localStorage.setItem("clientPositions", JSON.stringify(positions));
+                  this.trading.positions = positions;
 
-                this.trading.positions = clientPositions;
-
-                this.fetchOpenOrders(apiKey);
+                  this.fetchOpenOrders();
+                }, 500);
               });
             },
             (error) => {
@@ -530,14 +530,15 @@ export default {
       this.generalSettings = JSON.parse(localStorage.getItem("generalSettings")) || {
         playTraderNotification: true,
         playHeadlineNotification: true,
-        nbrOfOrdersForScaling: 10,
+        nbrOfSplitOrders: 9,
+        showDebugLogs: false,
       };
     },
     setGeneralSettings(generalSettings) {
       if (
         generalSettings.playHeadlineNotification != null &&
         generalSettings.playTraderNotification != null &&
-        generalSettings.nbrOfOrdersForScaling != null
+        generalSettings.nbrOfSplitOrders != null
       ) {
         localStorage.setItem("generalSettings", JSON.stringify(generalSettings));
         this.generalSettings = generalSettings;
