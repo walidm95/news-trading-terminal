@@ -633,6 +633,7 @@ export default {
             @quote-asset-changed="onQuoteAssetChanged"
             @toggle-api-key="onToggleApiKey"
             @add-debug-log="onDebugLog"
+            @clicked-by-other-trader="onClickedByOtherTrader"
             :tick-size="getTickSize()"
             :latest-price="livePriceFeed[trading.tradingSymbol + trading.quoteAsset]"
             :price-precision="precisionFormat.price[trading.tradingSymbol + trading.quoteAsset]"
