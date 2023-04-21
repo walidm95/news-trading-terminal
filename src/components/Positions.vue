@@ -1,14 +1,13 @@
 <template>
   <v-card>
     <v-card-title>Positions ({{ positions.length }})</v-card-title>
-    <v-table density="compact">
+    <v-table density="compact" fixed-header height="300px">
       <thead>
         <tr>
           <th class="text-center text-subtitle-2 pr-0 pl-2">Account</th>
           <th class="text-center text-subtitle-2 pr-0 pl-2">Ticker</th>
           <th class="text-center text-subtitle-2 pr-0 pl-2">Size</th>
           <th class="text-center text-subtitle-2 pr-0 pl-2">Entry Price</th>
-          <th class="text-center text-subtitle-2 pr-0 pl-2">Mark Price</th>
           <th class="text-center text-subtitle-2 pr-0 pl-2">uPNL</th>
           <th class="text-center text-subtitle-2 pr-2 pl-2">Close</th>
         </tr>
@@ -22,9 +21,6 @@
           </td>
           <td class="text-center text-subtitle-2 pr-0 pl-2">
             {{ formatNumber(pos.entryPrice, pos.ticker).replace("$", "") }}
-          </td>
-          <td class="text-center text-subtitle-2 pr-0 pl-2">
-            {{ formatNumber(pos.markPrice, pos.ticker).replace("$", "") }}
           </td>
           <td class="text-center text-subtitle-2 pr-0 pl-2" :class="pos.upnl > 0 ? 'text-green' : 'text-red'">
             {{ formatNumber(pos.upnl) }}
@@ -66,17 +62,22 @@ export default {
     },
     formatNumber(number, ticker) {
       number = parseFloat(number);
-      return formatter.format(number.toFixed(ticker ? this.pricePrecisions[ticker] : 2));
+      const fixedDecimals = ticker ? this.pricePrecisions[ticker] : 2;
+      return formatter.format(number.toFixed(fixedDecimals >= 5 ? 5 : fixedDecimals));
     },
     connectUserDataStream() {
       let apiKeys = JSON.parse(localStorage.getItem("apiKeys")) || [];
       for (let apiKey of apiKeys) {
+        if (!apiKey.enabled) {
+          continue;
+        }
         let promise = binance.getUserDataStreamListenKey(apiKey.key, apiKey.secret);
         promise
           .then((response) => response.json())
           .then((data) => {
             if (data.code) {
               alert(data.msg);
+              this.$emit("add-debug-log", data.msg);
             } else {
               this.listenKeys[apiKey.account] = data.listenKey;
               this.userDataStreams[apiKey.account] = new WebSocket("wss://fstream.binance.com/ws/" + this.listenKeys[apiKey.account]);
@@ -85,6 +86,10 @@ export default {
                 binance.keepAliveUserDataStream(apiKey.key, apiKey.secret, this.listenKeys[apiKey.account]);
               }, 30000);
             }
+          })
+          .catch((error) => {
+            this.debugLogs.unshift(`error on connectUserDataStream: ${error}`);
+            console.error(error);
           });
       }
     },
@@ -94,12 +99,20 @@ export default {
         clearTimeout(this.updateAfterTimeout);
         this.updateAfterTimeout = setTimeout(() => {
           this.$emit("update-positions");
-        }, 1000);
+        }, 500);
       }
     },
   },
   mounted() {
     setTimeout(this.connectUserDataStream, 2000);
+  },
+  unmounted() {
+    for (let account of Object.keys(this.userDataStreams)) {
+      this.userDataStreams[account].close();
+      this.userDataStreams[account] = null;
+      clearInterval(this.keepAliveIntervals[account]);
+      this.listenKeys[account] - null;
+    }
   },
 };
 </script>

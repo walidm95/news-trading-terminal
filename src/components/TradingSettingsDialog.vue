@@ -8,7 +8,11 @@ export default {
       newApiSecret: "",
       playTraderNotification: null,
       playHeadlineNotification: null,
-      nbrOfOrdersForScaling: null,
+      nbrOfSplitOrders: null,
+      showDebugLogs: null,
+      showPositions: null,
+      showChart: null,
+      nbrOfOrderRules: [(v) => !!v || "Required", (v) => v >= 0 || "Must be positive", (v) => v < 10 || "Must be less than 10"],
     };
   },
   props: {
@@ -17,13 +21,21 @@ export default {
   },
   methods: {
     close() {
+      // Validate data
+      if (this.nbrOfSplitOrders < 0 || this.nbrOfSplitOrders > 9) {
+        return;
+      }
+
       this.dialog = false;
 
       // Update general settings
       this.$emit("update-general-settings", {
         playHeadlineNotification: this.playHeadlineNotification,
         playTraderNotification: this.playTraderNotification,
-        nbrOfOrdersForScaling: this.nbrOfOrdersForScaling,
+        nbrOfSplitOrders: this.nbrOfSplitOrders,
+        showDebugLogs: this.showDebugLogs,
+        showPositions: this.showPositions,
+        showChart: this.showChart,
       });
     },
     onAddApiKey() {
@@ -31,17 +43,24 @@ export default {
         account: this.newAccount,
         key: this.newApiKey,
         secret: this.newApiSecret,
+        enabled: true,
       });
       this.newAccount = "";
       this.newApiKey = "";
       this.newApiSecret = "";
+    },
+    onToggleApiKey(index) {
+      this.$emit("toggle-api-key", index);
     },
   },
   watch: {
     generalSettings: function (newSettings) {
       this.playHeadlineNotification = newSettings.playHeadlineNotification;
       this.playTraderNotification = newSettings.playTraderNotification;
-      this.nbrOfOrdersForScaling = newSettings.nbrOfOrdersForScaling;
+      this.nbrOfSplitOrders = newSettings.nbrOfSplitOrders;
+      this.showDebugLogs = newSettings.showDebugLogs;
+      this.showPositions = newSettings.showPositions;
+      this.showChart = newSettings.showChart;
     },
   },
 };
@@ -60,19 +79,33 @@ export default {
           <v-card-text>
             <v-row>
               <v-col>
-                <v-checkbox density="compact" label="Trader Notification Sound" v-model="playTraderNotification"></v-checkbox>
+                <v-checkbox density="compact" hide-details="auto" label="Trader Notification Sound" v-model="playTraderNotification"></v-checkbox>
               </v-col>
               <v-col>
-                <v-checkbox density="compact" label="Headline Notification Sound" v-model="playHeadlineNotification"></v-checkbox>
+                <v-checkbox density="compact" hide-details="auto" label="Headline Notification Sound" v-model="playHeadlineNotification"></v-checkbox>
               </v-col>
               <v-col>
                 <v-text-field
                   density="compact"
                   hide-details="auto"
                   type="number"
-                  label="Number Of Orders For Scaling"
-                  v-model="nbrOfOrdersForScaling"
+                  min="0"
+                  max="9"
+                  :rules="nbrOfOrderRules"
+                  label="Number of split orders"
+                  v-model="nbrOfSplitOrders"
                 ></v-text-field>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-checkbox density="compact" hide-details="auto" label="Show Positions" v-model="showPositions"></v-checkbox>
+              </v-col>
+              <v-col>
+                <v-checkbox density="compact" hide-details="auto" label="Show Chart" v-model="showChart"></v-checkbox>
+              </v-col>
+              <v-col>
+                <v-checkbox density="compact" hide-details="auto" label="Show Debug Logs" v-model="showDebugLogs"></v-checkbox>
               </v-col>
             </v-row>
           </v-card-text>
@@ -83,15 +116,15 @@ export default {
             <thead>
               <tr>
                 <th class="text-center text-subtitle-2 pr-0">Name</th>
-                <th class="text-center text-subtitle-2 pr-0">Key</th>
+                <th class="text-center text-subtitle-2 pr-0" style="width: 30%">Key</th>
                 <th class="text-center text-subtitle-2 pr-0">Secret</th>
                 <th class="text-center text-subtitle-2 pr-0">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(api, index) in apiKeys">
-                <td>{{ api.account }}</td>
-                <td>{{ api.key }}</td>
+              <tr v-for="(api, index) in apiKeys" class="text-center">
+                <td><v-checkbox hide-details="true" :model-value="api.enabled" :label="api.account" @click="onToggleApiKey(index)"></v-checkbox></td>
+                <td>{{ api.key.slice(0, 10) + " ... " + api.key.slice(-10) }}</td>
                 <td>***</td>
                 <td class="pt-1 pb-1">
                   <v-btn rounded="lg" variant="tonal" color="red" @click="$emit('delete-api-key', index)"> Delete </v-btn>
@@ -99,7 +132,7 @@ export default {
               </tr>
             </tbody>
           </v-table>
-          <v-card-actions>
+          <v-card-actions v-if="apiKeys.length < 6">
             <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Account" v-model="newAccount"></v-text-field>
             <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Key" v-model="newApiKey"></v-text-field>
             <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Secret" v-model="newApiSecret"></v-text-field>
