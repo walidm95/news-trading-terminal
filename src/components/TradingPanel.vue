@@ -445,7 +445,7 @@ export default {
     getTotalPositionsNotional() {
       let total = 0;
       for (let pos of this.accountsPositions) {
-        total += pos.size;
+        if (this.apiKeys.some((api) => api.enabled && api.account == pos.account)) total += pos.size;
       }
       return total.toFixed(2);
     },

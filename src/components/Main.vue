@@ -17,6 +17,7 @@ export default {
       version: null,
       newTradeSound: new Audio("/new_trade.mp3"),
       clientsThatTraded: [],
+      nbrOfActiveAccounts: null,
       binanceFuturesPing: null,
       binanceFuturesPingLoop: null,
       precisionFormat: { price: {}, quantity: {} },
@@ -547,9 +548,15 @@ export default {
         showChart: true,
       };
     },
+    setNbrOfActiveAccounts() {
+      // Update nbr of active accounts
+      this.nbrOfActiveAccounts = this.trading.apiKeys.filter((api) => api.enabled).length;
+    },
     setGeneralSettings(generalSettings) {
       localStorage.setItem("generalSettings", JSON.stringify(generalSettings));
       this.generalSettings = generalSettings;
+
+      this.setNbrOfActiveAccounts();
 
       // Hijacking this event to update positions in case api keys were added/removed
       this.fetchOpenPositions();
@@ -577,6 +584,7 @@ export default {
     //this.binanceFuturesPingLoop = setInterval(this.calculateBinanceFuturesPing, 2000); // Not using for now
 
     this.getGeneralSettings();
+    this.setNbrOfActiveAccounts();
   },
   beforeDestroy() {
     clearInterval(this.binanceFuturesPing);
@@ -654,6 +662,8 @@ export default {
         <v-col v-if="generalSettings.showPositions">
           <Positions
             class="bottom-panels"
+            :nbr-of-active-accounts="nbrOfActiveAccounts"
+            :api-keys="trading.apiKeys"
             :positions="trading.positions"
             :pricePrecisions="precisionFormat.price"
             @close-position="onClosePosition"

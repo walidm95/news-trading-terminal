@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title>Positions ({{ positions.length }})</v-card-title>
+    <v-card-title>Positions ({{ showPositions() ? positions.length : 0 }})</v-card-title>
     <v-table density="compact" fixed-header height="300px">
       <thead>
         <tr>
@@ -13,7 +13,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(pos, index) in positions">
+        <tr v-if="showPositions()" v-for="(pos, index) in positions">
           <td class="text-center text-subtitle-2 pr-0 pl-2">{{ pos.account }}</td>
           <td class="text-center text-subtitle-2 pr-0 pl-2" @click="onTickerClick(pos.ticker)">{{ pos.ticker.replace("USDT", "") }}</td>
           <td class="text-center text-subtitle-2 pr-0 pl-2" :class="pos.side == 'BUY' ? 'text-green' : 'text-red'">
@@ -53,6 +53,8 @@ export default {
     };
   },
   props: {
+    nbrOfActiveAccounts: { type: Number, required: true },
+    apiKeys: { type: Array, required: true },
     positions: { type: Array, required: true },
     pricePrecisions: { type: Object, required: true },
   },
@@ -66,9 +68,8 @@ export default {
       return formatter.format(number.toFixed(fixedDecimals >= 5 ? 5 : fixedDecimals));
     },
     connectUserDataStream() {
-      let apiKeys = JSON.parse(localStorage.getItem("apiKeys")) || [];
-      for (let apiKey of apiKeys) {
-        if (!apiKey.enabled) {
+      for (let apiKey of this.apiKeys) {
+        if (!apiKey.enabled || this.userDataStreams[apiKey.account]) {
           continue;
         }
         let promise = binance.getUserDataStreamListenKey(apiKey.key, apiKey.secret);
@@ -85,7 +86,11 @@ export default {
               this.userDataStreams[apiKey.account] = new WebSocket("wss://fstream.binance.com/ws/" + this.listenKeys[apiKey.account]);
               this.userDataStreams[apiKey.account].onmessage = this.onUserDataStreamMessage;
               this.keepAliveIntervals[apiKey.account] = setInterval(() => {
-                binance.keepAliveUserDataStream(apiKey.key, apiKey.secret, this.listenKeys[apiKey.account]);
+                if (apiKey.enabled) {
+                  binance.keepAliveUserDataStream(apiKey.key, apiKey.secret, this.listenKeys[apiKey.account]);
+                } else if (this.keepAliveIntervals[apiKey.account]) {
+                  this.closeStream(apiKey.account);
+                }
               }, 30000);
             }
           })
@@ -106,17 +111,43 @@ export default {
         }, 500);
       }
     },
+    closeStream(account) {
+      if (this.userDataStreams[account]) {
+        this.userDataStreams[account].close();
+        this.userDataStreams[account] = null;
+        clearInterval(this.keepAliveIntervals[account]);
+        this.listenKeys[account] = null;
+      }
+    },
+    closeAllStreams() {
+      for (let account of Object.keys(this.userDataStreams)) {
+        this.closeStream(account);
+      }
+    },
+    showPositions() {
+      for (let api of this.apiKeys) {
+        if (api.enabled && this.positions.some((pos) => pos.account == api.account)) {
+          return true;
+        }
+      }
+      return false;
+    },
   },
   mounted() {
     setTimeout(this.connectUserDataStream, 2000);
   },
   unmounted() {
-    for (let account of Object.keys(this.userDataStreams)) {
-      this.userDataStreams[account].close();
-      this.userDataStreams[account] = null;
-      clearInterval(this.keepAliveIntervals[account]);
-      this.listenKeys[account] - null;
-    }
+    this.closeAllStreams();
+  },
+  watch: {
+    nbrOfActiveAccounts: function (newNbr) {
+      if (newNbr > 0) {
+        this.connectUserDataStream();
+      } else {
+        // Disconnect all user data stream
+        this.closeAllStreams();
+      }
+    },
   },
 };
 </script>
