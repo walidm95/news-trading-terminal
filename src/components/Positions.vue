@@ -76,8 +76,10 @@ export default {
           .then((response) => response.json())
           .then((data) => {
             if (data.code) {
-              alert(data.msg);
-              this.$emit("add-debug-log", data.msg);
+              const msg = `${apiKey.account}: ${data.msg}`;
+              this.$emit("add-debug-log", msg);
+              console.error(msg);
+              alert(msg);
             } else {
               this.listenKeys[apiKey.account] = data.listenKey;
               this.userDataStreams[apiKey.account] = new WebSocket("wss://fstream.binance.com/ws/" + this.listenKeys[apiKey.account]);
@@ -88,8 +90,10 @@ export default {
             }
           })
           .catch((error) => {
-            this.debugLogs.unshift(`error on connectUserDataStream: ${error}`);
-            console.error(error);
+            const msg = `Error in UserDataStream\n${apiKey.account}: ${error}`;
+            this.$emit("add-debug-log", msg);
+            console.error(msg);
+            alert(msg);
           });
       }
     },

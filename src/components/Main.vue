@@ -458,7 +458,16 @@ export default {
           .then(
             (response) => {
               let data = response.json();
-              data.then((account) => {
+              data.then((response) => {
+                if (response.code) {
+                  const msg = `${apiKey.account}: ${response.msg}`;
+                  this.debugLogs.unshift(`error on fetchOpenPositions: ${msg}`);
+                  console.error(msg);
+                  alert(msg);
+                  return;
+                }
+                let account = response;
+
                 this.trading.accountBalances[apiKey.account] = parseFloat(account.totalWalletBalance);
 
                 if (account.positions == undefined) {
@@ -498,12 +507,14 @@ export default {
             },
             (error) => {
               this.debugLogs.unshift(`error on fetchOpenPositions: ${error}`);
+              console.error(error);
               alert(error);
             }
           )
           .catch((error) => {
             this.debugLogs.unshift(`error on fetchOpenPositions: ${error}`);
             console.error(error);
+            //alert(error);
           });
       }
     },
@@ -530,21 +541,15 @@ export default {
       this.generalSettings = JSON.parse(localStorage.getItem("generalSettings")) || {
         playTraderNotification: true,
         playHeadlineNotification: true,
-        nbrOfSplitOrders: 9,
+        nbrOfSplitOrders: 5,
         showDebugLogs: false,
         showPositions: true,
         showChart: true,
       };
     },
     setGeneralSettings(generalSettings) {
-      if (
-        generalSettings.playHeadlineNotification != null &&
-        generalSettings.playTraderNotification != null &&
-        generalSettings.nbrOfSplitOrders != null
-      ) {
-        localStorage.setItem("generalSettings", JSON.stringify(generalSettings));
-        this.generalSettings = generalSettings;
-      }
+      localStorage.setItem("generalSettings", JSON.stringify(generalSettings));
+      this.generalSettings = generalSettings;
 
       // Hijacking this event to update positions in case api keys were added/removed
       this.fetchOpenPositions();
@@ -632,8 +637,8 @@ export default {
           ></TradingPanel>
         </v-col>
       </v-row>
-      <v-row v-if="this.generalSettings.showChart || this.generalSettings.showPositions">
-        <v-col v-if="this.generalSettings.showChart">
+      <v-row v-if="generalSettings.showChart || generalSettings.showPositions">
+        <v-col v-if="generalSettings.showChart">
           <!--TradinViewChart
             class="bottom-panels"
             :ticker="`${trading.tradingSymbol}${trading.quoteAsset}.P`"
@@ -646,7 +651,7 @@ export default {
             :price-precision="precisionFormat.price[trading.tradingSymbol + trading.quoteAsset]"
           ></LWChart>
         </v-col>
-        <v-col v-if="this.generalSettings.showPositions">
+        <v-col v-if="generalSettings.showPositions">
           <Positions
             class="bottom-panels"
             :positions="trading.positions"
@@ -657,7 +662,7 @@ export default {
           />
         </v-col>
       </v-row>
-      <v-row class="pl-2" v-if="this.generalSettings.showDebugLogs">
+      <v-row class="pl-2" v-if="generalSettings.showDebugLogs">
         <DebugLogs style="width: 99%; height: 300px" :logs="debugLogs"></DebugLogs>
       </v-row>
     </v-container>

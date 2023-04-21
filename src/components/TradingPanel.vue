@@ -28,6 +28,7 @@ export default {
       pingTimeout: null,
       pingIntervalTime: 5000,
       pingTimeoutTime: 2000,
+      disableTradingButtons: true,
     };
   },
   props: {
@@ -355,11 +356,11 @@ export default {
     onDeleteApiKey(index) {
       this.$emit("delete-api-key", index);
     },
-    onUpdateGeneralSettings(settings) {
-      this.$emit("update-general-settings", settings);
-    },
     onToggleApiKey(index) {
       this.$emit("toggle-api-key", index);
+    },
+    onCloseDialog(settings) {
+      this.$emit("update-general-settings", settings);
     },
     connectNttWs() {
       //Get websocket api key
@@ -428,9 +429,17 @@ export default {
     },
     getTotalAccountsBalance() {
       let total = 0;
-      for (let account of Object.keys(this.accountsBalance)) {
-        total += this.accountsBalance[account];
+
+      if (!this.accountsBalance) {
+        this.disableTradingButtons = true;
+      } else {
+        for (let account of Object.keys(this.accountsBalance)) {
+          total += this.accountsBalance[account];
+        }
       }
+
+      this.disableTradingButtons = !this.apiKeys.some((api) => api.enabled) || total == 0;
+
       return total.toFixed(2);
     },
     getTotalPositionsNotional() {
@@ -464,8 +473,7 @@ export default {
         :general-settings="generalSettings"
         @add-api-key="onAddApiKey"
         @delete-api-key="onDeleteApiKey"
-        @update-general-settings="onUpdateGeneralSettings"
-        @close-dialog="onCloseDialog()"
+        @close-dialog="onCloseDialog"
         @toggle-api-key="onToggleApiKey"
       ></TradingSettingsDialog
     ></v-card-title>
@@ -619,12 +627,12 @@ export default {
         <v-row>
           <v-col>
             <v-row justify="center">
-              <TradingButton :amount="maxSize * 0.25" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :amount="maxSize * 0.5" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :amount="maxSize" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :amount="maxSize * 0.25" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :amount="maxSize * 0.5" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :amount="maxSize" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="maxSize * 0.25" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="maxSize * 0.5" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="maxSize" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="maxSize * 0.25" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="maxSize * 0.5" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="maxSize" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
             </v-row>
           </v-col>
         </v-row>

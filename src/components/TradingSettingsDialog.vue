@@ -6,13 +6,18 @@ export default {
       newAccount: "",
       newApiKey: "",
       newApiSecret: "",
-      playTraderNotification: null,
-      playHeadlineNotification: null,
-      nbrOfSplitOrders: null,
-      showDebugLogs: null,
-      showPositions: null,
-      showChart: null,
-      nbrOfOrderRules: [(v) => !!v || "Required", (v) => v >= 0 || "Must be positive", (v) => v < 10 || "Must be less than 10"],
+      playTraderNotification: true,
+      playHeadlineNotification: true,
+      nbrOfSplitOrders: "5",
+      showDebugLogs: false,
+      showPositions: true,
+      showChart: true,
+      nbrOfOrderRules: [
+        (v) => v != "" || "Required",
+        (v) => !!v || "Required",
+        (v) => v >= 0 || "Must be positive",
+        (v) => v < 10 || "Must be less than 10",
+      ],
     };
   },
   props: {
@@ -22,14 +27,18 @@ export default {
   methods: {
     close() {
       // Validate data
-      if (this.nbrOfSplitOrders < 0 || this.nbrOfSplitOrders > 9) {
+      if (this.nbrOfSplitOrders == "") {
+        alert("Number of split orders is missing");
+        return;
+      }
+      if (Number(this.nbrOfSplitOrders) < 0 || Number(this.nbrOfSplitOrders) > 9) {
         return;
       }
 
       this.dialog = false;
 
       // Update general settings
-      this.$emit("update-general-settings", {
+      this.$emit("close-dialog", {
         playHeadlineNotification: this.playHeadlineNotification,
         playTraderNotification: this.playTraderNotification,
         nbrOfSplitOrders: this.nbrOfSplitOrders,
