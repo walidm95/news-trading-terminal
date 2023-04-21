@@ -297,6 +297,16 @@ export default {
       // Calculate max top to bottom range
       this.calculateMaxRangePct(visibleBars);
     },
+    resetObjects() {
+      this.ws = null;
+      this.chart = null;
+      this.priceData = [];
+      this.volumeData = [];
+      this.priceLines = [];
+      this.priceSeries = null;
+      this.volumeSeries = null;
+      this.maxRangePct = null;
+    },
   },
   watch: {
     ticker: function (newTicker) {
@@ -324,7 +334,7 @@ export default {
   unmounted() {
     if (this.chart) {
       this.chart.remove();
-      this.chart = null;
+      this.resetObjects();
     }
   },
 };

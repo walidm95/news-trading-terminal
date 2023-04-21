@@ -532,6 +532,8 @@ export default {
         playHeadlineNotification: true,
         nbrOfSplitOrders: 9,
         showDebugLogs: false,
+        showPositions: true,
+        showChart: true,
       };
     },
     setGeneralSettings(generalSettings) {
@@ -630,8 +632,8 @@ export default {
           ></TradingPanel>
         </v-col>
       </v-row>
-      <v-row>
-        <v-col>
+      <v-row v-if="this.generalSettings.showChart || this.generalSettings.showPositions">
+        <v-col v-if="this.generalSettings.showChart">
           <!--TradinViewChart
             class="bottom-panels"
             :ticker="`${trading.tradingSymbol}${trading.quoteAsset}.P`"
@@ -644,7 +646,7 @@ export default {
             :price-precision="precisionFormat.price[trading.tradingSymbol + trading.quoteAsset]"
           ></LWChart>
         </v-col>
-        <v-col>
+        <v-col v-if="this.generalSettings.showPositions">
           <Positions
             class="bottom-panels"
             :positions="trading.positions"
@@ -655,8 +657,8 @@ export default {
           />
         </v-col>
       </v-row>
-      <v-row class="pl-2">
-        <DebugLogs v-if="this.generalSettings.showDebugLogs" style="width: 99%; height: 300px" :logs="debugLogs"></DebugLogs>
+      <v-row class="pl-2" v-if="this.generalSettings.showDebugLogs">
+        <DebugLogs style="width: 99%; height: 300px" :logs="debugLogs"></DebugLogs>
       </v-row>
     </v-container>
   </v-main>

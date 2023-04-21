@@ -106,5 +106,13 @@ export default {
   mounted() {
     setTimeout(this.connectUserDataStream, 2000);
   },
+  unmounted() {
+    for (let account of Object.keys(this.userDataStreams)) {
+      this.userDataStreams[account].close();
+      this.userDataStreams[account] = null;
+      clearInterval(this.keepAliveIntervals[account]);
+      this.listenKeys[account] - null;
+    }
+  },
 };
 </script>

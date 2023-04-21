@@ -10,6 +10,8 @@ export default {
       playHeadlineNotification: null,
       nbrOfSplitOrders: null,
       showDebugLogs: null,
+      showPositions: null,
+      showChart: null,
       nbrOfOrderRules: [(v) => !!v || "Required", (v) => v >= 0 || "Must be positive", (v) => v < 10 || "Must be less than 10"],
     };
   },
@@ -32,6 +34,8 @@ export default {
         playTraderNotification: this.playTraderNotification,
         nbrOfSplitOrders: this.nbrOfSplitOrders,
         showDebugLogs: this.showDebugLogs,
+        showPositions: this.showPositions,
+        showChart: this.showChart,
       });
     },
     onAddApiKey() {
@@ -55,6 +59,8 @@ export default {
       this.playTraderNotification = newSettings.playTraderNotification;
       this.nbrOfSplitOrders = newSettings.nbrOfSplitOrders;
       this.showDebugLogs = newSettings.showDebugLogs;
+      this.showPositions = newSettings.showPositions;
+      this.showChart = newSettings.showChart;
     },
   },
 };
@@ -73,10 +79,10 @@ export default {
           <v-card-text>
             <v-row>
               <v-col>
-                <v-checkbox density="compact" label="Trader Notification Sound" v-model="playTraderNotification"></v-checkbox>
+                <v-checkbox density="compact" hide-details="auto" label="Trader Notification Sound" v-model="playTraderNotification"></v-checkbox>
               </v-col>
               <v-col>
-                <v-checkbox density="compact" label="Headline Notification Sound" v-model="playHeadlineNotification"></v-checkbox>
+                <v-checkbox density="compact" hide-details="auto" label="Headline Notification Sound" v-model="playHeadlineNotification"></v-checkbox>
               </v-col>
               <v-col>
                 <v-text-field
@@ -90,8 +96,16 @@ export default {
                   v-model="nbrOfSplitOrders"
                 ></v-text-field>
               </v-col>
+            </v-row>
+            <v-row>
               <v-col>
-                <v-checkbox density="compact" label="Show Debug Logs" v-model="showDebugLogs"></v-checkbox>
+                <v-checkbox density="compact" hide-details="auto" label="Show Positions" v-model="showPositions"></v-checkbox>
+              </v-col>
+              <v-col>
+                <v-checkbox density="compact" hide-details="auto" label="Show Chart" v-model="showChart"></v-checkbox>
+              </v-col>
+              <v-col>
+                <v-checkbox density="compact" hide-details="auto" label="Show Debug Logs" v-model="showDebugLogs"></v-checkbox>
               </v-col>
             </v-row>
           </v-card-text>
