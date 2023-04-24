@@ -1,5 +1,6 @@
 <script setup>
 import NewsItem from "./NewsItem.vue";
+import NewsFeedSettingsDialog from "./NewsFeedSettingsDialog.vue";
 </script>
 
 <script>
@@ -18,6 +19,7 @@ export default {
       pingTimeout: null,
       pingIntervalTime: 5000,
       pingTimeoutTime: 2000,
+      keywords: {},
     };
   },
   props: {
@@ -68,7 +70,7 @@ export default {
         let data = JSON.parse(event.data);
 
         if (data.user) {
-          const msg = "TreeOfAlphaWS logged in" //as " + data.user.username;
+          const msg = "TreeOfAlphaWS logged in"; //as " + data.user.username;
           this.$emit("add-debug-log", msg);
           console.log(msg);
           return;
@@ -169,6 +171,20 @@ export default {
       }
       return "";
     },
+    onAddKeyword(word, color) {
+      this.keywords.push({ word: word, color: color });
+    },
+    onDeleteKeyword(index) {
+      this.keywords.splice(index, 1);
+    },
+    highlight(word, color) {
+      let text = this.headlines[this.activeHeadline].body;
+      if (text) {
+        return text.replace(new RegExp(word, "gi"), (match) => {
+          return `<span style="color:${color}">` + match + "</span>";
+        });
+      }
+    },
   },
   mounted() {
     this.connectNewsFeedWs();
@@ -188,6 +204,13 @@ export default {
     <v-badge :color="wsAlive ? 'green' : 'red'" dot inline>
       <v-card-title>News Feed</v-card-title>
     </v-badge>
+    <NewsFeedSettingsDialog
+      class="float-right pt-3 pr-3"
+      :keywords="keywords"
+      @add-keyword="onAddKeyword"
+      @delete-keyword="onDeleteKeyword"
+    ></NewsFeedSettingsDialog>
+
     <v-list class="overflow-y-auto" style="height: 90%">
       <NewsItem
         v-for="(headline, index) in headlines"
