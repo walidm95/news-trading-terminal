@@ -4,11 +4,13 @@ export default {
     return {
       dialog: false,
       newKeyword: "",
+      newAction: "",
       newColor: "",
     };
   },
   props: {
-    keywords: { type: Array, required: true },
+    keywordsToHighlight: { type: Array, required: true },
+    keywordsToIgnore: { type: Array, required: true },
   },
   methods: {
     close() {
@@ -17,20 +19,23 @@ export default {
 
     onAddKeyword() {
       // Validate data
-      if (this.newColor == "") {
-        alert("Select a color");
+      if (this.newAction == "") {
+        alert("Select an action");
         return;
       }
       if (this.newKeyword == "") {
         alert("Enter a keyword");
         return;
       }
-
-      this.dialog = false;
+      if (this.newAction == "Highlight" && this.newColor == "") {
+        alert("Select a color");
+        return;
+      }
 
       this.$emit("add-keyword", {
-        newKeyword: this.newKeyword,
-        newColor: this.newColor,
+        word: this.newKeyword,
+        action: this.newAction,
+        color: this.newColor,
       });
     },
   },
@@ -44,31 +49,58 @@ export default {
         <v-btn v-bind="props" color="grey" variant="text" icon="mdi-cog-outline" />
       </template>
       <v-card>
-        <v-card-title>News Feed Settings</v-card-title>
         <v-card>
-          <v-card-subtitle>Keyword Coloring</v-card-subtitle>
-          <v-table density="compact">
-            <thead>
-              <tr>
-                <th class="text-center text-subtitle-2 pr-0">Keyword</th>
-                <th class="text-center text-subtitle-2 pr-0">Color</th>
-                <th class="text-center text-subtitle-2 pr-0">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(obj, index) in keywords" class="text-center">
-                <td>{{ obj.word }}</td>
-                <td>{{ obj.color }}</td>
-                <td class="pt-1 pb-1">
-                  <v-btn rounded="lg" variant="tonal" color="red" @click="$emit('delete-keyword', index)"> Delete </v-btn>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-          <v-card-actions v-if="apiKeys.length < 6">
-            <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Keyword" v-model="newKetword"></v-text-field>
-            <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Color" v-model="newColor"></v-text-field>
-            <v-select label="Color" :items="['Red', 'Green', 'Blue', 'Yellow']"></v-select>
+          <v-card-title>News Feed Settings</v-card-title>
+          <v-row>
+            <v-col>
+              <v-card>
+                <v-card-subtitle>Keywords Coloring</v-card-subtitle>
+                <div class="text-center">
+                  <v-chip
+                    closable
+                    v-for="(obj, index) in keywordsToHighlight"
+                    :color="obj.color"
+                    @click:close="$emit('delete-keyword', { action: 'Highlight', index: index })"
+                  >
+                    {{ obj.word }}
+                  </v-chip>
+                </div>
+              </v-card>
+            </v-col>
+            <v-col>
+              <v-card>
+                <v-card-subtitle>Keywords to Ignore</v-card-subtitle>
+                <div class="text-center">
+                  <v-chip
+                    closable
+                    v-for="(word, index) in keywordsToIgnore"
+                    @click:close="$emit('delete-keyword', { action: 'Ignore', index: index })"
+                  >
+                    {{ word }}
+                  </v-chip>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+          <v-card-actions>
+            <v-text-field density="compact" hide-details="auto" class="pl-2 pr-2" label="Keyword" v-model="newKeyword"></v-text-field>
+            <v-select
+              class="pr-2"
+              density="compact"
+              hide-details="auto"
+              label="Action"
+              v-model="newAction"
+              :items="['Highlight', 'Ignore']"
+            ></v-select>
+            <v-select
+              v-show="newAction == 'Highlight'"
+              class="pr-2"
+              density="compact"
+              hide-details="auto"
+              label="Color"
+              v-model="newColor"
+              :items="['red', 'green', 'blue', 'yellow']"
+            ></v-select>
             <v-btn rounded="lg" variant="outlined" color="white" @click="onAddKeyword">Add</v-btn>
           </v-card-actions>
         </v-card>

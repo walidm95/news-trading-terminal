@@ -19,7 +19,8 @@ export default {
       pingTimeout: null,
       pingIntervalTime: 5000,
       pingTimeoutTime: 2000,
-      keywords: {},
+      keywordsToHighlight: [],
+      keywordsToIgnore: [],
     };
   },
   props: {
@@ -171,11 +172,19 @@ export default {
       }
       return "";
     },
-    onAddKeyword(word, color) {
-      this.keywords.push({ word: word, color: color });
+    onAddKeyword(obj) {
+      if (obj.action == "Highlight") {
+        this.keywordsToHighlight.push(obj);
+      } else if (obj.action == "Ignore") {
+        this.keywordsToIgnore.push(obj.word);
+      }
     },
-    onDeleteKeyword(index) {
-      this.keywords.splice(index, 1);
+    onDeleteKeyword(obj) {
+      if (obj.action == "Highlight") {
+        this.keywordsToHighlight.splice(obj.index, 1);
+      } else if (obj.action == "Ignore") {
+        this.keywordsToIgnore.splice(obj.index, 1);
+      }
     },
     highlight(word, color) {
       let text = this.headlines[this.activeHeadline].body;
@@ -206,7 +215,8 @@ export default {
     </v-badge>
     <NewsFeedSettingsDialog
       class="float-right pt-3 pr-3"
-      :keywords="keywords"
+      :keywordsToHighlight="keywordsToHighlight"
+      :keywordsToIgnore="keywordsToIgnore"
       @add-keyword="onAddKeyword"
       @delete-keyword="onDeleteKeyword"
     ></NewsFeedSettingsDialog>
