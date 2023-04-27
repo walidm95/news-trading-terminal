@@ -28,7 +28,6 @@ export default {
     symbols: { type: Object, required: true },
     livePriceFeed: { type: Object, required: true },
     playNotificationSound: { type: Boolean, required: true },
-    nbrOfTradesLatestHeadline: { type: Number, required: true },
   },
   methods: {
     onSelectHeadline(index) {
@@ -122,12 +121,13 @@ export default {
           link: link,
           price: this.livePriceFeed[ticker] ? this.livePriceFeed[ticker] : 0,
           btcPrice: this.livePriceFeed["BTC" + this.quoteAsset] ? this.livePriceFeed["BTC" + this.quoteAsset] : 0,
+          nbrOfTrades: 0
         };
 
         // Ignore headline that contains a keyword to ignore
         if (this.keywordsToIgnore.length > 0) {
           const regex = new RegExp("\\b(" + this.keywordsToIgnore.join("|") + ")\\b", "i");
-          if (regex.test(headline.body)) {
+          if (regex.test(headline.body) || regex.test(headline.title)) {
             const msg = "Contains keyword from ignore list. Skipping";
             this.$emit("add-debug-log", msg);
             console.log(msg);
@@ -269,7 +269,7 @@ export default {
         :selected="activeHeadline == index"
         :priceChange="getPriceChange(index)"
         :btcPriceChange="getBtcPriceChange(index)"
-        :nbrOfTrades="index == 0 ? nbrOfTradesLatestHeadline : 0"
+        :nbrOfTrades="headline.nbrOfTrades || 0"
         @click="onSelectHeadline(index)"
       ></NewsItem>
     </v-list>

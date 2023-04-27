@@ -233,6 +233,7 @@ export default {
     onClickedByOtherTrader(trader_id) {
       if (!this.clientsThatTraded.includes(trader_id)) {
         this.clientsThatTraded.push(trader_id);
+        this.news.headlines[0].nbrOfTrades = this.clientsThatTraded.length;
         if (this.generalSettings.playTraderNotification) {
           this.newTradeSound.play();
         }
@@ -609,7 +610,6 @@ export default {
             :quote-asset="trading.quoteAsset"
             :live-price-feed="livePriceFeed"
             :play-notification-sound="generalSettings.playHeadlineNotification"
-            :nbr-of-trades-latest-headline="clientsThatTraded.length"
             @symbol-from-headline="onSymbolChanged"
             @update-headlines="onUpdateHeadlines"
             @active-headline-index-changed="onActiveHeadlineChanged"
@@ -682,7 +682,7 @@ export default {
 
 <style scoped>
 .top-panels {
-  height: 450px;
+  height: 500px;
 }
 .bottom-panels {
   height: 350px;
