@@ -99,7 +99,7 @@ export default {
               hide-details="auto"
               label="Color"
               v-model="newColor"
-              :items="['red', 'green', 'blue', 'yellow']"
+              :items="['red', 'green', 'cyan', 'yellow']"
             ></v-select>
             <v-btn rounded="lg" variant="outlined" color="white" @click="onAddKeyword">Add</v-btn>
           </v-card-actions>

@@ -111,8 +111,8 @@ export default {
           return;
         }
 
-        let ticker = symbol + this.quoteAsset;
-        this.headlines.unshift({
+        const ticker = symbol + this.quoteAsset;
+        const headline = {
           title: data.title,
           body: data.body ? data.body : data.title,
           type: type,
@@ -122,7 +122,20 @@ export default {
           link: link,
           price: this.livePriceFeed[ticker] ? this.livePriceFeed[ticker] : 0,
           btcPrice: this.livePriceFeed["BTC" + this.quoteAsset] ? this.livePriceFeed["BTC" + this.quoteAsset] : 0,
-        });
+        };
+
+        // Ignore headline that contains a keyword to ignore
+        if (this.keywordsToIgnore.length > 0) {
+          const regex = new RegExp("\\b(" + this.keywordsToIgnore.join("|") + ")\\b", "i");
+          if (regex.test(headline.body)) {
+            const msg = "Contains keyword from ignore list. Skipping";
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
+            return;
+          }
+        }
+
+        this.headlines.unshift(headline);
 
         if (this.playNotificationSound) {
           this.notification_sound.play();
@@ -178,6 +191,7 @@ export default {
       } else if (obj.action == "Ignore") {
         this.keywordsToIgnore.push(obj.word);
       }
+      localStorage.setItem("keywords", JSON.stringify({ highlight: this.keywordsToHighlight, ignore: this.keywordsToIgnore }));
     },
     onDeleteKeyword(obj) {
       if (obj.action == "Highlight") {
@@ -185,18 +199,48 @@ export default {
       } else if (obj.action == "Ignore") {
         this.keywordsToIgnore.splice(obj.index, 1);
       }
+      localStorage.setItem("keywords", JSON.stringify({ highlight: this.keywordsToHighlight, ignore: this.keywordsToIgnore }));
     },
-    highlight(word, color) {
-      let text = this.headlines[this.activeHeadline].body;
-      if (text) {
-        return text.replace(new RegExp(word, "gi"), (match) => {
-          return `<span style="color:${color}">` + match + "</span>";
+    applyHighlightsOld(text) {
+      for (let item of this.keywordsToHighlight) {
+        text = text.replace(new RegExp(item.word, "gi"), (match) => {
+          return `<span style="color:${item.color}">` + match + "</span>";
         });
       }
+      return text;
+    },
+    applyHighlights(text) {
+      const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+      const highlightGroups = this.keywordsToHighlight
+        .map((item) => ({
+          pattern: `\\b${escapeRegExp(item.word)}\\b`,
+          color: item.color,
+        }))
+        .reduce((acc, item) => {
+          const colorGroup = acc[item.color] || { patterns: [], color: item.color };
+          colorGroup.patterns.push(item.pattern);
+          acc[item.color] = colorGroup;
+          return acc;
+        }, {});
+
+      for (const colorGroup of Object.values(highlightGroups)) {
+        const pattern = colorGroup.patterns.join("|");
+        const regex = new RegExp(pattern, "gi");
+        text = text.replace(regex, (match) => `<span style="color:${colorGroup.color}">${match}</span>`);
+      }
+
+      return text;
     },
   },
   mounted() {
     this.connectNewsFeedWs();
+
+    // Load keywords
+    const keywords = JSON.parse(localStorage.getItem("keywords"));
+    if (keywords) {
+      this.keywordsToHighlight = keywords.highlight;
+      this.keywordsToIgnore = keywords.ignore;
+    }
   },
   beforeUnmount() {
     if (this.newsWebsocket) {
@@ -227,7 +271,7 @@ export default {
         :symbol="headline.symbol"
         :type="headline.type"
         :title="headline.title"
-        :body="headline.body"
+        :body="applyHighlights(headline.body)"
         :link="headline.link"
         :timestamp="headline.timestamp"
         :selected="activeHeadline == index"
