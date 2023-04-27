@@ -201,14 +201,6 @@ export default {
       }
       localStorage.setItem("keywords", JSON.stringify({ highlight: this.keywordsToHighlight, ignore: this.keywordsToIgnore }));
     },
-    applyHighlightsOld(text) {
-      for (let item of this.keywordsToHighlight) {
-        text = text.replace(new RegExp(item.word, "gi"), (match) => {
-          return `<span style="color:${item.color}">` + match + "</span>";
-        });
-      }
-      return text;
-    },
     applyHighlights(text) {
       const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
       const highlightGroups = this.keywordsToHighlight
