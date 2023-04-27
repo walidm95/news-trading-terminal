@@ -55,7 +55,7 @@ export default {
             <v-col>
               <v-card>
                 <v-card-subtitle>Keywords Coloring</v-card-subtitle>
-                <div class="text-center">
+                <div class="text-center pt-3 pb-3">
                   <v-chip
                     closable
                     v-for="(obj, index) in keywordsToHighlight"
@@ -70,7 +70,7 @@ export default {
             <v-col>
               <v-card>
                 <v-card-subtitle>Keywords to Ignore</v-card-subtitle>
-                <div class="text-center">
+                <div class="text-center pt-3 pb-3">
                   <v-chip
                     closable
                     v-for="(word, index) in keywordsToIgnore"
