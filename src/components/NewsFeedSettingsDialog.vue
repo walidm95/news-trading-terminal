@@ -9,14 +9,12 @@ export default {
     };
   },
   props: {
-    keywordsToHighlight: { type: Array, required: true },
-    keywordsToIgnore: { type: Array, required: true },
+    keywords: { type: Object, required: true },
   },
   methods: {
     close() {
       this.dialog = false;
     },
-
     onAddKeyword() {
       // Validate data
       if (this.newAction == "") {
@@ -53,33 +51,24 @@ export default {
           <v-card-title>News Feed Settings</v-card-title>
           <v-row>
             <v-col>
-              <v-card>
-                <v-card-subtitle>Keywords Coloring</v-card-subtitle>
-                <div class="text-center pt-3 pb-3">
-                  <v-chip
-                    closable
-                    v-for="(obj, index) in keywordsToHighlight"
-                    :color="obj.color"
-                    @click:close="$emit('delete-keyword', { action: 'Highlight', index: index })"
-                  >
-                    {{ obj.word }}
+              <v-card-subtitle>Keywords Coloring</v-card-subtitle>
+              <v-row class="ma-2">
+                <v-col v-for="(item, i) in keywords.highlight" :key="item.word" cols="auto" class="py-1 pe-0">
+                  <v-chip :disabled="loading" closable :color="item.color" @click:close="$emit('delete-keyword', { action: 'Highlight', index: i })">
+                    {{ item.word }}
                   </v-chip>
-                </div>
-              </v-card>
+                </v-col>
+              </v-row>
             </v-col>
             <v-col>
-              <v-card>
-                <v-card-subtitle>Keywords to Ignore</v-card-subtitle>
-                <div class="text-center pt-3 pb-3">
-                  <v-chip
-                    closable
-                    v-for="(word, index) in keywordsToIgnore"
-                    @click:close="$emit('delete-keyword', { action: 'Ignore', index: index })"
-                  >
+              <v-card-subtitle>Keywords to Ignore</v-card-subtitle>
+              <v-row class="ma-2">
+                <v-col v-for="(word, i) in keywords.ignore" :key="word" cols="auto" class="py-1 pe-0">
+                  <v-chip :disabled="loading" closable @click:close="$emit('delete-keyword', { action: 'Ignore', index: i })">
                     {{ word }}
                   </v-chip>
-                </div>
-              </v-card>
+                </v-col>
+              </v-row>
             </v-col>
           </v-row>
           <v-card-actions>
@@ -106,7 +95,7 @@ export default {
         </v-card>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn rounded="lg" variant="tonal" color="white" @click="close()"> Close </v-btn>
+          <v-btn rounded="lg" variant="tonal" color="white" @click="close"> Close </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

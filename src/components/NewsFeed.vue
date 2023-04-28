@@ -19,8 +19,7 @@ export default {
       pingTimeout: null,
       pingIntervalTime: 5000,
       pingTimeoutTime: 2000,
-      keywordsToHighlight: [],
-      keywordsToIgnore: [],
+      keywords: JSON.parse(localStorage.getItem("keywords")) || { highlight: [], ignore: [] },
     };
   },
   props: {
@@ -121,12 +120,12 @@ export default {
           link: link,
           price: this.livePriceFeed[ticker] ? this.livePriceFeed[ticker] : 0,
           btcPrice: this.livePriceFeed["BTC" + this.quoteAsset] ? this.livePriceFeed["BTC" + this.quoteAsset] : 0,
-          nbrOfTrades: 0
+          nbrOfTrades: 0,
         };
 
         // Ignore headline that contains a keyword to ignore
-        if (this.keywordsToIgnore.length > 0) {
-          const regex = new RegExp("\\b(" + this.keywordsToIgnore.join("|") + ")\\b", "i");
+        if (this.keywords.ignore.length > 0) {
+          const regex = new RegExp("\\b(" + this.keywords.ignore.join("|") + ")\\b", "i");
           if (regex.test(headline.body) || regex.test(headline.title)) {
             const msg = "Contains keyword from ignore list. Skipping";
             this.$emit("add-debug-log", msg);
@@ -187,23 +186,23 @@ export default {
     },
     onAddKeyword(obj) {
       if (obj.action == "Highlight") {
-        this.keywordsToHighlight.push(obj);
+        this.keywords.highlight.push(obj);
       } else if (obj.action == "Ignore") {
-        this.keywordsToIgnore.push(obj.word);
+        this.keywords.ignore.push(obj.word);
       }
-      localStorage.setItem("keywords", JSON.stringify({ highlight: this.keywordsToHighlight, ignore: this.keywordsToIgnore }));
+      localStorage.setItem("keywords", JSON.stringify(this.keywords));
     },
     onDeleteKeyword(obj) {
       if (obj.action == "Highlight") {
-        this.keywordsToHighlight.splice(obj.index, 1);
+        this.keywords.highlight.splice(obj.index, 1);
       } else if (obj.action == "Ignore") {
-        this.keywordsToIgnore.splice(obj.index, 1);
+        this.keywords.ignore.splice(obj.index, 1);
       }
-      localStorage.setItem("keywords", JSON.stringify({ highlight: this.keywordsToHighlight, ignore: this.keywordsToIgnore }));
+      localStorage.setItem("keywords", JSON.stringify(this.keywords));
     },
     applyHighlights(text) {
       const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
-      const highlightGroups = this.keywordsToHighlight
+      const highlightGroups = this.keywords.highlight
         .map((item) => ({
           pattern: `\\b${escapeRegExp(item.word)}\\b`,
           color: item.color,
@@ -226,13 +225,6 @@ export default {
   },
   mounted() {
     this.connectNewsFeedWs();
-
-    // Load keywords
-    const keywords = JSON.parse(localStorage.getItem("keywords"));
-    if (keywords) {
-      this.keywordsToHighlight = keywords.highlight;
-      this.keywordsToIgnore = keywords.ignore;
-    }
   },
   beforeUnmount() {
     if (this.newsWebsocket) {
@@ -251,8 +243,7 @@ export default {
     </v-badge>
     <NewsFeedSettingsDialog
       class="float-right pt-3 pr-3"
-      :keywordsToHighlight="keywordsToHighlight"
-      :keywordsToIgnore="keywordsToIgnore"
+      :keywords="keywords"
       @add-keyword="onAddKeyword"
       @delete-keyword="onDeleteKeyword"
     ></NewsFeedSettingsDialog>
