@@ -14,20 +14,39 @@ export default {
   data() {
     return {
       cognitoIdToken: null,
+      refreshSessionInterval: null,
     };
   },
   methods: {
+    startRefreshSessionInterval(user, maxRetries = 3) {
+      const refreshSessionWithRetry = (user, retries) => {
+        user.refreshSession(user.signInUserSession.refreshToken, (err, session) => {
+          if (err) {
+            console.log(`error in token refresh: ${err}`);
+
+            if (retries > 0) {
+              console.log(`Retrying token refresh... (remaining retries: ${retries})`);
+              refreshSessionWithRetry(user, retries - 1);
+            } else {
+              alert("Failed to refresh token after multiple attempts. Please try again later.");
+            }
+          } else {
+            console.log("cognito id token refreshed");
+            this.cognitoIdToken = session.idToken;
+          }
+        });
+      };
+
+      this.refreshSessionInterval = setInterval(() => {
+        refreshSessionWithRetry(user, maxRetries);
+      }, 55 * 60 * 1000);
+    },
     getCognitoIdToken(user) {
       const currentSession = user.signInUserSession;
       this.cognitoIdToken = currentSession.idToken;
 
       // Token expires every hour, so refresh it every 55min
-      setInterval(() => {
-        user.refreshSession(currentSession.refreshToken, (err, session) => {
-          console.log("cognito id token refreshed");
-            this.cognitoIdToken = session.idToken;
-        });
-      }, 55 * 60 * 1000);
+      this.startRefreshSessionInterval(user);
 
       return this.cognitoIdToken;
     },
