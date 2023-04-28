@@ -6,6 +6,8 @@ export default {
       newKeyword: "",
       newAction: "",
       newColor: "",
+      playHeadlineNotification: true,
+      onlyColoredKeywords: false,
     };
   },
   props: {
@@ -14,6 +16,14 @@ export default {
   methods: {
     close() {
       this.dialog = false;
+
+      // Update general settings
+      this.$emit("update-news-feed-settings", {
+        playHeadlineNotification: this.playHeadlineNotification,
+        onlyColoredKeywords: this.onlyColoredKeywords,
+      });
+
+      this.newKeyword = "";
     },
     onAddKeyword() {
       // Validate data
@@ -27,6 +37,14 @@ export default {
       }
       if (this.newAction == "Highlight" && this.newColor == "") {
         alert("Select a color");
+        return;
+      }
+      if(this.newAction == "Highlight" && this.keywords.highlight.some(item => item.word == this.newKeyword)) {
+        alert("This keyword is already in the list");
+        return;
+      }
+      if(this.newAction == "Ignore" && this.keywords.ignore.some(word => word == this.newKeyword)) {
+        alert("This keyword is already in the list");
         return;
       }
 
@@ -47,8 +65,26 @@ export default {
         <v-btn v-bind="props" color="grey" variant="text" icon="mdi-cog-outline" />
       </template>
       <v-card>
+        <v-card-title>News Feed Settings</v-card-title>
         <v-card>
-          <v-card-title>News Feed Settings</v-card-title>
+          <v-card-subtitle>Headline Notification Sound</v-card-subtitle>
+          <v-card-text>
+            <v-row>
+              <v-col>
+                <v-checkbox density="compact" hide-details="auto" label="New headline" v-model="playHeadlineNotification"></v-checkbox>
+              </v-col>
+              <v-col>
+                <v-checkbox
+                  density="compact"
+                  hide-details="auto"
+                  label="Only headline containing colored keywords"
+                  v-model="onlyColoredKeywords"
+                ></v-checkbox>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+        <v-card>
           <v-row>
             <v-col>
               <v-card-subtitle>Keywords Coloring</v-card-subtitle>

@@ -7,7 +7,6 @@ export default {
       newApiKey: "",
       newApiSecret: "",
       playTraderNotification: true,
-      playHeadlineNotification: true,
       nbrOfSplitOrders: "5",
       showDebugLogs: false,
       showPositions: true,
@@ -39,7 +38,6 @@ export default {
 
       // Update general settings
       this.$emit("close-dialog", {
-        playHeadlineNotification: this.playHeadlineNotification,
         playTraderNotification: this.playTraderNotification,
         nbrOfSplitOrders: this.nbrOfSplitOrders,
         showDebugLogs: this.showDebugLogs,
@@ -64,7 +62,6 @@ export default {
   },
   watch: {
     generalSettings: function (newSettings) {
-      this.playHeadlineNotification = newSettings.playHeadlineNotification;
       this.playTraderNotification = newSettings.playTraderNotification;
       this.nbrOfSplitOrders = newSettings.nbrOfSplitOrders;
       this.showDebugLogs = newSettings.showDebugLogs;
@@ -89,9 +86,6 @@ export default {
             <v-row>
               <v-col>
                 <v-checkbox density="compact" hide-details="auto" label="Trader Notification Sound" v-model="playTraderNotification"></v-checkbox>
-              </v-col>
-              <v-col>
-                <v-checkbox density="compact" hide-details="auto" label="Headline Notification Sound" v-model="playHeadlineNotification"></v-checkbox>
               </v-col>
               <v-col>
                 <v-text-field

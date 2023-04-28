@@ -237,10 +237,11 @@ export default {
         const headline = this.news.headlines.find((h) => h.id === args.headline_id);
         if (headline) {
           headline.nbrOfTrades = this.clientsThatTraded.length;
-        }
 
-        if (this.generalSettings.playTraderNotification) {
-          this.newTradeSound.play();
+          // Only play sound if client has the headline on his news feed
+          if (this.generalSettings.playTraderNotification) {
+            this.newTradeSound.play();
+          }
         }
       }
     },
@@ -558,9 +559,20 @@ export default {
       // Update nbr of active accounts
       this.nbrOfActiveAccounts = this.trading.apiKeys.filter((api) => api.enabled).length;
     },
-    setGeneralSettings(generalSettings) {
-      localStorage.setItem("generalSettings", JSON.stringify(generalSettings));
-      this.generalSettings = generalSettings;
+    onUpdateNewsFeedSettings(newsFeedSettings) {
+      this.generalSettings.playHeadlineNotification = newsFeedSettings.playHeadlineNotification;
+      this.generalSettings.onlyColoredKeywords = newsFeedSettings.onlyColoredKeywords;
+      localStorage.setItem("generalSettings", JSON.stringify(this.generalSettings));
+    },
+    onUpdateTradingSettings(tradingSettings) {
+      // Only update settings that are in this.generalSettings and tradingSettings
+      for (const key of Object.keys(tradingSettings)) {
+        if (this.generalSettings.hasOwnProperty(key)) {
+          this.generalSettings[key] = tradingSettings[key];
+        }
+      }
+
+      localStorage.setItem("generalSettings", JSON.stringify(this.generalSettings));
 
       this.setNbrOfActiveAccounts();
 
@@ -615,10 +627,12 @@ export default {
             :quote-asset="trading.quoteAsset"
             :live-price-feed="livePriceFeed"
             :play-notification-sound="generalSettings.playHeadlineNotification"
+            :only-colored-keywords="generalSettings.onlyColoredKeywords"
             @symbol-from-headline="onSymbolChanged"
             @update-headlines="onUpdateHeadlines"
             @active-headline-index-changed="onActiveHeadlineChanged"
             @add-debug-log="onDebugLog"
+            @update-news-feed-settings="onUpdateNewsFeedSettings"
           ></NewsFeed>
         </v-col>
         <v-col>
@@ -632,7 +646,7 @@ export default {
             @trading-symbol-changed="onSymbolChanged"
             @add-api-key="onAddApiKey"
             @delete-api-key="onDeleteApiKey"
-            @update-general-settings="setGeneralSettings"
+            @update-trading-settings="onUpdateTradingSettings"
             @position-opened="onOpenPosition"
             @lock-symbol-toggled="onLockSymbolToggled"
             @quote-asset-changed="onQuoteAssetChanged"

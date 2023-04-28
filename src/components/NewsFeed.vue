@@ -27,6 +27,7 @@ export default {
     symbols: { type: Object, required: true },
     livePriceFeed: { type: Object, required: true },
     playNotificationSound: { type: Boolean, required: true },
+    onlyColoredKeywords: { type: Boolean, required: true },
   },
   methods: {
     onSelectHeadline(index) {
@@ -137,7 +138,7 @@ export default {
 
         this.headlines.unshift(headline);
 
-        if (this.playNotificationSound) {
+        if (this.playNotificationSound && (!this.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
           this.notification_sound.play();
         }
 
@@ -201,6 +202,14 @@ export default {
       }
       localStorage.setItem("keywords", JSON.stringify(this.keywords));
     },
+    hasHighlightedWord(text) {
+      const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+
+      const highlightPatterns = this.keywords.highlight.map((item) => `\\b${escapeRegExp(item.word)}\\b`).join("|");
+
+      const regex = new RegExp(highlightPatterns, "gi");
+      return regex.test(text);
+    },
     applyHighlights(text) {
       const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
       const highlightGroups = this.keywords.highlight
@@ -222,6 +231,10 @@ export default {
       }
 
       return text;
+    },
+    onUpdateNewsFeedSettings(settings) {
+      // Only settings, does not handle the keywords system
+      this.$emit("update-news-feed-settings", settings);
     },
   },
   mounted() {
@@ -247,6 +260,7 @@ export default {
       :keywords="keywords"
       @add-keyword="onAddKeyword"
       @delete-keyword="onDeleteKeyword"
+      @update-news-feed-settings="onUpdateNewsFeedSettings"
     ></NewsFeedSettingsDialog>
 
     <v-list class="overflow-y-auto" style="height: 90%">

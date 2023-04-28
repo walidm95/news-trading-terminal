@@ -361,7 +361,7 @@ export default {
       this.$emit("toggle-api-key", index);
     },
     onCloseDialog(settings) {
-      this.$emit("update-general-settings", settings);
+      this.$emit("update-trading-settings", settings);
     },
     connectNttWs() {
       //Get websocket api key
