@@ -75,7 +75,7 @@ export default {
       // somehow, scaleMargins only works when called through applyOptions
       this.volumeSeries.priceScale().applyOptions({
         scaleMargins: {
-          top: 0.7,
+          top: 0.8,
           bottom: 0,
         },
       });
@@ -214,7 +214,7 @@ export default {
           borderColor: "rgba(56, 61, 72, 0.8)",
           timeVisible: true,
           secondsVisible: false,
-          rightOffset: 15,
+          rightOffset: 10,
         },
       });
 
@@ -234,6 +234,9 @@ export default {
       });
 
       this.priceSeries.setData(this.priceData);
+
+      // Set visible range to 15 bars
+      this.chart.timeScale().setVisibleLogicalRange({ from: this.priceData.length - 15, to: this.priceData.length });
 
       this.chart.timeScale().subscribeVisibleLogicalRangeChange(this.onVisibleRangeChanged);
     },

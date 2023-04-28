@@ -18,7 +18,7 @@ export default {
 <template>
   <v-list-item :active="selected" :ripple="false">
     <h4 class="text-info" v-show="type == 'twitter'"><v-icon icon="mdi-twitter" size="small" />{{ title }}&nbsp;</h4>
-    <h4 :class="!selected ? 'text-truncate' : ''">{{ body }}<a class="float-right pl-2" :href="link" target="_blank">Link</a></h4>
+    <h4 :class="!selected ? 'text-truncate' : ''"><span v-html="body"></span><a class="float-right pl-2" :href="link" target="_blank">Link</a></h4>
     <small class="float-left text-grey">
       <v-icon icon="mdi-clock-outline" size="x-small" /> {{ timestamp.toLocaleString("en-US", { timeZoneName: "short" }) }}
     </small>

@@ -230,11 +230,18 @@ export default {
     onLockSymbolToggled() {
       this.trading.lockSymbol = !this.trading.lockSymbol;
     },
-    onClickedByOtherTrader(trader_id) {
-      if (!this.clientsThatTraded.includes(trader_id)) {
-        this.clientsThatTraded.push(trader_id);
-        if (this.generalSettings.playTraderNotification) {
-          this.newTradeSound.play();
+    onClickedByOtherTrader(args) {
+      if (!this.clientsThatTraded.some((item) => item.trader_id === args.trader_id && item.headline_id === args.headline_id)) {
+        this.clientsThatTraded.push(args);
+
+        const headline = this.news.headlines.find((h) => h.id === args.headline_id);
+        if (headline) {
+          headline.nbrOfTrades = this.clientsThatTraded.length;
+
+          // Only play sound if client has the headline on his news feed
+          if (this.generalSettings.playTraderNotification) {
+            this.newTradeSound.play();
+          }
         }
       }
     },
@@ -552,9 +559,20 @@ export default {
       // Update nbr of active accounts
       this.nbrOfActiveAccounts = this.trading.apiKeys.filter((api) => api.enabled).length;
     },
-    setGeneralSettings(generalSettings) {
-      localStorage.setItem("generalSettings", JSON.stringify(generalSettings));
-      this.generalSettings = generalSettings;
+    onUpdateNewsFeedSettings(newsFeedSettings) {
+      this.generalSettings.playHeadlineNotification = newsFeedSettings.playHeadlineNotification;
+      this.generalSettings.onlyColoredKeywords = newsFeedSettings.onlyColoredKeywords;
+      localStorage.setItem("generalSettings", JSON.stringify(this.generalSettings));
+    },
+    onUpdateTradingSettings(tradingSettings) {
+      // Only update settings that are in this.generalSettings and tradingSettings
+      for (const key of Object.keys(tradingSettings)) {
+        if (this.generalSettings.hasOwnProperty(key)) {
+          this.generalSettings[key] = tradingSettings[key];
+        }
+      }
+
+      localStorage.setItem("generalSettings", JSON.stringify(this.generalSettings));
 
       this.setNbrOfActiveAccounts();
 
@@ -609,11 +627,12 @@ export default {
             :quote-asset="trading.quoteAsset"
             :live-price-feed="livePriceFeed"
             :play-notification-sound="generalSettings.playHeadlineNotification"
-            :nbr-of-trades-latest-headline="clientsThatTraded.length"
+            :only-colored-keywords="generalSettings.onlyColoredKeywords"
             @symbol-from-headline="onSymbolChanged"
             @update-headlines="onUpdateHeadlines"
             @active-headline-index-changed="onActiveHeadlineChanged"
             @add-debug-log="onDebugLog"
+            @update-news-feed-settings="onUpdateNewsFeedSettings"
           ></NewsFeed>
         </v-col>
         <v-col>
@@ -627,7 +646,7 @@ export default {
             @trading-symbol-changed="onSymbolChanged"
             @add-api-key="onAddApiKey"
             @delete-api-key="onDeleteApiKey"
-            @update-general-settings="setGeneralSettings"
+            @update-trading-settings="onUpdateTradingSettings"
             @position-opened="onOpenPosition"
             @lock-symbol-toggled="onLockSymbolToggled"
             @quote-asset-changed="onQuoteAssetChanged"
@@ -682,7 +701,7 @@ export default {
 
 <style scoped>
 .top-panels {
-  height: 450px;
+  height: 500px;
 }
 .bottom-panels {
   height: 350px;

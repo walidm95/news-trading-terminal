@@ -1,5 +1,6 @@
 <script setup>
 import NewsItem from "./NewsItem.vue";
+import NewsFeedSettingsDialog from "./NewsFeedSettingsDialog.vue";
 </script>
 
 <script>
@@ -18,6 +19,7 @@ export default {
       pingTimeout: null,
       pingIntervalTime: 5000,
       pingTimeoutTime: 2000,
+      keywords: JSON.parse(localStorage.getItem("keywords")) || { highlight: [], ignore: [] },
     };
   },
   props: {
@@ -25,7 +27,7 @@ export default {
     symbols: { type: Object, required: true },
     livePriceFeed: { type: Object, required: true },
     playNotificationSound: { type: Boolean, required: true },
-    nbrOfTradesLatestHeadline: { type: Number, required: true },
+    onlyColoredKeywords: { type: Boolean, required: true },
   },
   methods: {
     onSelectHeadline(index) {
@@ -68,7 +70,7 @@ export default {
         let data = JSON.parse(event.data);
 
         if (data.user) {
-          const msg = "TreeOfAlphaWS logged in" //as " + data.user.username;
+          const msg = "TreeOfAlphaWS logged in"; //as " + data.user.username;
           this.$emit("add-debug-log", msg);
           console.log(msg);
           return;
@@ -108,8 +110,9 @@ export default {
           return;
         }
 
-        let ticker = symbol + this.quoteAsset;
-        this.headlines.unshift({
+        const ticker = symbol + this.quoteAsset;
+        const headline = {
+          id: data._id,
           title: data.title,
           body: data.body ? data.body : data.title,
           type: type,
@@ -119,9 +122,23 @@ export default {
           link: link,
           price: this.livePriceFeed[ticker] ? this.livePriceFeed[ticker] : 0,
           btcPrice: this.livePriceFeed["BTC" + this.quoteAsset] ? this.livePriceFeed["BTC" + this.quoteAsset] : 0,
-        });
+          nbrOfTrades: 0,
+        };
 
-        if (this.playNotificationSound) {
+        // Ignore headline that contains a keyword to ignore
+        if (this.keywords.ignore.length > 0) {
+          const regex = new RegExp("\\b(" + this.keywords.ignore.join("|") + ")\\b", "i");
+          if (regex.test(headline.body) || regex.test(headline.title)) {
+            const msg = "Contains keyword from ignore list. Skipping";
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
+            return;
+          }
+        }
+
+        this.headlines.unshift(headline);
+
+        if (this.playNotificationSound && (!this.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
           this.notification_sound.play();
         }
 
@@ -169,6 +186,56 @@ export default {
       }
       return "";
     },
+    onAddKeyword(obj) {
+      if (obj.action == "Highlight") {
+        this.keywords.highlight.push(obj);
+      } else if (obj.action == "Ignore") {
+        this.keywords.ignore.push(obj.word);
+      }
+      localStorage.setItem("keywords", JSON.stringify(this.keywords));
+    },
+    onDeleteKeyword(obj) {
+      if (obj.action == "Highlight") {
+        this.keywords.highlight.splice(obj.index, 1);
+      } else if (obj.action == "Ignore") {
+        this.keywords.ignore.splice(obj.index, 1);
+      }
+      localStorage.setItem("keywords", JSON.stringify(this.keywords));
+    },
+    hasHighlightedWord(text) {
+      const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+
+      const highlightPatterns = this.keywords.highlight.map((item) => `\\b${escapeRegExp(item.word)}\\b`).join("|");
+
+      const regex = new RegExp(highlightPatterns, "gi");
+      return regex.test(text);
+    },
+    applyHighlights(text) {
+      const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+      const highlightGroups = this.keywords.highlight
+        .map((item) => ({
+          pattern: `\\b${escapeRegExp(item.word)}\\b`,
+          color: item.color,
+        }))
+        .reduce((acc, item) => {
+          const colorGroup = acc[item.color] || { patterns: [], color: item.color };
+          colorGroup.patterns.push(item.pattern);
+          acc[item.color] = colorGroup;
+          return acc;
+        }, {});
+
+      for (const colorGroup of Object.values(highlightGroups)) {
+        const pattern = colorGroup.patterns.join("|");
+        const regex = new RegExp(pattern, "gi");
+        text = text.replace(regex, (match) => `<span style="color:${colorGroup.color}">${match}</span>`);
+      }
+
+      return text;
+    },
+    onUpdateNewsFeedSettings(settings) {
+      // Only settings, does not handle the keywords system
+      this.$emit("update-news-feed-settings", settings);
+    },
   },
   mounted() {
     this.connectNewsFeedWs();
@@ -188,19 +255,27 @@ export default {
     <v-badge :color="wsAlive ? 'green' : 'red'" dot inline>
       <v-card-title>News Feed</v-card-title>
     </v-badge>
+    <NewsFeedSettingsDialog
+      class="float-right pt-3 pr-3"
+      :keywords="keywords"
+      @add-keyword="onAddKeyword"
+      @delete-keyword="onDeleteKeyword"
+      @update-news-feed-settings="onUpdateNewsFeedSettings"
+    ></NewsFeedSettingsDialog>
+
     <v-list class="overflow-y-auto" style="height: 90%">
       <NewsItem
         v-for="(headline, index) in headlines"
         :symbol="headline.symbol"
         :type="headline.type"
         :title="headline.title"
-        :body="headline.body"
+        :body="applyHighlights(headline.body)"
         :link="headline.link"
         :timestamp="headline.timestamp"
         :selected="activeHeadline == index"
         :priceChange="getPriceChange(index)"
         :btcPriceChange="getBtcPriceChange(index)"
-        :nbrOfTrades="index == 0 ? nbrOfTradesLatestHeadline : 0"
+        :nbrOfTrades="headline.nbrOfTrades || 0"
         @click="onSelectHeadline(index)"
       ></NewsItem>
     </v-list>
