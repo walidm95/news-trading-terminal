@@ -73,6 +73,7 @@ export default {
             JSON.stringify({
               action: "trade",
               data: {
+                headline_id: this.activeHeadline.id,
                 trader_id: this.cognitoIdToken.payload.email,
                 ticker: this.tradingSymbol + this.quoteAsset,
                 size: `${(dollarSize / this.maxSize) * 100}%`,
@@ -408,7 +409,7 @@ export default {
             }
 
             if (data["action"] == "trade") {
-              this.$emit("clicked-by-other-trader", data["data"]["trader_id"]);
+              this.$emit("clicked-by-other-trader", { trader_id: data["data"]["trader_id"], headline_id: data["data"]["headline_id"] });
             }
           };
         })

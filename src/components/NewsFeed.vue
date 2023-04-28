@@ -111,6 +111,7 @@ export default {
 
         const ticker = symbol + this.quoteAsset;
         const headline = {
+          id: data._id,
           title: data.title,
           body: data.body ? data.body : data.title,
           type: type,

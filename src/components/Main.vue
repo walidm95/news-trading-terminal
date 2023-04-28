@@ -230,10 +230,15 @@ export default {
     onLockSymbolToggled() {
       this.trading.lockSymbol = !this.trading.lockSymbol;
     },
-    onClickedByOtherTrader(trader_id) {
-      if (!this.clientsThatTraded.includes(trader_id)) {
-        this.clientsThatTraded.push(trader_id);
-        this.news.headlines[0].nbrOfTrades = this.clientsThatTraded.length;
+    onClickedByOtherTrader(args) {
+      if (!this.clientsThatTraded.some((item) => item.trader_id === args.trader_id && item.headline_id === args.headline_id)) {
+        this.clientsThatTraded.push(args);
+
+        const headline = this.news.headlines.find((h) => h.id === args.headline_id);
+        if (headline) {
+          headline.nbrOfTrades = this.clientsThatTraded.length;
+        }
+
         if (this.generalSettings.playTraderNotification) {
           this.newTradeSound.play();
         }
