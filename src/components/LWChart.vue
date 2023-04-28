@@ -175,6 +175,8 @@ export default {
         if (this.volumeSeries) {
           this.volumeSeries.update(volumeBar);
         }
+
+        this.getPriceRangeOfVisibleRange();
       };
 
       /*this.ws.onclose = () => {
@@ -236,7 +238,7 @@ export default {
       this.priceSeries.setData(this.priceData);
 
       // Set visible range to 15 bars
-      this.chart.timeScale().setVisibleLogicalRange({ from: this.priceData.length - 15, to: this.priceData.length });
+      //this.chart.timeScale().setVisibleLogicalRange({ from: this.priceData.length - 15, to: this.priceData.length });
 
       this.chart.timeScale().subscribeVisibleLogicalRangeChange(this.onVisibleRangeChanged);
     },
@@ -294,11 +296,13 @@ export default {
       this.maxRangePct = ((maxPriceDiff / lowestPrice) * 100).toFixed(1);
     },
     getPriceRangeOfVisibleRange() {
-      let logicalRange = this.chart.timeScale().getVisibleLogicalRange();
-      let visibleBars = this.priceData.slice(Math.round(logicalRange.from));
+      if (this.chart) {
+        let logicalRange = this.chart.timeScale().getVisibleLogicalRange();
+        let visibleBars = this.priceData.slice(Math.round(logicalRange.from));
 
-      // Calculate max top to bottom range
-      this.calculateMaxRangePct(visibleBars);
+        // Calculate max top to bottom range
+        this.calculateMaxRangePct(visibleBars);
+      }
     },
     resetObjects() {
       this.ws = null;
