@@ -29,6 +29,7 @@ export default {
               refreshSessionWithRetry(user, retries - 1);
             } else {
               alert("Failed to refresh token after multiple attempts. Please try again later.");
+              clearInterval(this.refreshSessionInterval)
             }
           } else {
             console.log("cognito id token refreshed");
