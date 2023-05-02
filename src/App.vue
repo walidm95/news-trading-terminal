@@ -47,7 +47,7 @@ export default {
       this.cognitoIdToken = currentSession.idToken;
 
       // Token expires every hour, so refresh it every 55min
-      this.startRefreshSessionInterval(user);
+      // this.startRefreshSessionInterval(user); NOTE: changed the id expiry to 24h on aws cognito instead, because refreshing the token was causing a mess for some people
 
       return this.cognitoIdToken;
     },
