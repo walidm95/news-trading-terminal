@@ -6,6 +6,8 @@ import "@aws-amplify/ui-vue/styles.css";
 import { Amplify, Auth } from "aws-amplify";
 import awsconfig from "./aws-exports";
 
+import { getVersion } from "@tauri-apps/api/app";
+
 Amplify.configure(awsconfig);
 </script>
 
@@ -13,11 +15,15 @@ Amplify.configure(awsconfig);
 export default {
   data() {
     return {
+      version: null,
       cognitoIdToken: null,
       refreshSessionInterval: null,
     };
   },
   methods: {
+    async getAppVersion() {
+      this.version = await getVersion();
+    },
     startRefreshSessionInterval(user, maxRetries = 3) {
       const refreshSessionWithRetry = (user, retries) => {
         user.refreshSession(user.signInUserSession.refreshToken, (err, session) => {
@@ -29,7 +35,7 @@ export default {
               refreshSessionWithRetry(user, retries - 1);
             } else {
               alert("Failed to refresh token after multiple attempts. Please try again later.");
-              clearInterval(this.refreshSessionInterval)
+              clearInterval(this.refreshSessionInterval);
             }
           } else {
             console.log("cognito id token refreshed");
@@ -52,6 +58,9 @@ export default {
       return this.cognitoIdToken;
     },
   },
+  mounted() {
+    this.getAppVersion();
+  },
 };
 </script>
 
@@ -65,7 +74,10 @@ export default {
       </template>
       <template v-slot="{ user, signOut }">
         <Main @open-trading-settings="openTradingSettings" :cognito-id-token="getCognitoIdToken(user)"> </Main>
-        <button class="float-right" @click="signOut">Sign Out</button>
+        <button @click="signOut">Sign Out</button>
+        <div style="text-align: center">
+          <small class="text-grey">{{ version }}</small>
+        </div>
       </template>
     </authenticator>
   </v-app>
