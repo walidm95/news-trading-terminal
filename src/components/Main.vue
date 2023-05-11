@@ -552,8 +552,13 @@ export default {
         nbrOfSplitOrders: 5,
         showDebugLogs: false,
         showPositions: true,
-        showChart: true,
+        showChart: true
       };
+
+      // Set default values for new params
+      this.generalSettings.smallSizePct = this.generalSettings.smallSizePct || 25
+      this.generalSettings.mediumSizePct = this.generalSettings.mediumSizePct || 50
+      this.generalSettings.bigSizePct = this.generalSettings.bigSizePct || 100
     },
     setNbrOfActiveAccounts() {
       // Update nbr of active accounts
@@ -701,7 +706,7 @@ export default {
 
 <style scoped>
 .top-panels {
-  height: 500px;
+  height: 450px;
 }
 .bottom-panels {
   height: 350px;

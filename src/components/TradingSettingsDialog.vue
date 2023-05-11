@@ -15,8 +15,11 @@ export default {
         (v) => v != "" || "Required",
         (v) => !!v || "Required",
         (v) => v >= 0 || "Must be positive",
-        (v) => v < 10 || "Must be less than 10",
+        (v) => v <= 30 || "Must be 30 or less",
       ],
+      smallSizePct: 25,
+      mediumSizePct: 50,
+      bigSizePct: 100,
     };
   },
   props: {
@@ -30,7 +33,7 @@ export default {
         alert("Number of split orders is missing");
         return;
       }
-      if (Number(this.nbrOfSplitOrders) < 0 || Number(this.nbrOfSplitOrders) > 9) {
+      if (Number(this.nbrOfSplitOrders) < 0 || Number(this.nbrOfSplitOrders) > 30) {
         return;
       }
 
@@ -43,6 +46,9 @@ export default {
         showDebugLogs: this.showDebugLogs,
         showPositions: this.showPositions,
         showChart: this.showChart,
+        smallSizePct: this.smallSizePct,
+        mediumSizePct: this.mediumSizePct,
+        bigSizePct: this.bigSizePct,
       });
     },
     onAddApiKey() {
@@ -67,6 +73,9 @@ export default {
       this.showDebugLogs = newSettings.showDebugLogs;
       this.showPositions = newSettings.showPositions;
       this.showChart = newSettings.showChart;
+      this.smallSizePct = newSettings.smallSizePct
+      this.mediumSizePct = newSettings.mediumSizePct
+      this.bigSizePct = newSettings.bigSizePct
     },
   },
 };
@@ -85,22 +94,8 @@ export default {
           <v-card-text>
             <v-row>
               <v-col>
-                <v-checkbox density="compact" hide-details="auto" label="Trader Notification Sound" v-model="playTraderNotification"></v-checkbox>
+                <v-checkbox density="compact" hide-details="auto" label="Trader Notification" v-model="playTraderNotification"></v-checkbox>
               </v-col>
-              <v-col>
-                <v-text-field
-                  density="compact"
-                  hide-details="auto"
-                  type="number"
-                  min="0"
-                  max="9"
-                  :rules="nbrOfOrderRules"
-                  label="Number of split orders"
-                  v-model="nbrOfSplitOrders"
-                ></v-text-field>
-              </v-col>
-            </v-row>
-            <v-row>
               <v-col>
                 <v-checkbox density="compact" hide-details="auto" label="Show Positions" v-model="showPositions"></v-checkbox>
               </v-col>
@@ -109,6 +104,55 @@ export default {
               </v-col>
               <v-col>
                 <v-checkbox density="compact" hide-details="auto" label="Show Debug Logs" v-model="showDebugLogs"></v-checkbox>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+        <v-card>
+          <v-card-subtitle>Trading</v-card-subtitle>
+          <v-card-text>
+            <v-row>
+              <v-col>
+                <v-text-field
+                  hide-details="auto"
+                  density="compact"
+                  label="Small Size Button"
+                  suffix="%"
+                  type="number"
+                  v-model="smallSizePct"
+                ></v-text-field>
+              </v-col>
+              <v-col>
+                <v-text-field
+                  hide-details="auto"
+                  density="compact"
+                  label="Medium Size Button"
+                  suffix="%"
+                  type="number"
+                  v-model="mediumSizePct"
+                ></v-text-field>
+              </v-col>
+              <v-col>
+                <v-text-field
+                  hide-details="auto"
+                  density="compact"
+                  label="Big Size Button"
+                  suffix="%"
+                  type="number"
+                  v-model="bigSizePct"
+                ></v-text-field>
+              </v-col>
+              <v-col>
+                <v-text-field
+                  density="compact"
+                  hide-details="auto"
+                  type="number"
+                  min="0"
+                  max="30"
+                  :rules="nbrOfOrderRules"
+                  label="Number of split orders"
+                  v-model="nbrOfSplitOrders"
+                ></v-text-field>
               </v-col>
             </v-row>
           </v-card-text>

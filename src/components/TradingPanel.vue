@@ -160,20 +160,19 @@ export default {
 
               // Take profit
               let takeProfitPromise;
-              if (this.selectedExitMode == ExecutionMode.exit.LIMIT) {
-                let takeProfitPrice = side == "BUY" ? this.latestPrice * (1 + this.takeProfit / 100) : this.latestPrice * (1 - this.takeProfit / 100);
-                takeProfitPrice = this.formatPricePrecision(takeProfitPrice);
-
-                takeProfitPromise = binance.executeLimitOrder(
+              if (this.selectedExitMode == ExecutionMode.exit.SPLIT_TP_STOP) {
+                takeProfitPromise = this.executeScaleOrders(
                   api.key,
                   api.secret,
-                  ticker,
                   side == "BUY" ? "SELL" : "BUY",
-                  formattedQuantity,
-                  takeProfitPrice,
-                  "true"
+                  dollarSize / this.latestPrice,
+                  this.generalSettings.nbrOfSplitOrders > 9 ? 9 : this.generalSettings.nbrOfSplitOrders,
+                  this.scaleFrom,
+                  this.scaleTo,
+                  true,
+                  true
                 );
-              } else if (this.selectedExitMode == ExecutionMode.exit.SCALE) {
+              } else if (this.selectedExitMode == ExecutionMode.exit.SPLIT_TP_LIMIT) {
                 takeProfitPromise = this.executeScaleOrders(
                   api.key,
                   api.secret,
@@ -183,9 +182,9 @@ export default {
                   this.scaleFrom,
                   this.scaleTo,
                   true,
-                  true
+                  false
                 );
-              }
+              } 
 
               if (takeProfitPromise) {
                 takeProfitPromise
@@ -210,10 +209,6 @@ export default {
                       return;
                     }
 
-                    if (this.selectedExitMode == ExecutionMode.exit.LIMIT) {
-                      // orders is only one order if its limit mode
-                      orders = [orders];
-                    }
                     for (let order of orders) {
                       if (order.code) {
                         console.log(order.msg);
@@ -384,11 +379,17 @@ export default {
           this.nttWs.onopen = () => {
             this.wsAlive = true;
             this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime);
-          };
-          this.nttWs.onerror = (error) => {
-            const msg = `nttWs error: ${error.toString()}`;
+            const msg = `nttWs connected`;
             this.$emit("add-debug-log", msg);
             console.log(msg);
+          };
+          this.nttWs.onerror = (error) => {
+            const msg = `nttWs error: ${error}`;
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
+            console.log(error);
+
+            this.reconnectNttWs();
           };
           this.nttWs.onclose = () => {
             const msg = "nttWs close";
@@ -418,6 +419,12 @@ export default {
           this.$emit("add-debug-log", msg);
           console.log("error", msg);
         });
+    },
+    reconnectNttWs() {
+      this.wsAlive = false;
+      clearTimeout(this.pingTimeout);
+      clearInterval(this.pingInterval);
+      this.connectNttWs();
     },
     pingWebsocket() {
       this.nttWs.send(JSON.stringify({ action: "ping" }));
@@ -467,25 +474,26 @@ export default {
 
 <template>
   <v-card>
-    <v-card-title
-      >Trading Panel<TradingSettingsDialog
-        class="float-right"
-        :api-keys="apiKeys"
-        :general-settings="generalSettings"
-        @add-api-key="onAddApiKey"
-        @delete-api-key="onDeleteApiKey"
-        @close-dialog="onCloseDialog"
-        @toggle-api-key="onToggleApiKey"
-      ></TradingSettingsDialog
-    ></v-card-title>
+    <v-badge :color="wsAlive ? 'green' : 'red'" dot inline>
+      <v-card-title>Trading Panel</v-card-title>
+    </v-badge>
+    <TradingSettingsDialog
+      class="float-right pt-3 pr-3"
+      :api-keys="apiKeys"
+      :general-settings="generalSettings"
+      @add-api-key="onAddApiKey"
+      @delete-api-key="onDeleteApiKey"
+      @close-dialog="onCloseDialog"
+      @toggle-api-key="onToggleApiKey"
+    ></TradingSettingsDialog>
     <v-card-text>
       <h4>
         Balance: {{ getTotalAccountsBalance() }}<span class="float-right">Exposure: {{ getTotalPositionsNotional() }}</span>
       </h4>
       &nbsp;
       <v-form>
-        <v-row>
-          <v-col class="pb-0">
+        <v-row dense>
+          <v-col>
             <v-select
               hide-details="auto"
               :density="density"
@@ -496,7 +504,7 @@ export default {
               @update:modelValue="storeTradingParams"
             ></v-select>
           </v-col>
-          <v-col class="pb-0" v-show="selectedEntryMode == ExecutionMode.entry.MKT_SCALE">
+          <v-col v-show="selectedEntryMode == ExecutionMode.entry.MKT_SCALE">
             <v-text-field
               hide-details="auto"
               :density="density"
@@ -509,7 +517,7 @@ export default {
             >
             </v-text-field>
           </v-col>
-          <v-col class="pb-0" v-show="selectedEntryMode == ExecutionMode.entry.MKT_SCALE">
+          <v-col v-show="selectedEntryMode == ExecutionMode.entry.MKT_SCALE">
             <v-text-field
               hide-details="auto"
               :density="density"
@@ -523,30 +531,19 @@ export default {
             </v-text-field>
           </v-col>
         </v-row>
-        <v-row>
-          <v-col class="pb-0">
+        <v-row dense>
+          <v-col>
             <v-select
               hide-details="auto"
               :density="density"
               v-model="selectedExitMode"
               label="Exit Mode"
+              class="text-truncate"
               :items="Object.values(ExecutionMode.exit)"
               @update:modelValue="storeTradingParams"
             ></v-select>
           </v-col>
-          <v-col class="pb-0" v-show="selectedExitMode == ExecutionMode.exit.LIMIT">
-            <v-text-field
-              hide-details="auto"
-              :density="density"
-              label="Take Profit"
-              suffix="%"
-              v-model="takeProfit"
-              type="number"
-              @update:modelValue="storeTradingParams"
-            >
-            </v-text-field>
-          </v-col>
-          <v-col class="pb-0" v-show="selectedExitMode == ExecutionMode.exit.SCALE">
+          <v-col v-show="(selectedExitMode == ExecutionMode.exit.SPLIT_TP_LIMIT) || (selectedExitMode == ExecutionMode.exit.SPLIT_TP_STOP)">
             <v-text-field
               hide-details="auto"
               :density="density"
@@ -558,7 +555,7 @@ export default {
             >
             </v-text-field>
           </v-col>
-          <v-col class="pb-0" v-show="selectedExitMode == ExecutionMode.exit.SCALE">
+          <v-col v-show="(selectedExitMode == ExecutionMode.exit.SPLIT_TP_LIMIT) || (selectedExitMode == ExecutionMode.exit.SPLIT_TP_STOP)">
             <v-text-field
               hide-details="auto"
               :density="density"
@@ -571,18 +568,19 @@ export default {
             </v-text-field>
           </v-col>
         </v-row>
-        <v-row>
-          <v-col class="pb-0">
+        <v-row dense>
+          <v-col>
             <v-text-field
               hide-details="auto"
               :density="density"
               label="Max Size"
               prefix="$"
               v-model="maxSize"
+              type="number"
               @update:modelValue="storeTradingParams"
             ></v-text-field>
           </v-col>
-          <v-col class="pb-0">
+          <v-col>
             <v-text-field
               hide-details="auto"
               :density="density"
@@ -595,8 +593,8 @@ export default {
             </v-text-field>
           </v-col>
         </v-row>
-        <v-row>
-          <v-col class="pb-0">
+        <v-row dense>
+          <v-col>
             <div style="display: flex; align-items: center">
               <v-text-field
                 hide-details="auto"
@@ -613,7 +611,7 @@ export default {
               </span>
             </div>
           </v-col>
-          <v-col class="pb-5">
+          <v-col>
             <v-select
               hide-details="auto"
               :disabled="lockSymbol"
@@ -628,12 +626,42 @@ export default {
         <v-row>
           <v-col>
             <v-row justify="center">
-              <TradingButton :disabled="disableTradingButtons" :amount="maxSize * 0.25" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="maxSize * 0.5" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="maxSize" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="maxSize * 0.25" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="maxSize * 0.5" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="maxSize" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton
+                :disabled="disableTradingButtons"
+                :amount="(maxSize * generalSettings.smallSizePct) / 100"
+                side="BUY"
+                @execute-trade="onExecuteTrade"
+              ></TradingButton>
+              <TradingButton
+                :disabled="disableTradingButtons"
+                :amount="(maxSize * generalSettings.mediumSizePct) / 100"
+                side="BUY"
+                @execute-trade="onExecuteTrade"
+              ></TradingButton>
+              <TradingButton
+                :disabled="disableTradingButtons"
+                :amount="(maxSize * generalSettings.bigSizePct) / 100"
+                side="BUY"
+                @execute-trade="onExecuteTrade"
+              ></TradingButton>
+              <TradingButton
+                :disabled="disableTradingButtons"
+                :amount="(maxSize * generalSettings.smallSizePct) / 100"
+                side="SELL"
+                @execute-trade="onExecuteTrade"
+              ></TradingButton>
+              <TradingButton
+                :disabled="disableTradingButtons"
+                :amount="(maxSize * generalSettings.mediumSizePct) / 100"
+                side="SELL"
+                @execute-trade="onExecuteTrade"
+              ></TradingButton>
+              <TradingButton
+                :disabled="disableTradingButtons"
+                :amount="(maxSize * generalSettings.bigSizePct) / 100"
+                side="SELL"
+                @execute-trade="onExecuteTrade"
+              ></TradingButton>
             </v-row>
           </v-col>
         </v-row>

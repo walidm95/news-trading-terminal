@@ -68,6 +68,7 @@ export default {
         },
         priceScaleId: "", // set as an overlay by setting a blank priceScaleId
         priceLineVisible: false,
+        lastValueVisible: false
       });
 
       this.volumeSeries.setData(this.volumeData);
@@ -232,7 +233,7 @@ export default {
         priceFormat: {
           type: "price",
           minMove: 1 / 10 ** this.pricePrecision,
-        },
+        }
       });
 
       this.priceSeries.setData(this.priceData);

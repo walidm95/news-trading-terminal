@@ -5,8 +5,8 @@ export const ExecutionMode = Object.freeze({
   },
   exit: {
     NONE: "None",
-    LIMIT: "Limit",
-    SCALE: "Scale",
+    SPLIT_TP_STOP: "Split TP stops",
+    SPLIT_TP_LIMIT: "Split limits",
   },
 });
 
