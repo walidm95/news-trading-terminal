@@ -76,8 +76,8 @@ export default {
           return;
         }
 
-        this.$emit("add-debug-log", data.body ? data.body : data.title);
-        console.log(data);
+        //this.$emit("add-debug-log", data.body ? data.body : data.title);
+        //console.log(data);
 
         let type = data.info && data.info.twitterId ? "twitter" : data.source;
         let link = data.link ? data.link : data.url ? data.url : undefined;
@@ -105,7 +105,7 @@ export default {
 
         if (symbol == "") {
           const msg = "no symbol found. Skipping";
-          this.$emit("add-debug-log", msg);
+          //this.$emit("add-debug-log", msg);
           console.log(msg);
           return;
         }

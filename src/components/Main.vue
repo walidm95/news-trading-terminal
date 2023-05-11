@@ -9,7 +9,6 @@ import DebugLogs from "./DebugLogs.vue";
 
 <script>
 import binance from "../binance";
-import { getVersion } from "@tauri-apps/api/app";
 
 export default {
   data() {
@@ -48,9 +47,6 @@ export default {
     cognitoIdToken: { type: Object, required: true },
   },
   methods: {
-    async getAppVersion() {
-      this.version = await getVersion();
-    },
     getMaxLeverageAndNotional() {
       let ticker = this.trading.tradingSymbol + this.trading.quoteAsset;
 
@@ -554,6 +550,11 @@ export default {
         showPositions: true,
         showChart: true,
       };
+
+      // Set default values for new params
+      this.generalSettings.smallSizePct = this.generalSettings.smallSizePct || 25;
+      this.generalSettings.mediumSizePct = this.generalSettings.mediumSizePct || 50;
+      this.generalSettings.bigSizePct = this.generalSettings.bigSizePct || 100;
     },
     setNbrOfActiveAccounts() {
       // Update nbr of active accounts
@@ -581,8 +582,6 @@ export default {
     },
   },
   mounted: function () {
-    this.getAppVersion();
-
     this.connectBinanceMarkPriceStreamWS();
     this.getBinanceSymbolsWithNames();
 
@@ -611,12 +610,6 @@ export default {
 </script>
 
 <template>
-  <v-app-bar style="text-align: center">
-    <v-app-bar-title
-      ><span class="float-left text-grey">{{ version }}</span
-      >News Trading Terminal</v-app-bar-title
-    >
-  </v-app-bar>
   <v-main>
     <v-container fluid>
       <v-row>
@@ -701,7 +694,7 @@ export default {
 
 <style scoped>
 .top-panels {
-  height: 500px;
+  height: 450px;
 }
 .bottom-panels {
   height: 350px;
