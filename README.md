@@ -2,5 +2,6 @@
 
 NTT is a convenient app that merges up-to-date cryptocurrency news with an intuitive trading panel, enabling quick and informed trading decisions based on current market insights.
 
+Snippet:
 ![Screenshot](public/ntt-screenshot.png)
 
