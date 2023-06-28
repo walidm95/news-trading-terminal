@@ -57,6 +57,12 @@ export default {
 
       return this.cognitoIdToken;
     },
+    hardReset(signOut) {
+      if(confirm("WARNING: This will reset everything (including all your api keys) then log you out.\n\nDo you really want to do a hard reset?")) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
   },
   mounted() {
     this.getAppVersion();
@@ -74,8 +80,10 @@ export default {
       </template>
       <template v-slot="{ user, signOut }">
         <Main @open-trading-settings="openTradingSettings" :cognito-id-token="getCognitoIdToken(user)"> </Main>
-        <button @click="signOut">Sign Out</button>
+
         <div style="text-align: center">
+          <button @click="hardReset">Hard Reset</button>
+          <button @click="signOut">Sign Out</button>
           <small class="text-grey">{{ version }}</small>
         </div>
       </template>
