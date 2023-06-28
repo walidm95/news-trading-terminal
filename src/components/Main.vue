@@ -40,7 +40,8 @@ export default {
         chartTradeInfo: {},
         accountBalances: {},
       },
-      generalSettings: {},
+      generalTradingSettings: {},
+      newsFeedSettings: {},
     };
   },
   props: {
@@ -58,18 +59,15 @@ export default {
       return leverageBracket[leverageBracket.length - 1];
     },
     getTickSize() {
-      if (this.trading.tradingSymbol + this.trading.quoteAsset in this.tickSize)
-        return this.tickSize[this.trading.tradingSymbol + this.trading.quoteAsset];
+      if (this.trading.tradingSymbol + this.trading.quoteAsset in this.tickSize) return this.tickSize[this.trading.tradingSymbol + this.trading.quoteAsset];
       else return 0.01;
     },
     getPricePrecision() {
-      if (this.trading.tradingSymbol + this.trading.quoteAsset in this.precisionFormat.price)
-        return this.precisionFormat.price[this.trading.tradingSymbol + this.trading.quoteAsset];
+      if (this.trading.tradingSymbol + this.trading.quoteAsset in this.precisionFormat.price) return this.precisionFormat.price[this.trading.tradingSymbol + this.trading.quoteAsset];
       else return 2;
     },
     getQuantityPrecision() {
-      if (this.trading.tradingSymbol + this.trading.quoteAsset in this.precisionFormat.quantity)
-        return this.precisionFormat.quantity[this.trading.tradingSymbol + this.trading.quoteAsset];
+      if (this.trading.tradingSymbol + this.trading.quoteAsset in this.precisionFormat.quantity) return this.precisionFormat.quantity[this.trading.tradingSymbol + this.trading.quoteAsset];
       else return 2;
     },
     async getBinanceExchangeInfo() {
@@ -235,7 +233,7 @@ export default {
           headline.nbrOfTrades = this.clientsThatTraded.length;
 
           // Only play sound if client has the headline on his news feed
-          if (this.generalSettings.playTraderNotification) {
+          if (this.generalTradingSettings.playTraderNotification) {
             this.newTradeSound.play();
           }
         }
@@ -260,13 +258,7 @@ export default {
         }
       }
 
-      let promise = binance.executeCloseMarketOrder(
-        apiKey.key,
-        apiKey.secret,
-        position.ticker,
-        position.side == "BUY" ? "SELL" : "BUY",
-        position.units
-      );
+      let promise = binance.executeCloseMarketOrder(apiKey.key, apiKey.secret, position.ticker, position.side == "BUY" ? "SELL" : "BUY", position.units);
       promise
         .then((response) => {
           const msg = response.ok ? "Position closed" : "Error while closing position";
@@ -541,44 +533,55 @@ export default {
 
       this.binanceFuturesPing = end - start;
     },
-    getGeneralSettings() {
-      this.generalSettings = JSON.parse(localStorage.getItem("generalSettings")) || {
-        playTraderNotification: true,
+    getNewsFeedSettings() {
+      this.newsFeedSettings = JSON.parse(localStorage.getItem("newsFeedSettings")) || {
+        source: {
+          treeOfAlpha: true,
+          db: false,
+        },
         playHeadlineNotification: true,
-        nbrOfSplitOrders: 5,
-        showDebugLogs: false,
+        showOnlyHeadlineWithColoredKeywork: false,
+        keywords: {
+          highlight: [],
+          ignore: [],
+        },
+      };
+    },
+    getGeneralTradingSettings() {
+      this.generalTradingSettings = JSON.parse(localStorage.getItem("generalTradingSettings")) || {
+        playTraderNotification: true,
         showPositions: true,
         showChart: true,
+        showDebugLogs: false,
+        smallSizePct: 25,
+        mediumSizePct: 50,
+        bigSizePct: 100,
+        nbrOfSplitOrders: 5,
       };
-
-      // Set default values for new params
-      this.generalSettings.smallSizePct = this.generalSettings.smallSizePct || 25;
-      this.generalSettings.mediumSizePct = this.generalSettings.mediumSizePct || 50;
-      this.generalSettings.bigSizePct = this.generalSettings.bigSizePct || 100;
     },
     setNbrOfActiveAccounts() {
       // Update nbr of active accounts
       this.nbrOfActiveAccounts = this.trading.apiKeys.filter((api) => api.enabled).length;
     },
     onUpdateNewsFeedSettings(newsFeedSettings) {
-      this.generalSettings.playHeadlineNotification = newsFeedSettings.playHeadlineNotification;
-      this.generalSettings.onlyColoredKeywords = newsFeedSettings.onlyColoredKeywords;
-      localStorage.setItem("generalSettings", JSON.stringify(this.generalSettings));
+      this.newsFeedSettings.playHeadlineNotification = newsFeedSettings.playHeadlineNotification;
+      this.newsFeedSettings.onlyColoredKeywords = newsFeedSettings.onlyColoredKeywords;
+      this.newsFeedSettings.source.treeOfAlpha = newsFeedSettings.source.treeOfAlpha;
+      this.newsFeedSettings.source.db = newsFeedSettings.source.db;
+      this.newsFeedSettings.keywords = newsFeedSettings.keywords;
+      localStorage.setItem("newsFeedSettings", JSON.stringify(this.newsFeedSettings));
     },
-    onUpdateTradingSettings(tradingSettings) {
-      // Only update settings that are in this.generalSettings and tradingSettings
-      for (const key of Object.keys(tradingSettings)) {
-        if (this.generalSettings.hasOwnProperty(key)) {
-          this.generalSettings[key] = tradingSettings[key];
-        }
-      }
-
-      localStorage.setItem("generalSettings", JSON.stringify(this.generalSettings));
+    onUpdateGeneralTradingSettings(generalTradingSettings) {
+      localStorage.setItem("generalTradingSettings", JSON.stringify(generalTradingSettings));
 
       this.setNbrOfActiveAccounts();
 
       // Hijacking this event to update positions in case api keys were added/removed
       this.fetchOpenPositions();
+    },
+    onResetGeneralTradingSettings() {
+      localStorage.setItem("generalTradingSettings", JSON.stringify({}));
+      this.getGeneralTradingSettings();
     },
   },
   mounted: function () {
@@ -600,7 +603,8 @@ export default {
 
     //this.binanceFuturesPingLoop = setInterval(this.calculateBinanceFuturesPing, 2000); // Not using for now
 
-    this.getGeneralSettings();
+    this.getGeneralTradingSettings();
+    this.getNewsFeedSettings();
     this.setNbrOfActiveAccounts();
   },
   beforeDestroy() {
@@ -619,8 +623,7 @@ export default {
             :symbols="symbols"
             :quote-asset="trading.quoteAsset"
             :live-price-feed="livePriceFeed"
-            :play-notification-sound="generalSettings.playHeadlineNotification"
-            :only-colored-keywords="generalSettings.onlyColoredKeywords"
+            :news-feed-settings="newsFeedSettings"
             @symbol-from-headline="onSymbolChanged"
             @update-headlines="onUpdateHeadlines"
             @active-headline-index-changed="onActiveHeadlineChanged"
@@ -639,7 +642,8 @@ export default {
             @trading-symbol-changed="onSymbolChanged"
             @add-api-key="onAddApiKey"
             @delete-api-key="onDeleteApiKey"
-            @update-trading-settings="onUpdateTradingSettings"
+            @update-general-trading-settings="onUpdateGeneralTradingSettings"
+            @reset-general-trading-settings="onResetGeneralTradingSettings"
             @position-opened="onOpenPosition"
             @lock-symbol-toggled="onLockSymbolToggled"
             @quote-asset-changed="onQuoteAssetChanged"
@@ -652,14 +656,14 @@ export default {
             :quantity-precision="precisionFormat.quantity[trading.tradingSymbol + trading.quoteAsset]"
             :cognito-id-token="cognitoIdToken"
             :accounts-positions="trading.positions"
-            :general-settings="generalSettings"
-            :active-headline="news.headlines[news.activeHeadlineIndex]"
+            :general-settings="generalTradingSettings"
+            :active-headline="news.headlines[news.activeHeadlineIndex] || {}"
             :active-headline-index="news.activeHeadlineIndex"
           ></TradingPanel>
         </v-col>
       </v-row>
-      <v-row v-if="generalSettings.showChart || generalSettings.showPositions">
-        <v-col v-if="generalSettings.showChart">
+      <v-row v-if="generalTradingSettings.showChart || generalTradingSettings.showPositions">
+        <v-col v-if="generalTradingSettings.showChart">
           <!--TradinViewChart
             class="bottom-panels"
             :ticker="`${trading.tradingSymbol}${trading.quoteAsset}.P`"
@@ -672,7 +676,7 @@ export default {
             :price-precision="precisionFormat.price[trading.tradingSymbol + trading.quoteAsset]"
           ></LWChart>
         </v-col>
-        <v-col v-if="generalSettings.showPositions">
+        <v-col v-if="generalTradingSettings.showPositions">
           <Positions
             class="bottom-panels"
             :nbr-of-active-accounts="nbrOfActiveAccounts"
@@ -685,7 +689,7 @@ export default {
           />
         </v-col>
       </v-row>
-      <v-row class="pl-2" v-if="generalSettings.showDebugLogs">
+      <v-row class="pl-2" v-if="generalTradingSettings.showDebugLogs">
         <DebugLogs style="width: 99%; height: 300px" :logs="debugLogs"></DebugLogs>
       </v-row>
     </v-container>

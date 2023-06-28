@@ -38,9 +38,9 @@ export default {
     accountsBalance: { type: Object, required: true },
     accountsPositions: { type: Array, required: true },
     apiKeys: { type: Array, required: true },
-    latestPrice: { type: Array, required: true },
-    pricePrecision: { type: Array, required: true },
-    quantityPrecision: { type: Array, required: true },
+    latestPrice: { type: Number, required: true },
+    pricePrecision: { type: Number, required: true },
+    quantityPrecision: { type: Number, required: true },
     tickSize: { type: Number, required: true },
     cognitoIdToken: { type: Object, required: true },
     activeHeadline: { type: Object, required: true },
@@ -79,7 +79,7 @@ export default {
                 size: `${(dollarSize / this.maxSize) * 100}%`,
                 side: side,
                 entryPrice: this.latestPrice,
-                newsHeadline: this.activeHeadline ? this.activeHeadline : "N/A",
+                newsHeadline: this.activeHeadline,
               },
             })
           );
@@ -99,17 +99,7 @@ export default {
           marketOrderPromise = binance.executeMarketOrder(api.key, api.secret, ticker, side, formattedQtyToMarket);
 
           let formattedQtyToLimit = this.formatQuantityPrecision((dollarSize - dollarSizeToMarket) / this.latestPrice);
-          this.executeScaleOrders(
-            api.key,
-            api.secret,
-            side,
-            formattedQtyToLimit,
-            this.generalSettings.nbrOfSplitOrders,
-            0,
-            this.entryScaleTo,
-            false,
-            false
-          ).then((values) => {
+          this.executeScaleOrders(api.key, api.secret, side, formattedQtyToLimit, this.generalSettings.nbrOfSplitOrders, 0, this.entryScaleTo, false, false).then((values) => {
             let promises = values.length ? values : [{ status: "fulfilled", value: values }];
             for (let prom of promises) {
               if (prom.status != "fulfilled") {
@@ -184,7 +174,7 @@ export default {
                   true,
                   false
                 );
-              } 
+              }
 
               if (takeProfitPromise) {
                 takeProfitPromise
@@ -236,14 +226,7 @@ export default {
         // Stop loss
         if (this.stopLoss > 0) {
           let stopLossPrice = side == "BUY" ? this.latestPrice * (1 - this.stopLoss / 100) : this.latestPrice * (1 + this.stopLoss / 100);
-          let stopLossPromise = binance.executeStopLossOrder(
-            api.key,
-            api.secret,
-            ticker,
-            side == "BUY" ? "SELL" : "BUY",
-            formattedQuantity,
-            this.formatPricePrecision(stopLossPrice)
-          );
+          let stopLossPromise = binance.executeStopLossOrder(api.key, api.secret, ticker, side == "BUY" ? "SELL" : "BUY", formattedQuantity, this.formatPricePrecision(stopLossPrice));
 
           stopLossPromise
             .then((response) => response.json())
@@ -355,8 +338,11 @@ export default {
     onToggleApiKey(index) {
       this.$emit("toggle-api-key", index);
     },
-    onCloseDialog(settings) {
-      this.$emit("update-trading-settings", settings);
+    onUpdateGeneralTradingSettings(settings) {
+      this.$emit("update-general-trading-settings", settings);
+    },
+    onResetGeneralTradingSettings() {
+      this.$emit("reset-general-trading-settings");
     },
     connectNttWs() {
       //Get websocket api key
@@ -483,6 +469,7 @@ export default {
       :general-settings="generalSettings"
       @add-api-key="onAddApiKey"
       @delete-api-key="onDeleteApiKey"
+      @update-general-trading-settings="onUpdateGeneralTradingSettings"
       @close-dialog="onCloseDialog"
       @toggle-api-key="onToggleApiKey"
     ></TradingSettingsDialog>
@@ -543,54 +530,19 @@ export default {
               @update:modelValue="storeTradingParams"
             ></v-select>
           </v-col>
-          <v-col v-show="(selectedExitMode == ExecutionMode.exit.SPLIT_TP_LIMIT) || (selectedExitMode == ExecutionMode.exit.SPLIT_TP_STOP)">
-            <v-text-field
-              hide-details="auto"
-              :density="density"
-              label="From"
-              suffix="%"
-              v-model="scaleFrom"
-              type="number"
-              @update:modelValue="storeTradingParams"
-            >
-            </v-text-field>
+          <v-col v-show="selectedExitMode == ExecutionMode.exit.SPLIT_TP_LIMIT || selectedExitMode == ExecutionMode.exit.SPLIT_TP_STOP">
+            <v-text-field hide-details="auto" :density="density" label="From" suffix="%" v-model="scaleFrom" type="number" @update:modelValue="storeTradingParams"> </v-text-field>
           </v-col>
-          <v-col v-show="(selectedExitMode == ExecutionMode.exit.SPLIT_TP_LIMIT) || (selectedExitMode == ExecutionMode.exit.SPLIT_TP_STOP)">
-            <v-text-field
-              hide-details="auto"
-              :density="density"
-              label="To"
-              suffix="%"
-              v-model="scaleTo"
-              type="number"
-              @update:modelValue="storeTradingParams"
-            >
-            </v-text-field>
+          <v-col v-show="selectedExitMode == ExecutionMode.exit.SPLIT_TP_LIMIT || selectedExitMode == ExecutionMode.exit.SPLIT_TP_STOP">
+            <v-text-field hide-details="auto" :density="density" label="To" suffix="%" v-model="scaleTo" type="number" @update:modelValue="storeTradingParams"> </v-text-field>
           </v-col>
         </v-row>
         <v-row dense>
           <v-col>
-            <v-text-field
-              hide-details="auto"
-              :density="density"
-              label="Max Size"
-              prefix="$"
-              v-model="maxSize"
-              type="number"
-              @update:modelValue="storeTradingParams"
-            ></v-text-field>
+            <v-text-field hide-details="auto" :density="density" label="Max Size" prefix="$" v-model="maxSize" type="number" @update:modelValue="storeTradingParams"></v-text-field>
           </v-col>
           <v-col>
-            <v-text-field
-              hide-details="auto"
-              :density="density"
-              label="Stop Loss"
-              suffix="%"
-              v-model="stopLoss"
-              type="number"
-              @update:modelValue="storeTradingParams"
-            >
-            </v-text-field>
+            <v-text-field hide-details="auto" :density="density" label="Stop Loss" suffix="%" v-model="stopLoss" type="number" @update:modelValue="storeTradingParams"> </v-text-field>
           </v-col>
         </v-row>
         <v-row dense>
@@ -626,42 +578,12 @@ export default {
         <v-row>
           <v-col>
             <v-row justify="center">
-              <TradingButton
-                :disabled="disableTradingButtons"
-                :amount="(maxSize * generalSettings.smallSizePct) / 100"
-                side="BUY"
-                @execute-trade="onExecuteTrade"
-              ></TradingButton>
-              <TradingButton
-                :disabled="disableTradingButtons"
-                :amount="(maxSize * generalSettings.mediumSizePct) / 100"
-                side="BUY"
-                @execute-trade="onExecuteTrade"
-              ></TradingButton>
-              <TradingButton
-                :disabled="disableTradingButtons"
-                :amount="(maxSize * generalSettings.bigSizePct) / 100"
-                side="BUY"
-                @execute-trade="onExecuteTrade"
-              ></TradingButton>
-              <TradingButton
-                :disabled="disableTradingButtons"
-                :amount="(maxSize * generalSettings.smallSizePct) / 100"
-                side="SELL"
-                @execute-trade="onExecuteTrade"
-              ></TradingButton>
-              <TradingButton
-                :disabled="disableTradingButtons"
-                :amount="(maxSize * generalSettings.mediumSizePct) / 100"
-                side="SELL"
-                @execute-trade="onExecuteTrade"
-              ></TradingButton>
-              <TradingButton
-                :disabled="disableTradingButtons"
-                :amount="(maxSize * generalSettings.bigSizePct) / 100"
-                side="SELL"
-                @execute-trade="onExecuteTrade"
-              ></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.smallSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.mediumSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.bigSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.smallSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.mediumSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.bigSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
             </v-row>
           </v-col>
         </v-row>

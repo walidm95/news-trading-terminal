@@ -19,15 +19,13 @@ export default {
       pingTimeout: null,
       pingIntervalTime: 5000,
       pingTimeoutTime: 2000,
-      keywords: JSON.parse(localStorage.getItem("keywords")) || { highlight: [], ignore: [] },
     };
   },
   props: {
     quoteAsset: { type: String, required: true },
     symbols: { type: Object, required: true },
     livePriceFeed: { type: Object, required: true },
-    playNotificationSound: { type: Boolean, required: true },
-    onlyColoredKeywords: { type: Boolean, required: true },
+    newsFeedSettings: { type: Object, required: true },
   },
   methods: {
     onSelectHeadline(index) {
@@ -126,8 +124,8 @@ export default {
         };
 
         // Ignore headline that contains a keyword to ignore
-        if (this.keywords.ignore.length > 0) {
-          const regex = new RegExp("\\b(" + this.keywords.ignore.join("|") + ")\\b", "i");
+        if (this.newsFeedSettings.keywords.ignore.length > 0) {
+          const regex = new RegExp("\\b(" + this.newsFeedSettings.keywords.ignore.join("|") + ")\\b", "i");
           if (regex.test(headline.body) || regex.test(headline.title)) {
             const msg = "Contains keyword from ignore list. Skipping";
             this.$emit("add-debug-log", msg);
@@ -138,7 +136,7 @@ export default {
 
         this.headlines.unshift(headline);
 
-        if (this.playNotificationSound && (!this.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
+        if (this.newsFeedSettings.playNotificationSound && (!this.newsFeedSettings.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
           this.notification_sound.play();
         }
 
@@ -186,33 +184,17 @@ export default {
       }
       return "";
     },
-    onAddKeyword(obj) {
-      if (obj.action == "Highlight") {
-        this.keywords.highlight.push(obj);
-      } else if (obj.action == "Ignore") {
-        this.keywords.ignore.push(obj.word);
-      }
-      localStorage.setItem("keywords", JSON.stringify(this.keywords));
-    },
-    onDeleteKeyword(obj) {
-      if (obj.action == "Highlight") {
-        this.keywords.highlight.splice(obj.index, 1);
-      } else if (obj.action == "Ignore") {
-        this.keywords.ignore.splice(obj.index, 1);
-      }
-      localStorage.setItem("keywords", JSON.stringify(this.keywords));
-    },
     hasHighlightedWord(text) {
       const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
-      const highlightPatterns = this.keywords.highlight.map((item) => `\\b${escapeRegExp(item.word)}\\b`).join("|");
+      const highlightPatterns = this.newsFeedSettings.keywords.highlight.map((item) => `\\b${escapeRegExp(item.word)}\\b`).join("|");
 
       const regex = new RegExp(highlightPatterns, "gi");
       return regex.test(text);
     },
     applyHighlights(text) {
       const escapeRegExp = (string) => string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
-      const highlightGroups = this.keywords.highlight
+      const highlightGroups = this.newsFeedSettings.keywords.highlight
         .map((item) => ({
           pattern: `\\b${escapeRegExp(item.word)}\\b`,
           color: item.color,
@@ -233,8 +215,10 @@ export default {
       return text;
     },
     onUpdateNewsFeedSettings(settings) {
-      // Only settings, does not handle the keywords system
       this.$emit("update-news-feed-settings", settings);
+    },
+    onResetNewsFeedSettings() {
+      this.$emit("reset-news-feed-settings");
     },
   },
   mounted() {
@@ -257,9 +241,10 @@ export default {
     </v-badge>
     <NewsFeedSettingsDialog
       class="float-right pt-3 pr-3"
-      :keywords="keywords"
+      :news-feed-settings="newsFeedSettings"
       @add-keyword="onAddKeyword"
       @delete-keyword="onDeleteKeyword"
+      @reset-news-feed-settings="onResetNewsFeedSettings"
       @update-news-feed-settings="onUpdateNewsFeedSettings"
     ></NewsFeedSettingsDialog>
 

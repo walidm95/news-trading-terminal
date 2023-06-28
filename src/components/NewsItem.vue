@@ -6,7 +6,7 @@ export default {
     title: { type: String, required: true },
     body: { type: String, required: true },
     link: { type: String, required: true },
-    timestamp: { type: String, required: true },
+    timestamp: { type: Date, required: true },
     selected: { type: Boolean, required: true },
     priceChange: { type: Number, required: true },
     btcPriceChange: { type: Number, required: true },

@@ -11,12 +11,7 @@ export default {
       showDebugLogs: false,
       showPositions: true,
       showChart: true,
-      nbrOfOrderRules: [
-        (v) => v != "" || "Required",
-        (v) => !!v || "Required",
-        (v) => v >= 0 || "Must be positive",
-        (v) => v <= 30 || "Must be 30 or less",
-      ],
+      nbrOfOrderRules: [(v) => v != "" || "Required", (v) => !!v || "Required", (v) => v >= 0 || "Must be positive", (v) => v <= 30 || "Must be 30 or less"],
       smallSizePct: 25,
       mediumSizePct: 50,
       bigSizePct: 100,
@@ -39,8 +34,8 @@ export default {
 
       this.dialog = false;
 
-      // Update general settings
-      this.$emit("close-dialog", {
+      // Update settings
+      this.$emit("update-general-trading-settings", {
         playTraderNotification: this.playTraderNotification,
         nbrOfSplitOrders: this.nbrOfSplitOrders,
         showDebugLogs: this.showDebugLogs,
@@ -50,6 +45,20 @@ export default {
         mediumSizePct: this.mediumSizePct,
         bigSizePct: this.bigSizePct,
       });
+    },
+    reset() {
+      if (confirm("Do you really want to reset your settings?")) {
+        this.playTraderNotification = true;
+        this.showPositions = true;
+        this.showChart = true;
+        this.showDebugLogs = false;
+        this.smallSizePct = 25;
+        this.mediumSizePct = 50;
+        this.bigSizePct = 100;
+        this.nbrOfSplitOrders = 5;
+
+        this.$emit("reset-trading-params");
+      }
     },
     onAddApiKey() {
       this.$emit("add-api-key", {
@@ -73,9 +82,9 @@ export default {
       this.showDebugLogs = newSettings.showDebugLogs;
       this.showPositions = newSettings.showPositions;
       this.showChart = newSettings.showChart;
-      this.smallSizePct = newSettings.smallSizePct
-      this.mediumSizePct = newSettings.mediumSizePct
-      this.bigSizePct = newSettings.bigSizePct
+      this.smallSizePct = newSettings.smallSizePct;
+      this.mediumSizePct = newSettings.mediumSizePct;
+      this.bigSizePct = newSettings.bigSizePct;
     },
   },
 };
@@ -113,46 +122,16 @@ export default {
           <v-card-text>
             <v-row>
               <v-col>
-                <v-text-field
-                  hide-details="auto"
-                  density="compact"
-                  label="Small Size Button"
-                  suffix="%"
-                  type="number"
-                  v-model="smallSizePct"
-                ></v-text-field>
+                <v-text-field hide-details="auto" density="compact" label="Small Size Button" suffix="%" type="number" v-model="smallSizePct"></v-text-field>
               </v-col>
               <v-col>
-                <v-text-field
-                  hide-details="auto"
-                  density="compact"
-                  label="Medium Size Button"
-                  suffix="%"
-                  type="number"
-                  v-model="mediumSizePct"
-                ></v-text-field>
+                <v-text-field hide-details="auto" density="compact" label="Medium Size Button" suffix="%" type="number" v-model="mediumSizePct"></v-text-field>
               </v-col>
               <v-col>
-                <v-text-field
-                  hide-details="auto"
-                  density="compact"
-                  label="Big Size Button"
-                  suffix="%"
-                  type="number"
-                  v-model="bigSizePct"
-                ></v-text-field>
+                <v-text-field hide-details="auto" density="compact" label="Big Size Button" suffix="%" type="number" v-model="bigSizePct"></v-text-field>
               </v-col>
               <v-col>
-                <v-text-field
-                  density="compact"
-                  hide-details="auto"
-                  type="number"
-                  min="0"
-                  max="30"
-                  :rules="nbrOfOrderRules"
-                  label="Number of split orders"
-                  v-model="nbrOfSplitOrders"
-                ></v-text-field>
+                <v-text-field density="compact" hide-details="auto" type="number" min="0" max="30" :rules="nbrOfOrderRules" label="Number of split orders" v-model="nbrOfSplitOrders"></v-text-field>
               </v-col>
             </v-row>
           </v-card-text>
@@ -188,7 +167,8 @@ export default {
         </v-card>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn rounded="lg" variant="tonal" color="white" @click="close()"> Close </v-btn>
+          <v-btn rounded="lg" variant="tonal" color="white" @click="reset"> Reset</v-btn>
+          <v-btn rounded="lg" variant="tonal" color="white" @click="close"> Close </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
