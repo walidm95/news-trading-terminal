@@ -26,8 +26,8 @@ export default {
       this.dialog = false;
       this.newsFeedSettings.playHeadlineNotification = this.playHeadlineNotification;
       this.newsFeedSettings.onlyColoredKeywords = this.onlyColoredKeywords;
-      this.newsFeedSettings.source.treeOfAlpha = this.useTreeOfAlpha;
-      this.newsFeedSettings.source.db = this.useDB;
+      this.newsFeedSettings.useTreeOfAlpha = this.useTreeOfAlpha;
+      this.newsFeedSettings.useDB = this.useDB;
       this.newsFeedSettings.keywords = this.keywords;
 
       // Update news feed settings
@@ -93,8 +93,8 @@ export default {
     newsFeedSettings: function (settings) {
       this.playHeadlineNotification = this.newsFeedSettings.playHeadlineNotification;
       this.onlyColoredKeywords = this.newsFeedSettings.onlyColoredKeywords;
-      this.useTreeOfAlpha = this.newsFeedSettings.source.treeOfAlpha;
-      this.useDB = this.newsFeedSettings.source.db;
+      this.useTreeOfAlpha = this.newsFeedSettings.useTreeOfAlpha;
+      this.useDB = this.newsFeedSettings.useDB;
       this.keywords = this.newsFeedSettings.keywords;
     },
   },

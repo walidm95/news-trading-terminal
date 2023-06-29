@@ -535,10 +535,8 @@ export default {
     },
     getNewsFeedSettings() {
       this.newsFeedSettings = JSON.parse(localStorage.getItem("newsFeedSettings")) || {
-        source: {
-          treeOfAlpha: true,
-          db: false,
-        },
+        useTreeOfAlpha: true,
+        useDB: false,
         playHeadlineNotification: true,
         showOnlyHeadlineWithColoredKeywork: false,
         keywords: {
@@ -566,8 +564,8 @@ export default {
     onUpdateNewsFeedSettings(newsFeedSettings) {
       this.newsFeedSettings.playHeadlineNotification = newsFeedSettings.playHeadlineNotification;
       this.newsFeedSettings.onlyColoredKeywords = newsFeedSettings.onlyColoredKeywords;
-      this.newsFeedSettings.source.treeOfAlpha = newsFeedSettings.source.treeOfAlpha;
-      this.newsFeedSettings.source.db = newsFeedSettings.source.db;
+      this.newsFeedSettings.useTreeOfAlpha = newsFeedSettings.useTreeOfAlpha;
+      this.newsFeedSettings.useDB = newsFeedSettings.useDB;
       this.newsFeedSettings.keywords = newsFeedSettings.keywords;
       localStorage.setItem("newsFeedSettings", JSON.stringify(this.newsFeedSettings));
     },

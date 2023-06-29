@@ -4,8 +4,7 @@ import NewsFeedSettingsDialog from "./NewsFeedSettingsDialog.vue";
 </script>
 
 <script>
-//TODO: remove it and fetch it from http api
-const TREE_API_KEY = "f82ff6449777948ce45809afca68017db54d86c02d0409ee5d2b223eaefc52b2";
+import CREDENTIALS from "../credentials.js";
 
 export default {
   data() {
@@ -13,10 +12,14 @@ export default {
       notification_sound: new Audio("/new_headline.mp3"),
       headlines: [],
       activeHeadline: 0,
-      newsWebsocket: null,
-      wsAlive: false,
-      pingInterval: null,
-      pingTimeout: null,
+      toaNewsWebsocket: null,
+      dbNewsWebsocket: null,
+      toaWsAlive: false,
+      dbWsAlive: false,
+      toaPingInterval: null,
+      toaPingTimeout: null,
+      dbPingInterval: null,
+      toaPingInterval: null,
       pingIntervalTime: 5000,
       pingTimeoutTime: 2000,
     };
@@ -34,34 +37,122 @@ export default {
       this.activeHeadline = index;
       this.$emit("symbol-from-headline", this.headlines[index].symbol);
     },
-    connectNewsFeedWs() {
-      if (this.pingTimeout) {
-        clearTimeout(this.pingTimeout);
+    connectDbNewsFedWs() {
+      this.dbNewsWebsocket = new WebSocket(`wss://${CREDENTIALS.DB_USERNAME}:${CREDENTIALS.DB_PASSWORD}@904c7008.nip.io/credo`);
+      this.dbNewsWebsocket.onopen = () => {
+        const msg = "DB ws connected";
+        this.$emit("add-debug-log", msg);
+        console.log(msg);
+        this.dbWsAlive = true;
+      };
+      this.dbNewsWebsocket.onerror = (error) => {
+        const msg = "DB ws error";
+        this.$emit("add-debug-log", msg);
+        console.error(msg, error);
+      };
+      this.dbNewsWebsocket.onclose = () => {
+        const msg = "DB ws closed";
+        this.$emit("add-debug-log", msg);
+        console.log(msg);
+        clearTimeout(this.toaPingTimeout);
+      };
+      this.dbNewsWebsocket.onmessage = (event) => {
+        let data = JSON.parse(event.data);
+
+        let symbol;
+        if (data.coins.length > 0) {
+          // NOTE: for now we only take the first coin
+          symbol = data.coins[0];
+          if (!this.symbols[symbol]) {
+            const msg = "symbol not in symbols list. Skipping";
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
+            return;
+          }
+        } else {
+          const msg = "no symbol found. Skipping";
+          console.log(msg);
+          return;
+        }
+
+        const ticker = symbol + this.quoteAsset;
+
+        let title;
+
+        // get twitter username
+        const match = data.link.match(/https?:\/\/twitter\.com\/(\w+)\/status\/\d+/);
+        if (match && match[1]) {
+          title = "@" + match[1];
+        } else {
+          title = data.source;
+        }
+
+        const headline = {
+          feedSource: "DB",
+          id: data._id,
+          title: title,
+          body: data.text,
+          type: data.source,
+          timestamp: new Date(data.ts),
+          symbol: symbol,
+          ticker: ticker,
+          link: data.link,
+          price: this.livePriceFeed[ticker] ? this.livePriceFeed[ticker] : 0,
+          btcPrice: this.livePriceFeed["BTC" + this.quoteAsset] ? this.livePriceFeed["BTC" + this.quoteAsset] : 0,
+          nbrOfTrades: 0,
+        };
+
+        // Ignore headline that contains a keyword to ignore
+        if (this.newsFeedSettings.keywords.ignore.length > 0) {
+          const regex = new RegExp("\\b(" + this.newsFeedSettings.keywords.ignore.join("|") + ")\\b", "i");
+          if (regex.test(headline.body) || regex.test(headline.title)) {
+            const msg = "Contains keyword from ignore list. Skipping";
+            this.$emit("add-debug-log", msg);
+            console.log(msg);
+            return;
+          }
+        }
+
+        this.headlines.unshift(headline);
+
+        if (this.newsFeedSettings.playNotificationSound && (!this.newsFeedSettings.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
+          this.notification_sound.play();
+        }
+
+        this.activeHeadline = 0;
+        this.$emit("symbol-from-headline", symbol);
+        this.$emit("update-headlines", this.headlines);
+        this.$emit("active-headline-index-changed", 0);
+      };
+    },
+    connectToaNewsFeedWs() {
+      if (this.toaPingTimeout) {
+        clearTimeout(this.toaPingTimeout);
       }
 
-      this.newsWebsocket = new WebSocket("wss://news.treeofalpha.com/ws");
-      this.newsWebsocket.onopen = () => {
+      this.toaNewsWebsocket = new WebSocket("wss://news.treeofalpha.com/ws");
+      this.toaNewsWebsocket.onopen = () => {
         const msg = "TreeOfAlphaWS connected";
         this.$emit("add-debug-log", msg);
         console.log(msg);
-        this.newsWebsocket.send("login " + TREE_API_KEY);
-        this.wsAlive = true;
-        this.pingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime);
+        this.toaNewsWebsocket.send("login " + CREDENTIALS.TREE_OF_ALPHA_API_KEY);
+        this.toaWsAlive = true;
+        this.toaPingInterval = setInterval(this.pingWebsocket, this.pingIntervalTime);
       };
-      this.newsWebsocket.onerror = (error) => {
+      this.toaNewsWebsocket.onerror = (error) => {
         const msg = "TreeOfAlphaWS error";
         this.$emit("add-debug-log", msg);
         console.log(msg);
       };
-      this.newsWebsocket.onclose = () => {
+      this.toaNewsWebsocket.onclose = () => {
         const msg = "TreeOfAlphaWS closed";
         this.$emit("add-debug-log", msg);
         console.log(msg);
-        clearTimeout(this.pingTimeout);
+        clearTimeout(this.toaPingTimeout);
       };
-      this.newsWebsocket.onmessage = (event) => {
+      this.toaNewsWebsocket.onmessage = (event) => {
         if (event.data == "pong") {
-          clearTimeout(this.pingTimeout);
+          clearTimeout(this.toaPingTimeout);
           return;
         }
 
@@ -73,9 +164,6 @@ export default {
           console.log(msg);
           return;
         }
-
-        //this.$emit("add-debug-log", data.body ? data.body : data.title);
-        //console.log(data);
 
         let type = data.info && data.info.twitterId ? "twitter" : data.source;
         let link = data.link ? data.link : data.url ? data.url : undefined;
@@ -110,6 +198,7 @@ export default {
 
         const ticker = symbol + this.quoteAsset;
         const headline = {
+          feedSource: "Tree Of Alpha",
           id: data._id,
           title: data.title,
           body: data.body ? data.body : data.title,
@@ -157,17 +246,17 @@ export default {
       return ((priceNow - priceAtNews) / priceAtNews) * 100;
     },
     pingWebsocket() {
-      this.newsWebsocket.send("ping");
-      this.pingTimeout = setTimeout(() => {
+      this.toaNewsWebsocket.send("ping");
+      this.toaPingTimeout = setTimeout(() => {
         const msg = "ping timeout";
         this.$emit("add-debug-log", msg);
         console.log(msg);
-        this.wsAlive = false;
+        this.toaWsAlive = false;
 
-        this.newsWebsocket.close();
-        clearInterval(this.pingInterval);
+        this.toaNewsWebsocket.close();
+        clearInterval(this.toaPingInterval);
 
-        this.connectNewsFeedWs();
+        this.connectToaNewsFeedWs();
       }, this.pingTimeoutTime);
     },
     findSymbolInHeadline(headline) {
@@ -221,22 +310,36 @@ export default {
       this.$emit("reset-news-feed-settings");
     },
   },
-  mounted() {
-    this.connectNewsFeedWs();
+  watch: {
+    newsFeedSettings() {
+      if (this.newsFeedSettings.useTreeOfAlpha) {
+        this.connectToaNewsFeedWs();
+      } else if (this.toaNewsWebsocket) {
+        this.toaNewsWebsocket.close();
+        this.toaNewsWebsocket = null;
+      }
+      if (this.newsFeedSettings.useDB) {
+        this.connectDbNewsFedWs();
+      } else if (this.dbNewsWebsocket) {
+        this.dbNewsWebsocket.close();
+        this.dbNewsWebsocket = null;
+      }
+    },
   },
+  mounted() {},
   beforeUnmount() {
-    if (this.newsWebsocket) {
-      this.newsWebsocket.close();
+    if (this.toaNewsWebsocket) {
+      this.toaNewsWebsocket.close();
     }
-    clearInterval(this.pingInterval);
-    clearTimeout(this.pingTimeout);
+    clearInterval(this.toaPingInterval);
+    clearTimeout(this.toaPingTimeout);
   },
 };
 </script>
 
 <template>
   <v-card>
-    <v-badge :color="wsAlive ? 'green' : 'red'" dot inline>
+    <v-badge :color="toaWsAlive || dbWsAlive ? 'green' : 'red'" dot inline>
       <v-card-title>News Feed</v-card-title>
     </v-badge>
     <NewsFeedSettingsDialog
@@ -251,6 +354,7 @@ export default {
     <v-list class="overflow-y-auto" style="height: 90%">
       <NewsItem
         v-for="(headline, index) in headlines"
+        :feedSource="headline.feedSource"
         :symbol="headline.symbol"
         :type="headline.type"
         :title="headline.title"
