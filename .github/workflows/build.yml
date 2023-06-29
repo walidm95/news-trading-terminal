@@ -47,6 +47,10 @@ jobs:
       - name: Create ./src/aws-exports.js file required for aws cognito
         run: 
           echo "export default {aws_cognito_region:'${{ secrets.AWS_REGION }}',aws_user_pools_id:'${{ secrets.AWS_COGNITO_USER_POOL_ID }}',aws_user_pools_web_client_id:'${{ secrets.AWS_COGNITO_USER_POOL_CLIENT_ID }}'}" > ./src/aws-exports.js
+      
+      - name: Create ./src/credentials.js file required for aws cognito
+        run: 
+          echo "export default {TREE_OF_ALPHA_API_KEY:'${{ secrets.TREE_API_KEY }}',DB_USERNAME:'${{ secrets.DB_USERNAME }}',DB_PASSWORD:'${{ secrets.DB_PASSWORD }}'}" > ./src/credentials.js
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
