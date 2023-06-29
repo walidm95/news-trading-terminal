@@ -90,12 +90,15 @@ export default {
     },
   },
   watch: {
-    newsFeedSettings: function (settings) {
-      this.playHeadlineNotification = this.newsFeedSettings.playHeadlineNotification;
-      this.onlyColoredKeywords = this.newsFeedSettings.onlyColoredKeywords;
-      this.useTreeOfAlpha = this.newsFeedSettings.useTreeOfAlpha;
-      this.useDB = this.newsFeedSettings.useDB;
-      this.keywords = this.newsFeedSettings.keywords;
+    newsFeedSettings: {
+      handler: function (settings) {
+        this.playHeadlineNotification = this.newsFeedSettings.playHeadlineNotification;
+        this.onlyColoredKeywords = this.newsFeedSettings.onlyColoredKeywords;
+        this.useTreeOfAlpha = this.newsFeedSettings.useTreeOfAlpha;
+        this.useDB = this.newsFeedSettings.useDB;
+        this.keywords = this.newsFeedSettings.keywords;
+      },
+      deep: true,
     },
   },
   mounted() {},

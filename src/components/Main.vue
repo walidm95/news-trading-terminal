@@ -562,14 +562,15 @@ export default {
       this.nbrOfActiveAccounts = this.trading.apiKeys.filter((api) => api.enabled).length;
     },
     onUpdateNewsFeedSettings(newsFeedSettings) {
-      this.newsFeedSettings.playHeadlineNotification = newsFeedSettings.playHeadlineNotification;
-      this.newsFeedSettings.onlyColoredKeywords = newsFeedSettings.onlyColoredKeywords;
-      this.newsFeedSettings.useTreeOfAlpha = newsFeedSettings.useTreeOfAlpha;
-      this.newsFeedSettings.useDB = newsFeedSettings.useDB;
-      this.newsFeedSettings.keywords = newsFeedSettings.keywords;
+      this.newsFeedSettings = newsFeedSettings;
       localStorage.setItem("newsFeedSettings", JSON.stringify(this.newsFeedSettings));
     },
+    onResetNewsFeedSettings() {
+      localStorage.setItem("newsFeedSettings", JSON.stringify({}));
+      this.getNewsFeedSettings();
+    },
     onUpdateGeneralTradingSettings(generalTradingSettings) {
+      this.generalTradingSettings = generalTradingSettings;
       localStorage.setItem("generalTradingSettings", JSON.stringify(generalTradingSettings));
 
       this.setNbrOfActiveAccounts();
@@ -627,6 +628,7 @@ export default {
             @active-headline-index-changed="onActiveHeadlineChanged"
             @add-debug-log="onDebugLog"
             @update-news-feed-settings="onUpdateNewsFeedSettings"
+            @reset-news-feed-settings="onResetNewsFeedSettings"
           ></NewsFeed>
         </v-col>
         <v-col>
@@ -654,7 +656,7 @@ export default {
             :quantity-precision="precisionFormat.quantity[trading.tradingSymbol + trading.quoteAsset]"
             :cognito-id-token="cognitoIdToken"
             :accounts-positions="trading.positions"
-            :general-settings="generalTradingSettings"
+            :general-trading-settings="generalTradingSettings"
             :active-headline="news.headlines[news.activeHeadlineIndex] || {}"
             :active-headline-index="news.activeHeadlineIndex"
           ></TradingPanel>

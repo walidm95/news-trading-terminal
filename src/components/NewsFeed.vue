@@ -49,12 +49,16 @@ export default {
         const msg = "DB ws error";
         this.$emit("add-debug-log", msg);
         console.error(msg, error);
+        this.dbWsAlive = false;
+
+        // try to reconnect
+        this.connectDbNewsFedWs();
       };
       this.dbNewsWebsocket.onclose = () => {
         const msg = "DB ws closed";
         this.$emit("add-debug-log", msg);
         console.log(msg);
-        clearTimeout(this.toaPingTimeout);
+        this.dbWsAlive = false;
       };
       this.dbNewsWebsocket.onmessage = (event) => {
         let data = JSON.parse(event.data);
@@ -64,7 +68,7 @@ export default {
           // NOTE: for now we only take the first coin
           symbol = data.coins[0];
           if (!this.symbols[symbol]) {
-            const msg = "symbol not in symbols list. Skipping";
+            const msg = `${symbol} not in symbols list. Skipping`;
             this.$emit("add-debug-log", msg);
             console.log(msg);
             return;
@@ -115,7 +119,7 @@ export default {
 
         this.headlines.unshift(headline);
 
-        if (this.newsFeedSettings.playNotificationSound && (!this.newsFeedSettings.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
+        if (this.newsFeedSettings.playHeadlineNotification && (!this.newsFeedSettings.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
           this.notification_sound.play();
         }
 
@@ -142,13 +146,15 @@ export default {
       this.toaNewsWebsocket.onerror = (error) => {
         const msg = "TreeOfAlphaWS error";
         this.$emit("add-debug-log", msg);
-        console.log(msg);
+        console.error(msg, error);
       };
       this.toaNewsWebsocket.onclose = () => {
         const msg = "TreeOfAlphaWS closed";
         this.$emit("add-debug-log", msg);
         console.log(msg);
         clearTimeout(this.toaPingTimeout);
+        clearInterval(this.toaPingInterval);
+        this.toaWsAlive = false;
       };
       this.toaNewsWebsocket.onmessage = (event) => {
         if (event.data == "pong") {
@@ -172,7 +178,7 @@ export default {
         if (data.coin) {
           symbol = data.coin;
           if (!this.symbols[symbol]) {
-            const msg = "symbol not in symbols list. Skipping";
+            const msg = `${symbol} not in symbols list. Skipping`;
             this.$emit("add-debug-log", msg);
             console.log(msg);
             return;
@@ -180,7 +186,7 @@ export default {
         } else if (data.symbols && data.symbols.length > 0) {
           symbol = data.symbols[0].split("_")[0];
           if (!this.symbols[symbol]) {
-            const msg = "symbol not in symbols list. Skipping";
+            const msg = `${symbol} not in symbols list. Skipping`;
             this.$emit("add-debug-log", msg);
             console.log(msg);
             return;
@@ -225,7 +231,7 @@ export default {
 
         this.headlines.unshift(headline);
 
-        if (this.newsFeedSettings.playNotificationSound && (!this.newsFeedSettings.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
+        if (this.newsFeedSettings.playHeadlineNotification && (!this.newsFeedSettings.onlyColoredKeywords || this.hasHighlightedWord(headline.body))) {
           this.notification_sound.play();
         }
 
@@ -311,19 +317,22 @@ export default {
     },
   },
   watch: {
-    newsFeedSettings() {
-      if (this.newsFeedSettings.useTreeOfAlpha) {
-        this.connectToaNewsFeedWs();
-      } else if (this.toaNewsWebsocket) {
-        this.toaNewsWebsocket.close();
-        this.toaNewsWebsocket = null;
-      }
-      if (this.newsFeedSettings.useDB) {
-        this.connectDbNewsFedWs();
-      } else if (this.dbNewsWebsocket) {
-        this.dbNewsWebsocket.close();
-        this.dbNewsWebsocket = null;
-      }
+    newsFeedSettings: {
+      handler: function () {
+        if (this.newsFeedSettings.useTreeOfAlpha && !this.toaWsAlive) {
+          this.connectToaNewsFeedWs();
+        } else if (!this.newsFeedSettings.useTreeOfAlpha && this.toaNewsWebsocket) {
+          this.toaNewsWebsocket.close();
+          this.toaNewsWebsocket = null;
+        }
+        if (this.newsFeedSettings.useDB && !this.dbWsAlive) {
+          this.connectDbNewsFedWs();
+        } else if (!this.newsFeedSettings.useDB && this.dbNewsWebsocket) {
+          this.dbNewsWebsocket.close();
+          this.dbNewsWebsocket = null;
+        }
+      },
+      deep: true,
     },
   },
   mounted() {},

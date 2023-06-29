@@ -19,7 +19,7 @@ export default {
   },
   props: {
     apiKeys: { type: Array, required: true },
-    generalSettings: { type: Object, required: true },
+    generalTradingSettings: { type: Object, required: true },
   },
   methods: {
     close() {
@@ -76,15 +76,18 @@ export default {
     },
   },
   watch: {
-    generalSettings: function (newSettings) {
-      this.playTraderNotification = newSettings.playTraderNotification;
-      this.nbrOfSplitOrders = newSettings.nbrOfSplitOrders;
-      this.showDebugLogs = newSettings.showDebugLogs;
-      this.showPositions = newSettings.showPositions;
-      this.showChart = newSettings.showChart;
-      this.smallSizePct = newSettings.smallSizePct;
-      this.mediumSizePct = newSettings.mediumSizePct;
-      this.bigSizePct = newSettings.bigSizePct;
+    generalTradingSettings: {
+      handler: function (newSettings) {
+        this.playTraderNotification = newSettings.playTraderNotification;
+        this.nbrOfSplitOrders = newSettings.nbrOfSplitOrders;
+        this.showDebugLogs = newSettings.showDebugLogs;
+        this.showPositions = newSettings.showPositions;
+        this.showChart = newSettings.showChart;
+        this.smallSizePct = newSettings.smallSizePct;
+        this.mediumSizePct = newSettings.mediumSizePct;
+        this.bigSizePct = newSettings.bigSizePct;
+      },
+      deep: true,
     },
   },
 };

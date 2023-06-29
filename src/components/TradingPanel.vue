@@ -45,7 +45,7 @@ export default {
     cognitoIdToken: { type: Object, required: true },
     activeHeadline: { type: Object, required: true },
     activeHeadlineIndex: { type: Number, required: true },
-    generalSettings: { type: Object, required: true },
+    generalTradingSettings: { type: Object, required: true },
   },
   methods: {
     formatQuantityPrecision(quantity) {
@@ -99,7 +99,7 @@ export default {
           marketOrderPromise = binance.executeMarketOrder(api.key, api.secret, ticker, side, formattedQtyToMarket);
 
           let formattedQtyToLimit = this.formatQuantityPrecision((dollarSize - dollarSizeToMarket) / this.latestPrice);
-          this.executeScaleOrders(api.key, api.secret, side, formattedQtyToLimit, this.generalSettings.nbrOfSplitOrders, 0, this.entryScaleTo, false, false).then((values) => {
+          this.executeScaleOrders(api.key, api.secret, side, formattedQtyToLimit, this.generalTradingSettings.nbrOfSplitOrders, 0, this.entryScaleTo, false, false).then((values) => {
             let promises = values.length ? values : [{ status: "fulfilled", value: values }];
             for (let prom of promises) {
               if (prom.status != "fulfilled") {
@@ -156,7 +156,7 @@ export default {
                   api.secret,
                   side == "BUY" ? "SELL" : "BUY",
                   dollarSize / this.latestPrice,
-                  this.generalSettings.nbrOfSplitOrders > 9 ? 9 : this.generalSettings.nbrOfSplitOrders,
+                  this.generalTradingSettings.nbrOfSplitOrders > 9 ? 9 : this.generalTradingSettings.nbrOfSplitOrders,
                   this.scaleFrom,
                   this.scaleTo,
                   true,
@@ -168,7 +168,7 @@ export default {
                   api.secret,
                   side == "BUY" ? "SELL" : "BUY",
                   dollarSize / this.latestPrice,
-                  this.generalSettings.nbrOfSplitOrders,
+                  this.generalTradingSettings.nbrOfSplitOrders,
                   this.scaleFrom,
                   this.scaleTo,
                   true,
@@ -466,7 +466,7 @@ export default {
     <TradingSettingsDialog
       class="float-right pt-3 pr-3"
       :api-keys="apiKeys"
-      :general-settings="generalSettings"
+      :general-trading-settings="generalTradingSettings"
       @add-api-key="onAddApiKey"
       @delete-api-key="onDeleteApiKey"
       @update-general-trading-settings="onUpdateGeneralTradingSettings"
@@ -578,12 +578,12 @@ export default {
         <v-row>
           <v-col>
             <v-row justify="center">
-              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.smallSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.mediumSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.bigSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.smallSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.mediumSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
-              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalSettings.bigSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalTradingSettings.smallSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalTradingSettings.mediumSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalTradingSettings.bigSizePct) / 100" side="BUY" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalTradingSettings.smallSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalTradingSettings.mediumSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
+              <TradingButton :disabled="disableTradingButtons" :amount="(maxSize * generalTradingSettings.bigSizePct) / 100" side="SELL" @execute-trade="onExecuteTrade"></TradingButton>
             </v-row>
           </v-col>
         </v-row>
