@@ -11,6 +11,7 @@ export default {
       showDebugLogs: false,
       showPositions: true,
       showChart: true,
+      showTradingParams: true,
       nbrOfOrderRules: [(v) => v != "" || "Required", (v) => !!v || "Required", (v) => v >= 0 || "Must be positive", (v) => v <= 30 || "Must be 30 or less"],
       smallSizePct: 25,
       mediumSizePct: 50,
@@ -44,6 +45,7 @@ export default {
         smallSizePct: this.smallSizePct,
         mediumSizePct: this.mediumSizePct,
         bigSizePct: this.bigSizePct,
+        showTradingParams: this.showTradingParams
       });
     },
     reset() {
@@ -107,6 +109,9 @@ export default {
             <v-row>
               <v-col>
                 <v-checkbox density="compact" hide-details="auto" label="Trader Notification" v-model="playTraderNotification"></v-checkbox>
+              </v-col>
+              <v-col>
+                <v-checkbox density="compact" hide-details="auto" label="Show Trading Params" v-model="showTradingParams"></v-checkbox>
               </v-col>
               <v-col>
                 <v-checkbox density="compact" hide-details="auto" label="Show Positions" v-model="showPositions"></v-checkbox>

@@ -555,6 +555,7 @@ export default {
         mediumSizePct: 50,
         bigSizePct: 100,
         nbrOfSplitOrders: 5,
+        showTradingParams: true
       };
     },
     setNbrOfActiveAccounts() {

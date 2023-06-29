@@ -479,7 +479,7 @@ export default {
       </h4>
       &nbsp;
       <v-form>
-        <v-row dense>
+        <v-row dense v-if="generalTradingSettings.showTradingParams">
           <v-col>
             <v-select
               hide-details="auto"
@@ -518,7 +518,7 @@ export default {
             </v-text-field>
           </v-col>
         </v-row>
-        <v-row dense>
+        <v-row dense v-if="generalTradingSettings.showTradingParams">
           <v-col>
             <v-select
               hide-details="auto"
@@ -537,7 +537,7 @@ export default {
             <v-text-field hide-details="auto" :density="density" label="To" suffix="%" v-model="scaleTo" type="number" @update:modelValue="storeTradingParams"> </v-text-field>
           </v-col>
         </v-row>
-        <v-row dense>
+        <v-row dense v-if="generalTradingSettings.showTradingParams">
           <v-col>
             <v-text-field hide-details="auto" :density="density" label="Max Size" prefix="$" v-model="maxSize" type="number" @update:modelValue="storeTradingParams"></v-text-field>
           </v-col>
@@ -563,7 +563,7 @@ export default {
               </span>
             </div>
           </v-col>
-          <v-col>
+          <v-col v-if="generalTradingSettings.showTradingParams">
             <v-select
               hide-details="auto"
               :disabled="lockSymbol"
